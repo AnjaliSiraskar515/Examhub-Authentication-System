@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CertiGuard - Super Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --secondary: #64748b;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --error: #ef4444;
+      --success: #22c55e;
+      --teal: #14b8a6;
+    }
+    
+    body {
+      background: var(--bg);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+    }
+
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: white;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+      width: 40px;
+      height: 40px;
+    }
+
+    .sidebar-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 1rem 0;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      background: #f8fafc;
+      color: var(--primary);
+    }
+
+    .nav-item.active {
+      background: #eff6ff;
+      color: var(--primary);
+      border-left-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .nav-item i {
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 2rem;
+    }
+
+    .top-header {
+      background: white;
+      padding: 1.5rem 2rem;
+      border-radius: 0.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .header-title p {
+      color: var(--text-light);
+      margin: 0.25rem 0 0 0;
+      font-size: 0.875rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .primary-btn {
+      background: var(--primary);
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .secondary-btn {
+      background: #f1f5f9;
+      color: var(--text);
+      border: 1px solid #e2e8f0;
+    }
+
+    .secondary-btn:hover {
+      background: #e2e8f0;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      border-left: 4px solid;
+    }
+
+    .stat-card.blue { border-left-color: var(--primary); }
+    .stat-card.green { border-left-color: var(--success); }
+    .stat-card.teal { border-left-color: var(--teal); }
+    .stat-card.orange { border-left-color: #f59e0b; }
+
+    .stat-title {
+      color: var(--text-light);
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-icon {
+      float: right;
+      width: 48px;
+      height: 48px;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .stat-card.blue .stat-icon { background: #eff6ff; color: var(--primary); }
+    .stat-card.green .stat-icon { background: #f0fdf4; color: var(--success); }
+    .stat-card.teal .stat-icon { background: #f0fdfa; color: var(--teal); }
+    .stat-card.orange .stat-icon { background: #fffbeb; color: #f59e0b; }
+
+    /* Tabs */
+    .tabs-container {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      margin-bottom: 1.5rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 0.5rem;
+    }
+
+    .tab-btn {
+      padding: 0.625rem 1.25rem;
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn:hover {
+      background: #f8fafc;
+      color: var(--primary);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Content Sections */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .content-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+      box-sizing: border-box;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .data-table th {
+      background: #f8fafc;
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.875rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .data-table td {
+      padding: 0.875rem 0.75rem;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.875rem;
+    }
+
+    .data-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .badge.success { background: #dcfce7; color: #166534; }
+    .badge.warning { background: #fef3c7; color: #92400e; }
+    .badge.danger { background: #fee2e2; color: #991b1b; }
+
+    .action-btn {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .action-btn.edit {
+      background: #eff6ff;
+      color: var(--primary);
+    }
+
+    .action-btn.delete {
+      background: #fef2f2;
+      color: var(--error);
+    }
+
+    .action-btn:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg class="sidebar-logo" viewBox="0 0 54 54" fill="none">
+          <rect x="8" y="8" width="38" height="32" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <path d="M27 7L42 14L27 21L12 14L27 7Z" fill="#14b8a6" stroke="#14b8a6" stroke-width="1"/>
+          <path d="M34.5 30.6l3.2 2.7 5.6-8.4" stroke="#14b8a6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <div class="sidebar-title">ExamHub</div>
+          <div style="font-size: 0.75rem; color: var(--text-light);">Super Admin</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#overview" class="nav-item active" onclick="showSection('overview')">
+          <i class="fas fa-th-large"></i>
+          <span>Overview</span>
+        </a>
+        <a href="#profile" class="nav-item" onclick="showSection('profile')">
+          <i class="fas fa-user"></i>
+          <span>My Profile</span>
+        </a>
+        <a href="#exams" class="nav-item" onclick="showSection('exams')">
+          <i class="fas fa-file-alt"></i>
+          <span>Manage Exams</span>
+        </a>
+        <a href="#admins" class="nav-item" onclick="showSection('admins')">
+          <i class="fas fa-user-shield"></i>
+          <span>Manage Admins</span>
+        </a>
+        <a href="#institutions" class="nav-item" onclick="showSection('institutions')">
+          <i class="fas fa-building"></i>
+          <span>Institutions</span>
+        </a>
+        <a href="#students" class="nav-item" onclick="showSection('students')">
+          <i class="fas fa-users"></i>
+          <span>All Students</span>
+        </a>
+        <a href="#reports" class="nav-item" onclick="showSection('reports')">
+          <i class="fas fa-chart-bar"></i>
+          <span>Reports</span>
+        </a>
+        <a href="#settings" class="nav-item" onclick="showSection('settings')">
+          <i class="fas fa-cog"></i>
+          <span>System Settings</span>
+        </a>
+      </nav>
+
+      <div style="padding: 1.5rem; border-top: 1px solid #e2e8f0;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">SA</div>
+          <div>
+            <div style="font-weight: 600; font-size: 0.875rem;">Super Admin</div>
+            <div style="font-size: 0.75rem; color: var(--text-light);">admin@ExamHub.com</div>
+          </div>
+        </div>
+        <button onclick="logout()" class="btn secondary-btn" style="width: 100%; justify-content: center;">
+          <i class="fas fa-sign-out-alt"></i>
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <!-- Overview Section -->
+      <div id="section-overview" class="content-section">
+        <div class="top-header">
+          <div class="header-title">
+            <h1>Super Admin Dashboard</h1>
+            <p>System-wide controls and monitoring</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn secondary-btn">
+              <i class="fas fa-download"></i>
+              Export Data
+            </button>
+            <button class="btn primary-btn">
+              <i class="fas fa-plus"></i>
+              Create Admin
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card blue">
+            <div class="stat-icon">
+              <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-title">Total Exams</div>
+            <div class="stat-value">142</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-title">Total Students</div>
+            <div class="stat-value">3,847</div>
+          </div>
+          <div class="stat-card teal">
+            <div class="stat-icon">
+              <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="stat-title">Active Admins</div>
+            <div class="stat-value">12</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">
+              <i class="fas fa-building"></i>
+            </div>
+            <div class="stat-title">Institutions</div>
+            <div class="stat-value">8</div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="content-card">
+          <h2 class="section-title">
+            <i class="fas fa-clock"></i>
+            Recent Activity
+          </h2>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>2025-11-05 11:45 PM</td>
+                <td>admin@university.edu</td>
+                <td>Created new exam: "Midterm Math 101"</td>
+                <td><span class="badge success">Success</span></td>
+              </tr>
+              <tr>
+                <td>2025-11-05 11:30 PM</td>
+                <td>supervisor@college.edu</td>
+                <td>Approved student verification</td>
+                <td><span class="badge success">Success</span></td>
+              </tr>
+              <tr>
+                <td>2025-11-05 11:15 PM</td>
+                <td>new.institution@edu</td>
+                <td>Partnership request submitted</td>
+                <td><span class="badge warning">Pending</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Manage Admins Section -->
+      <div id="section-admins" class="content-section" style="display: none;">
+        <div class="top-header">
+          <div class="header-title">
+            <h1>Manage Admins</h1>
+            <p>Control admin access and permissions</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn primary-btn" onclick="showCreateAdminForm()">
+              <i class="fas fa-user-plus"></i>
+              Add New Admin
+            </button>
+          </div>
+        </div>
+
+        <div class="content-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Institution</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>John Smith</td>
+                <td>john.smith@uni.edu</td>
+                <td>+91 9876543210</td>
+                <td>State University</td>
+                <td><span class="badge success">Active</span></td>
+                <td>
+                  <button class="action-btn edit"><i class="fas fa-edit"></i> Edit</button>
+                  <button class="action-btn delete"><i class="fas fa-trash"></i> Remove</button>
+                </td>
+              </tr>
+              <tr>
+                <td>Sarah Johnson</td>
+                <td>sarah.j@college.edu</td>
+                <td>+91 9876543211</td>
+                <td>Tech College</td>
+                <td><span class="badge success">Active</span></td>
+                <td>
+                  <button class="action-btn edit"><i class="fas fa-edit"></i> Edit</button>
+                  <button class="action-btn delete"><i class="fas fa-trash"></i> Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Profile Section -->
+      <div id="section-profile" class="content-section" style="display: none;">
+        <div class="content-card">
+          <h2 class="section-title"><i class="fas fa-user"></i> My Profile</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="flex items-center space-x-4">
+              <div class="w-20 h-20 bg-indigo-600 text-white rounded-full flex items-center justify-center font-semibold text-xl">SA</div>
+              <div>
+                <h3 class="text-xl font-semibold text-gray-900">Super Admin</h3>
+                <p class="text-gray-600">admin@ExamHub.com</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="text-center">
+                <p class="text-2xl font-bold text-indigo-600">142</p>
+                <p class="text-sm text-gray-600">Total Exams</p>
+              </div>
+              <div class="text-center">
+                <p class="text-2xl font-bold text-teal-600">8</p>
+                <p class="text-sm text-gray-600">Institutions</p>
+              </div>
+            </div>
+          </div>
+          <div class="mt-6 flex space-x-4">
+            <button onclick="openProfileModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Edit Profile</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other sections hidden by default -->
+      <div id="section-exams" class="content-section" style="display: none;">
+        <div class="content-card">
+          <h2 class="section-title"><i class="fas fa-file-alt"></i> All Exams</h2>
+          <p>Exam management interface will be displayed here.</p>
+        </div>
+      </div>
+
+      <div id="section-institutions" class="content-section" style="display: none;">
+        <div class="content-card">
+          <h2 class="section-title"><i class="fas fa-building"></i> Institution Requests</h2>
+          <p>Pending institution partnership requests will be shown here.</p>
+        </div>
+      </div>
+
+      <div id="section-students" class="content-section" style="display: none;">
+        <div class="content-card">
+          <h2 class="section-title"><i class="fas fa-users"></i> All Students</h2>
+          <p>Student database and verification status.</p>
+        </div>
+      </div>
+
+      <div id="section-reports" class="content-section" style="display: none;">
+        <div class="content-card">
+          <h2 class="section-title"><i class="fas fa-chart-bar"></i> System Reports</h2>
+          <p>Analytics and reporting dashboard.</p>
+        </div>
+      </div>
+
+      <div id="section-settings" class="content-section" style="display: none;">
+        <div class="content-card">
+          <h2 class="section-title"><i class="fas fa-cog"></i> System Settings</h2>
+          <p>Global configuration and system parameters.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-gray-900">My Profile</h2>
+            <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600" title="Close modal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label class="block text-sm font-medium text-red-600 mb-2">Name *</label>
+              <input type="text" id="profileName" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Super Admin Name" aria-label="Super Admin Name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-red-600 mb-2">Email *</label>
+              <input type="email" id="profileEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Super Admin Email" aria-label="Super Admin Email">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-red-600 mb-2">Phone Number *</label>
+              <input type="tel" id="profilePhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Super Admin Phone Number" aria-label="Super Admin Phone Number">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-red-600 mb-2">Passport Photo *</label>
+              <input type="file" id="passportFile" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Passport Photo">
+              <span id="passportStatus" class="text-sm text-gray-500">Not uploaded</span>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-4">Document Upload</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">Aadhar Card *</label>
+                <input type="file" id="aadharFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Aadhar Card file">
+                <span id="aadharStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">10th Marksheet *</label>
+                <input type="file" id="marks10File" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 10th Marksheet file">
+                <span id="marks10Status" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">12th Marksheet *</label>
+                <input type="file" id="marks12File" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 12th Marksheet file">
+                <span id="marks12Status" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">UG Certificate (Optional)</label>
+                <input type="file" id="ugFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose UG Certificate file">
+                <span id="ugStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">PG Certificate (Optional)</label>
+                <input type="file" id="pgFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose PG Certificate file">
+                <span id="pgStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">Biometric Data *</label>
+                <input type="file" id="biometricFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Biometric Data file">
+                <span id="biometricStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex space-x-4">
+            <button onclick="uploadDocuments()" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+              Upload Documents
+            </button>
+            <button onclick="completeProfile()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+              Complete Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Navigation
+    function showSection(sectionName) {
+      // Hide all sections
+      const sections = document.querySelectorAll('.content-section');
+      sections.forEach(section => section.style.display = 'none');
+
+      // Remove active class from all nav items
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => item.classList.remove('active'));
+
+      // Show selected section
+      const targetSection = document.getElementById('section-' + sectionName);
+      if (targetSection) {
+        targetSection.style.display = 'block';
+      }
+
+      // Add active class to clicked nav item
+      event.target.closest('.nav-item').classList.add('active');
+    }
+
+    function showCreateAdminForm() {
+      alert('Create Admin Form\n\nThis would open a modal with fields:\n- Full Name\n- Email\n- Phone Number\n- Institution\n- Access Level');
+    }
+
+    function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        window.location.href = 'auth_portal.html';
+      }
+    }
+
+    // Profile functions
+    function uploadDocuments() {
+      alert('Document upload functionality would be implemented here.\n\nThis would:\n- Validate file types and sizes\n- Upload files to server\n- Update status indicators\n- Store file paths in database');
+    }
+
+    function completeProfile() {
+      alert('Profile completion functionality would be implemented here.\n\nThis would:\n- Validate all required fields are filled\n- Check all mandatory documents are uploaded\n- Update profile status to complete\n- Enable exam registration');
+    }
+
+    function openProfileModal() {
+      document.getElementById('profileModal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    // Load dashboard data (simulated)
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('Super Admin Dashboard Loaded');
+      console.log('Access Level: Full System Control');
+    });
+  </script>
+</body>
+</html>

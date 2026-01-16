@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - ExamHub</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --teal: #14b8a6;
+      --bg: #f8fafc;
+    }
+    body { background: var(--bg); font-family: Inter, ui-sans-serif, system-ui; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .exam-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .exam-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.1); }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <svg class="w-10 h-10" viewBox="0 0 54 54" fill="none">
+          <rect x="8" y="8" width="38" height="32" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+          <path d="M27 7L42 14L27 21L12 14L27 7Z" fill="#14b8a6" stroke="#14b8a6" stroke-width="1"/>
+        </svg>
+        <div>
+          <h1 class="text-xl font-semibold text-gray-900">Student Dashboard</h1>
+          <p class="text-sm text-gray-500">ExamHub - Secure Authentication System</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <div class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-semibold">S</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 rounded-lg shadow-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-indigo-100">Available Exams</p>
+            <p class="text-2xl font-bold" id="statExams">--</p>
+          </div>
+          <i class="fas fa-file-alt text-3xl text-indigo-200"></i>
+        </div>
+      </div>
+      <div class="bg-gradient-to-r from-teal-500 to-cyan-600 text-white p-6 rounded-lg shadow-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="teal-100">Completed Exams</p>
+            <p class="text-2xl font-bold" id="statCompleted">--</p>
+          </div>
+          <i class="fas fa-check-circle text-3xl text-teal-200"></i>
+        </div>
+      </div>
+      <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 rounded-lg shadow-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="green-100">Upcoming Exams</p>
+            <p class="text-2xl font-bold" id="statUpcoming">--</p>
+          </div>
+          <i class="fas fa-calendar-alt text-3xl text-green-200"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Available Exams -->
+      <div class="lg:col-span-2">
+        <div class="card p-6">
+          <h2 class="text-2xl font-semibold mb-6 text-gray-900"><i class="fas fa-file-alt mr-2"></i> Available Exams</h2>
+          <div id="exams" class="space-y-4">
+            <!-- Dynamic content -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        <!-- Profile Card -->
+        <div class="card p-6">
+          <h3 class="text-lg font-semibold mb-4 text-gray-900"><i class="fas fa-user mr-2"></i> My Profile</h3>
+          <div class="flex items-center space-x-4 mb-4">
+            <img src="placeholder-avatar.png" alt="avatar" class="w-16 h-16 rounded-full border-4 border-indigo-200">
+            <div>
+              <h4 class="font-semibold text-gray-900" id="studentName">Student Name</h4>
+              <p class="text-gray-600" id="studentEmail">student@example.com</p>
+              <p class="text-sm text-gray-500" id="studentRegno">Reg No: --</p>
+            </div>
+          </div>
+          <button onclick="openProfileModal()" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">My Profile</button>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card p-6">
+          <h3 class="text-lg font-semibold mb-4 text-gray-900"><i class="fas fa-bolt mr-2"></i> Quick Actions</h3>
+          <div class="space-y-3">
+            <button class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+              <i class="fas fa-history mr-2"></i> View Exam History
+            </button>
+          </div>
+
+        <!-- Notifications -->
+        <div class="card p-6">
+          <h3 class="text-lg font-semibold mb-4 text-gray-900"><i class="fas fa-bell mr-2"></i> Recent Notifications</h3>
+          <div class="space-y-3">
+            <div class="flex items-start space-x-3">
+              <div class="w-2 h-2 bg-indigo-500 rounded-full mt-2"></div>
+              <div>
+                <p class="text-sm text-gray-900">New exam scheduled for tomorrow</p>
+                <p class="text-xs text-gray-500">2 hours ago</p>
+              </div>
+            </div>
+            <div class="flex items-start space-x-3">
+              <div class="w-2 h-2 bg-teal-500 rounded-full mt-2"></div>
+              <div>
+                <p class="text-sm text-gray-900">Biometric verification successful</p>
+                <p class="text-xs text-gray-500">1 day ago</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-gray-900">My Profile</h2>
+            <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600" title="Close modal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+              <input type="text" id="profileName" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Student Name" aria-label="Student Name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input type="email" id="profileEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Student Email" aria-label="Student Email">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+              <input type="tel" id="profilePhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Student Phone Number" aria-label="Student Phone Number">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Passport Photo</label>
+              <input type="file" id="passportFile" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Passport Photo">
+              <span id="passportStatus" class="text-sm text-gray-500">Not uploaded</span>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-4">Document Upload</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">Aadhar Card *</label>
+                <input type="file" id="aadharFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Aadhar Card file">
+                <span id="aadharStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">10th Marksheet *</label>
+                <input type="file" id="marks10File" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 10th Marksheet file">
+                <span id="marks10Status" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">12th Marksheet *</label>
+                <input type="file" id="marks12File" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 12th Marksheet file">
+                <span id="marks12Status" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">UG Certificate (Optional)</label>
+                <input type="file" id="ugFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose UG Certificate file">
+                <span id="ugStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">PG Certificate (Optional)</label>
+                <input type="file" id="pgFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose PG Certificate file">
+                <span id="pgStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Biometric Data (Optional)</label>
+                <input type="file" id="biometricFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Biometric Data file">
+                <span id="biometricStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex space-x-4">
+            <button onclick="uploadDocuments()" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+              Upload Documents
+            </button>
+            <button onclick="completeProfile()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+              Complete Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-gray-500 text-sm">
+      © 2025 ExamHub Platform. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    async function loadExams() {
+      try {
+        const res = await fetch('/api/exams');
+        const js = await res.json();
+        const container = document.getElementById('exams');
+        container.innerHTML = '';
+
+        if (js.length === 0) {
+          container.innerHTML = '<div class="text-gray-500 text-center py-8">No exams available</div>';
+          return;
+        }
+
+        js.forEach(exam => {
+          const examCard = document.createElement('div');
+          examCard.className = 'exam-card bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg';
+          examCard.innerHTML = `
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">${exam.title || 'Exam Title'}</h3>
+              <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">${exam.type || 'Online'}</span>
+            </div>
+            <div class="text-gray-600 mb-4">
+              <p><i class="fas fa-calendar mr-2"></i> ${exam.date || 'Date TBD'}</p>
+              <p><i class="fas fa-clock mr-2"></i> ${exam.duration || 120} minutes</p>
+            </div>
+            <div class="flex space-x-3">
+              <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors" onclick="takeExam('${exam.id}')">
+                <i class="fas fa-play mr-2"></i> Take Exam
+              </button>
+              <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300" onclick="viewExamDetails('${exam.id}')">
+                <i class="fas fa-info-circle mr-2"></i> Details
+              </button>
+            </div>
+          `;
+          container.appendChild(examCard);
+        });
+
+        // Update stats
+        document.getElementById('statExams').textContent = js.length;
+        document.getElementById('statCompleted').textContent = Math.floor(js.length * 0.3); // Mock data
+        document.getElementById('statUpcoming').textContent = Math.floor(js.length * 0.7); // Mock data
+
+      } catch (error) {
+        console.error('Failed to load exams:', error);
+        document.getElementById('exams').innerHTML = '<div class="text-red-500 text-center py-8">Failed to load exams</div>';
+      }
+    }
+
+    function takeExam(id) {
+      alert('Starting exam: ' + id);
+      // Implement exam taking logic
+    }
+
+    function viewExamDetails(id) {
+      alert('Exam details: ' + id);
+      // Implement exam details view
+    }
+
+    // Profile modal functions
+    function openProfileModal() {
+      document.getElementById('profileModal').classList.remove('hidden');
+      loadProfileInfo();
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    async function loadProfileInfo() {
+      try {
+        const res = await fetch('/api/profile/info');
+        const profile = await res.json();
+        document.getElementById('profileName').value = profile.name;
+        document.getElementById('profileEmail').value = profile.email;
+        document.getElementById('profilePhone').value = profile.phone;
+
+        // Update status indicators
+        updateDocumentStatus('aadharStatus', profile.documents.aadhar);
+        updateDocumentStatus('marks10Status', profile.documents.marks10);
+        updateDocumentStatus('marks12Status', profile.documents.marks12);
+        updateDocumentStatus('ugStatus', profile.documents.ug);
+        updateDocumentStatus('pgStatus', profile.documents.pg);
+        updateDocumentStatus('biometricStatus', profile.documents.biometric);
+        updateDocumentStatus('passportStatus', profile.documents.passport);
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    }
+
+    function updateDocumentStatus(elementId, uploaded) {
+      const element = document.getElementById(elementId);
+      element.textContent = uploaded ? 'Uploaded' : 'Not uploaded';
+      element.className = uploaded ? 'text-sm text-green-600' : 'text-sm text-gray-500';
+    }
+
+    async function uploadDocuments() {
+      const formData = new FormData();
+      const files = {
+        aadhar: document.getElementById('aadharFile').files[0],
+        marks10: document.getElementById('marks10File').files[0],
+        marks12: document.getElementById('marks12File').files[0],
+        ug: document.getElementById('ugFile').files[0],
+        pg: document.getElementById('pgFile').files[0],
+        biometric: document.getElementById('biometricFile').files[0],
+        passport: document.getElementById('passportFile').files[0]
+      };
+
+      Object.keys(files).forEach(key => {
+        if (files[key]) formData.append(key, files[key]);
+      });
+
+      try {
+        const res = await fetch('/api/profile/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const result = await res.json();
+        if (res.ok) {
+          alert('Documents uploaded successfully');
+          loadProfileInfo();
+        } else {
+          alert('Upload failed: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('Upload failed');
+      }
+    }
+
+    async function completeProfile() {
+      try {
+        const res = await fetch('/api/profile/complete', { method: 'POST' });
+        const result = await res.json();
+        if (res.ok) {
+          alert(result.message);
+          closeProfileModal();
+          // Reload page to reflect changes
+          location.reload();
+        } else {
+          alert('Completion failed: ' + result.message);
+        }
+      } catch (error) {
+        console.error('Completion error:', error);
+        alert('Completion failed');
+      }
+    }
+
+    // Load data on page load
+    document.addEventListener('DOMContentLoaded', loadExams);
+  </script>
+</body>
+</html>

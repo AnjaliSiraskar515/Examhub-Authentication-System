@@ -1,0 +1,1 @@
+package com.example.examauth.repo; import com.example.examauth.model.FraudLog; import org.springframework.data.jpa.repository.JpaRepository; public interface FraudLogRepository extends JpaRepository<FraudLog, Long> { }

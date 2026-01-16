@@ -1,0 +1,1 @@
+package com.example.examauth.repo; import com.example.examauth.model.Attendance; import org.springframework.data.jpa.repository.JpaRepository; public interface AttendanceRepository extends JpaRepository<Attendance, Long> { boolean existsByExamIdAndStudentId(Long examId, Long studentId); }

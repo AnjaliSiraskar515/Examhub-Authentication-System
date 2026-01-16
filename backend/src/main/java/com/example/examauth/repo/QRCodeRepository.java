@@ -1,0 +1,1 @@
+package com.example.examauth.repo; import com.example.examauth.model.QRCodeEntry; import org.springframework.data.jpa.repository.JpaRepository; import java.util.Optional; public interface QRCodeRepository extends JpaRepository<QRCodeEntry, Long> { Optional<QRCodeEntry> findByToken(String token); }

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ExamHub Exam Authentication System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #f0f5ff;
+    }
+    /* LOGO icon style (SVG) */
+    .cg-logo {
+      width: 48px; height: 48px; display:inline-block;
+    }
+    /* Blobby Animated Background */
+    .blobby-bg {
+      pointer-events: none;
+      z-index: 0;
+      position: absolute;
+      width: 100vw; height: 100vh;
+      left:0; top:0; right:0; bottom:0;
+      overflow: hidden;
+    }
+    .blobby {
+      position: absolute;
+      border-radius: 9999px;
+      filter: blur(38px) brightness(1.2);
+      opacity: 0.31;
+      animation-duration: 12s;
+      animation-iteration-count: infinite;
+      animation-timing-function: ease-in-out;
+      will-change: transform;
+    }
+    .b1 { background: #a5b4fc; width: 340px; height: 280px; left: 7vw; top: 4vh; animation-name: float1;}
+    .b2 { background: #99f6e4; width: 240px; height: 170px; left: 60vw; top: 8vh; animation-name: float2;}
+    .b3 { background: #818cf8; width: 180px; height: 220px; left: 75vw; top: 44vh; animation-name: float3;}
+    .b4 { background: #7dd3fc; width: 180px; height: 150px; left: 25vw; top: 60vh; animation-name: float4;}
+    @keyframes float1 { 
+      0% { transform: translateY(0px) scale(1);}
+      48% { transform: translateY(45px) scale(1.11);}
+      100% { transform: translateY(0px) scale(1);}
+    }
+    @keyframes float2 { 
+      0% { transform: scale(1) translateY(0);}
+      39% { transform: scale(1.08) translateY(-24px);}
+      100% { transform: scale(1) translateY(0);}
+    }
+    @keyframes float3 {
+      0% { transform:translateY(0) scale(1); }
+      60% { transform:translateY(-32px) scale(0.94);}
+      100% { transform:translateY(0) scale(1);}
+    }
+    @keyframes float4 {
+      0% { transform:translateY(0);}
+      65% { transform:translateY(32px);}
+      100% { transform:translateY(0);}
+    }
+    /* Scroll reveal animations */
+    .reveal {opacity: 0;transform: translateY(48px) scale(0.98);transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);}
+    .reveal.visible {opacity: 1;transform: translateY(0px) scale(1);}
+    .reveal.out {opacity: 0;transform: translateY(48px) scale(0.98);}
+  </style>
+</head>
+<body class="relative min-h-screen text-gray-800">
+
+  <!-- Animated Blobby Background (behind everything!) -->
+  <div class="blobby-bg">
+    <div class="blobby b1"></div>
+    <div class="blobby b2"></div>
+    <div class="blobby b3"></div>
+    <div class="blobby b4"></div>
+  </div>
+
+  <!-- Header Navigation -->
+  <header class="w-full bg-white border-b border-gray-100 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
+      <!-- LOGO (SVG, education/exam themed) -->
+      <div class="flex items-center space-x-3">
+        <span>
+          <svg class="cg-logo" viewBox="0 0 54 54" fill="none">
+            <rect x="8" y="8" width="38" height="32" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+            <rect x="12.5" y="13.5" width="29" height="5" rx="2.5" fill="#4f46e5" opacity="0.13"/>
+            <rect x="12.5" y="21.5" width="13" height="2" rx="1" fill="#4f46e5" opacity="0.16"/>
+            <rect x="12.5" y="27.5" width="10" height="2" rx="1" fill="#4f46e5" opacity="0.18"/>
+            <!-- Graduation Cap -->
+            <path d="M27 7L42 14L27 21L12 14L27 7Z" fill="#14b8a6" stroke="#14b8a6" stroke-width="1"/>
+            <rect x="25.3" y="21" width="3.4" height="4.5" rx="1.5" fill="#4f46e5" opacity="0.12"/>
+            <!-- Checkmark for 'verified' -->
+            <path d="M34.5 30.6l3.2 2.7 5.6-8.4" stroke="#14b8a6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="text-2xl font-semibold text-indigo-600">ExamHub</span>
+      </div>
+      <nav class="flex items-center space-x-8">
+        <a href="#benefits" class="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Benefits</a>
+        <a href="#process" class="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Process</a>
+        <a href="#technology" class="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Technology</a>
+        <a href="institution_onboarding.html" class="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700 transition-colors ml-4">Partner/Help</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="relative flex items-center justify-center min-h-[520px] bg-transparent">
+    <div class="relative z-10 flex flex-col items-center justify-center w-full max-w-3xl mx-auto py-16 text-center">
+      <h1 class="text-5xl font-extrabold leading-tight text-indigo-700 mb-6">
+        The <span class="text-teal-500">Verified</span> Future of Exams.
+      </h1>
+      <p class="text-lg text-gray-700 mb-8 max-w-xl">
+        Multi-layered authentication platform securing high-stakes assessments with Biometrics, QR Codes, and Multi-Role Control.
+      </p>
+      <div class="flex flex-row space-x-4">
+        <a href="auth_portal.html" class="px-8 py-3 rounded-lg bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700 transition-colors text-lg">Access Portal Now &rarr;</a>
+        <a href="#process" class="px-8 py-3 rounded-lg border border-teal-400 text-teal-600 font-semibold hover:border-teal-600 hover:text-teal-800 transition-colors bg-white text-lg">Learn How It Works</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Sections Below Hero -->
+  <main class="w-full bg-transparent">
+
+    <!-- WHY CERTIGUARD -->
+    <section id="benefits" class="reveal max-w-6xl mx-auto px-6 py-16">
+      <h2 class="text-3xl font-bold text-center text-indigo-800 mb-10">Why ExamHub?</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-white rounded-lg shadow-md p-8 border-t-4 border-teal-400">
+          <h3 class="text-xl font-bold text-gray-900 mb-4">Impersonation Defense</h3>
+          <p class="text-gray-700">Facial and biometric checks thwart impersonators before test entry, guaranteeing identity integrity.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-8 border-t-4 border-cyan-400">
+          <h3 class="text-xl font-bold text-gray-900 mb-4">AI Document Validation</h3>
+          <p class="text-gray-700">Advanced AI scans, verifies, and matches all exam and ID documents, eliminating manual validation risks.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-8 border-t-4 border-indigo-400">
+          <h3 class="text-xl font-bold text-gray-900 mb-4">Audit Trails</h3>
+          <p class="text-gray-700">All exam actions are timestamped, logged, and encrypted for regulatory and forensic review at any moment.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TECHNOLOGY STACK & BENEFITS -->
+    <section id="technology" class="reveal max-w-7xl mx-auto px-6 py-16">
+      <h2 class="text-3xl font-bold text-center text-indigo-800 mb-10">Technology Stack & Benefits</h2>
+      <div class="grid md:grid-cols-4 gap-8">
+        <div class="bg-white rounded-lg shadow-lg p-7 flex flex-col items-center">
+          <span class="text-indigo-600 text-2xl font-extrabold mb-2">Java Core</span>
+          <p class="text-gray-700 text-center">Robust backend security powered by high-performance Java modules.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-7 flex flex-col items-center">
+          <span class="text-teal-500 text-2xl font-extrabold mb-2">Python Microservice</span>
+          <p class="text-gray-700 text-center">Scalable, containerized Python microservices enhance biometric validation.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-7 flex flex-col items-center">
+          <span class="text-indigo-500 text-2xl font-extrabold mb-2">Responsive UI</span>
+          <p class="text-gray-700 text-center">Tailwind-powered UI adapts seamlessly to all desktop display environments.</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-7 flex flex-col items-center">
+          <span class="text-cyan-500 text-2xl font-extrabold mb-2">Gemini LLM Intelligence</span>
+          <p class="text-gray-700 text-center">LLM-driven RFP analysis shortens onboarding and customizes assessment modules.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3-STEP VERIFICATION PROCESS -->
+    <section id="process" class="reveal max-w-4xl mx-auto px-6 py-16">
+      <h2 class="text-3xl font-bold text-center text-indigo-800 mb-10">Our 3-Step Verification Process</h2>
+      <div class="flex flex-col md:flex-row items-center justify-center md:space-x-10">
+        <div class="flex flex-col items-center flex-1">
+          <div class="relative flex flex-col items-center">
+            <span class="w-20 h-20 rounded-full bg-indigo-600 text-white flex items-center justify-center text-2xl font-bold mb-4 shadow">1</span>
+            <span class="absolute left-full top-1/2 hidden md:block w-24 h-2 bg-gradient-to-r from-indigo-400 to-teal-400"></span>
+          </div>
+          <p class="text-xl font-semibold mb-1 text-gray-900">Biometric ID Capture</p>
+          <p class="text-gray-700 text-center mb-6">Facial and document scans validate candidate identity before allowing exam entry.</p>
+        </div>
+        <div class="flex flex-col items-center flex-1">
+          <div class="relative flex flex-col items-center">
+            <span class="w-20 h-20 rounded-full bg-teal-500 text-white flex items-center justify-center text-2xl font-bold mb-4 shadow">2</span>
+            <span class="absolute left-full top-1/2 hidden md:block w-24 h-2 bg-gradient-to-r from-teal-400 to-cyan-400"></span>
+          </div>
+          <p class="text-xl font-semibold mb-1 text-gray-900">QR Code Entry</p>
+          <p class="text-gray-700 text-center mb-6">Each candidate receives a secure QR pass for timed exam room admission.</p>
+        </div>
+        <div class="flex flex-col items-center flex-1">
+          <div class="flex flex-col items-center">
+            <span class="w-20 h-20 rounded-full bg-cyan-500 text-white flex items-center justify-center text-2xl font-bold mb-4 shadow">3</span>
+          </div>
+          <p class="text-xl font-semibold mb-1 text-gray-900">Multi-Role Control</p>
+          <p class="text-gray-700 text-center mb-6">Proctor, admin, and user controls enforce real-time monitoring and adaptive permissions.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full bg-white border-t border-gray-100 mt-10">
+    <div class="max-w-7xl mx-auto px-8 py-6 flex flex-col md:flex-row items-center justify-between text-gray-600 text-sm">
+      <div>
+        &copy; 2025 ExamHub Platform. All rights reserved.
+      </div>
+      <div class="mt-2 md:mt-0">
+        Security Compliance: RBAC enforced, cryptographic hashing and audit logging applied.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll Reveal JS -->
+  <script>
+    function throttle(fn, wait) {
+      let time = Date.now();
+      return function() {
+        if ((time + wait - Date.now()) < 0) {
+          fn();
+          time = Date.now();
+        }
+      }
+    }
+    const revealElements = Array.from(document.querySelectorAll('.reveal'));
+    function handleReveal() {
+      const windowHeight = window.innerHeight;
+      revealElements.forEach(el => {
+        const elementTop = el.getBoundingClientRect().top;
+        const elementBottom = el.getBoundingClientRect().bottom;
+        if (elementTop < windowHeight - 60 && elementBottom > 60) {
+          el.classList.add('visible');
+          el.classList.remove('out');
+        } else {
+          el.classList.remove('visible');
+          el.classList.add('out');
+        }
+      });
+    }
+    window.addEventListener('scroll', throttle(handleReveal, 50));
+    window.addEventListener('resize', throttle(handleReveal, 150));
+    document.addEventListener('DOMContentLoaded', handleReveal);
+  </script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+USE exam_authentication_db; INSERT INTO users (name,email,password,role,status) VALUES ('Super Admin','superadmin@example.com','password','super_admin','active'); INSERT INTO exams (exam_name,institution_name,date,start_time,duration_minutes,mode,location) VALUES ('Sample Exam','Demo College','2025-11-01','09:00:00',120,'offline','Main Hall');

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExamHub - Student Admit Card</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      #admitCard, #admitCard * { visibility: visible; }
+      #admitCard { position: absolute; left: 0; top: 0; width: 100%; }
+      #downloadBtn { display: none; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-center py-10">
+
+  <!-- HEADER -->
+  <div class="mb-6 text-center">
+    <h1 class="text-3xl font-bold text-indigo-700 mb-1">ExamHub - Admit Card</h1>
+    <p class="text-gray-500 text-sm">Official Hall Ticket for Examination Entry</p>
+  </div>
+
+  <!-- ADMIT CARD -->
+  <div id="admitCard" class="bg-white shadow-lg rounded-lg p-8 w-full max-w-3xl border border-gray-200">
+    <div class="flex items-center justify-between border-b pb-4 mb-4">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-800">Student Admit Card</h2>
+        <p class="text-sm text-gray-500">Download & carry a printed copy to the examination hall</p>
+      </div>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=ExamHub12345" class="w-24 h-24 border rounded" alt="QR Code">
+    </div>
+
+    <!-- Student Info -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div>
+        <p class="text-gray-500 text-sm">Full Name</p>
+        <p class="text-lg font-semibold text-gray-800" id="studentName">Arti Kulkarni</p>
+      </div>
+      <div>
+        <p class="text-gray-500 text-sm">Roll Number</p>
+        <p class="text-lg font-semibold text-gray-800" id="rollNo">EXH-2025-1042</p>
+      </div>
+      <div>
+        <p class="text-gray-500 text-sm">Course</p>
+        <p class="text-lg font-semibold text-gray-800" id="course">B.Tech Computer Science</p>
+      </div>
+      <div>
+        <p class="text-gray-500 text-sm">Verification Status</p>
+        <p class="text-lg font-semibold text-green-600" id="verifyStatus">Verified</p>
+      </div>
+    </div>
+
+    <!-- Exam Details -->
+    <div class="border-t border-gray-200 pt-4">
+      <h3 class="text-lg font-semibold text-gray-800 mb-3">Exam Details</h3>
+      <table class="w-full text-sm text-gray-700 border">
+        <thead class="bg-indigo-50 text-indigo-700">
+          <tr>
+            <th class="border px-3 py-2">Subject Code</th>
+            <th class="border px-3 py-2">Subject Title</th>
+            <th class="border px-3 py-2">Date</th>
+            <th class="border px-3 py-2">Time</th>
+            <th class="border px-3 py-2">Center</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="border px-3 py-2">CSE301</td>
+            <td class="border px-3 py-2">Artificial Intelligence</td>
+            <td class="border px-3 py-2">2025-12-15</td>
+            <td class="border px-3 py-2">10:00 AM - 12:00 PM</td>
+            <td class="border px-3 py-2">Center A - Room 204</td>
+          </tr>
+          <tr>
+            <td class="border px-3 py-2">CSE302</td>
+            <td class="border px-3 py-2">Machine Learning</td>
+            <td class="border px-3 py-2">2025-12-17</td>
+            <td class="border px-3 py-2">2:00 PM - 4:00 PM</td>
+            <td class="border px-3 py-2">Center B - Lab 5</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-6 text-sm text-gray-600 border-t pt-4">
+      <p><strong>Note:</strong> Please carry this admit card along with a valid photo ID. Entry will not be allowed without verification.</p>
+      <p class="mt-1">Generated on <span id="genDate"></span> by <strong>ExamHub Authentication System</strong>.</p>
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="mt-6 flex gap-3">
+    <button id="downloadBtn" onclick="window.print()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+      <i class="fa-solid fa-download mr-2"></i>Download PDF
+    </button>
+    <button onclick="window.location.href='student_dashboard.html'" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">
+      <i class="fa-solid fa-arrow-left mr-2"></i>Back to Dashboard
+    </button>
+  </div>
+
+  <!-- Script -->
+  <script>
+    document.getElementById("genDate").innerText = new Date().toLocaleString();
+
+    // (Later you can fetch this data dynamically from backend)
+    const studentData = {
+      name: "Arti Kulkarni",
+      roll: "EXH-2025-1042",
+      course: "B.Tech Computer Science",
+      status: "Verified"
+    };
+
+    document.getElementById("studentName").innerText = studentData.name;
+    document.getElementById("rollNo").innerText = studentData.roll;
+    document.getElementById("course").innerText = studentData.course;
+    document.getElementById("verifyStatus").innerText = studentData.status;
+  </script>
+
+</body>
+</html>
