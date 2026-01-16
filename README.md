@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Exam Authentication System - Advanced Final Package
 This package contains a full project skeleton for an exam authentication system using QR, AES, fingerprint and AI OCR verification.
 ## Contents
@@ -27,3 +28,7 @@ This package contains a full project skeleton for an exam authentication system 
 - Fingerprint capture requires vendor SDK or local agent to capture real templates.
 - This package uses simulated fingerprint templates for demo flows ('SAMPLE' string).
 - Replace demo logic with vendor matching for production.
+=======
+# final-year-project
+An advanced examination authentication system that ensures secure candidate verification and prevents impersonation using modern web technologies.
+>>>>>>> 19403cf0c039a4be702737d667119335922edbf6
