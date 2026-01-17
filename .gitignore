@@ -1,0 +1,15 @@
+# Maven / Java build files
+target/
+*.class
+*.jar
+*.war
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
