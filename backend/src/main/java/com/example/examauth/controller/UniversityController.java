@@ -25,10 +25,20 @@ public class UniversityController {
     // GET /api/university/{id}/students
     @GetMapping("/{id}/students")
     public ResponseEntity<?> getStudents(@PathVariable Long id) {
-        // In a real app, filter by university ID. For now returning all students as per
-        // demo requirement.
-        List<User> students = userRepository.findAll().stream()
-                .filter(u -> "student".equalsIgnoreCase(u.getRole()) || "STUDENT".equalsIgnoreCase(u.getRole()))
+        // In a real app, filter by university ID. For now returning all students.
+        List<Map<String, Object>> students = userRepository.findAll().stream()
+                .filter(u -> "STUDENT".equalsIgnoreCase(u.getRole()))
+                .map(u -> {
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("userId", u.getUserId());
+                    map.put("name", u.getName());
+                    map.put("email", u.getEmail());
+                    map.put("major", u.getMajor());
+                    map.put("year", u.getYear());
+                    map.put("department", u.getDepartment());
+                    map.put("status", u.getStatus());
+                    return map;
+                })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(students);
     }
@@ -37,8 +47,18 @@ public class UniversityController {
     @GetMapping("/{id}/staff")
     public ResponseEntity<?> getStaff(@PathVariable Long id) {
         // Returning supervisors
-        List<User> staff = userRepository.findAll().stream()
-                .filter(u -> "supervisor".equalsIgnoreCase(u.getRole()) || "SUPERVISOR".equalsIgnoreCase(u.getRole()))
+        List<Map<String, Object>> staff = userRepository.findAll().stream()
+                .filter(u -> "SUPERVISOR".equalsIgnoreCase(u.getRole()))
+                .map(u -> {
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("userId", u.getUserId());
+                    map.put("name", u.getName());
+                    map.put("email", u.getEmail());
+                    map.put("status", u.getStatus());
+                    map.put("department", u.getDepartment());
+                    map.put("role", u.getRole());
+                    return map;
+                })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(staff);
     }
@@ -49,13 +69,20 @@ public class UniversityController {
         try {
             Exam exam = new Exam();
             exam.setExamName((String) request.get("examName"));
-            // Assuming institutionName comes from frontend or derived from ID.
-            // For now hardcoding or using request param if available
-            exam.setInstitutionName((String) request.getOrDefault("institutionName", "University " + id));
+            // Use provided institution or default
+            exam.setInstitutionName((String) request.getOrDefault("institutionName", "University"));
 
             exam.setDate(java.time.LocalDate.parse((String) request.get("date")));
             exam.setStartTime(java.time.LocalTime.parse((String) request.get("startTime")));
-            exam.setDurationMinutes(Integer.parseInt(String.valueOf(request.get("durationMinutes"))));
+
+            // Handle potentially different number types from JSON
+            Object durationObj = request.get("durationMinutes");
+            if (durationObj instanceof Number) {
+                exam.setDurationMinutes(((Number) durationObj).intValue());
+            } else {
+                exam.setDurationMinutes(Integer.parseInt(String.valueOf(durationObj)));
+            }
+
             exam.setMode((String) request.get("mode"));
             exam.setLocation((String) request.get("location"));
             exam.setStatus("upcoming");

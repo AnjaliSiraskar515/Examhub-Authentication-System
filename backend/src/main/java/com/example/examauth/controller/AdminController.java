@@ -36,7 +36,17 @@ public class AdminController {
 
     @GetMapping("/supervisors")
     public ResponseEntity<?> getSupervisors() {
-        List<User> s = userRepo.findAll().stream().filter(u -> "supervisor".equalsIgnoreCase(u.getRole()))
+        List<Map<String, Object>> s = userRepo.findAll().stream()
+                .filter(u -> "SUPERVISOR".equalsIgnoreCase(u.getRole()))
+                .map(u -> {
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("userId", u.getUserId());
+                    map.put("name", u.getName());
+                    map.put("email", u.getEmail());
+                    map.put("status", u.getStatus());
+                    map.put("role", u.getRole());
+                    return map;
+                })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(s);
     }
@@ -44,14 +54,14 @@ public class AdminController {
     @PostMapping("/assign-supervisor")
     public ResponseEntity<?> assignSupervisor(@RequestBody Map<String, Object> body) {
         String email = (String) body.get("email");
-        Long examId = Long.valueOf(String.valueOf(body.get("examId")));
         // create or find supervisor user
         User sup = userRepo.findByEmail(email).orElseGet(() -> {
             User u = new User();
             u.setEmail(email);
             u.setName(email.split("@")[0]);
-            u.setRole("supervisor");
-            u.setPassword("temp");
+            u.setRole("SUPERVISOR");
+            u.setStatus("active");
+            u.setPassword("temp"); // In production, send invite email
             return userRepo.save(u);
         });
         // In production create assignment record; here just return ok
