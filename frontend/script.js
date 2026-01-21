@@ -31,6 +31,25 @@ function switchTab(tab) {
 // ===========================================================
 //  ROLE-BASED LOGIN VISIBILITY
 // ===========================================================
+function updateRegistration() {
+  const role = document.getElementById("regRole")?.value;
+  const studentReg = document.getElementById("studentReg");
+  const authorityReg = document.getElementById("authorityReg");
+
+  if (!studentReg || !authorityReg) return;
+
+  if (role === "STUDENT") {
+    studentReg.classList.remove("hidden");
+    authorityReg.classList.add("hidden");
+  } else if (["UNIVERSITY_ADMIN", "SUPERVISOR", "SUPERADMIN"].includes(role)) {
+    authorityReg.classList.remove("hidden");
+    studentReg.classList.add("hidden");
+  } else {
+    studentReg.classList.add("hidden");
+    authorityReg.classList.add("hidden");
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const roleSelect = get("loginRole");
   const loginBtn = get("loginButton");
@@ -266,7 +285,8 @@ async function loginRequest(identifier, password, role = "student") {
 
     if (res.ok && data.role) {
       alert("✅ Login successful!");
-      const userRole = data.role || role;
+      const userRole = (data.role || role).toUpperCase();
+      // alert("Debug Role: " + userRole); // Debugging line (remove later)
       switch (userRole) {
         case "STUDENT": location.href = "student_dashboard.html"; break;
         case "SUPERVISOR": location.href = "supervisor_dashboard.html"; break;

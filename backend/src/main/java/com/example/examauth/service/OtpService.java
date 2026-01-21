@@ -3,17 +3,15 @@ package com.example.examauth.service;
 import com.example.examauth.model.OtpEntity;
 import com.example.examauth.repo.OtpRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Value;
-import jakarta.annotation.PostConstruct;
-import com.twilio.Twilio;
-import com.twilio.rest.api.v2010.account.Message;
-import com.twilio.type.PhoneNumber;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -25,50 +23,36 @@ public class OtpService {
     private OtpRepository otpRepository;
 
     @Autowired
-    private JavaMailSender mailSender; // ✅ Injects Gmail SMTP sender
+    private JavaMailSender mailSender;
 
     @Value("${spring.mail.username}")
     private String senderEmail;
 
-    @Value("${twilio.account.sid}")
-    private String twilioSid;
+    // ✅ Fast2SMS Config
+    @Value("${fast2sms.api.key}")
+    private String fast2smsApiKey;
 
-    @Value("${twilio.auth.token}")
-    private String twilioAuthToken;
-
-    @Value("${twilio.phone.number}")
-    private String twilioPhoneNumber;
-
-    @PostConstruct
-    public void initTwilio() {
-        if (twilioSid != null && !twilioSid.startsWith("ACxxxxx")) {
-            Twilio.init(twilioSid, twilioAuthToken);
-            System.out.println("✅ Twilio initialized successfully.");
-        } else {
-            System.out.println("⚠️ Twilio credentials are placeholders. SMS will be simulated.");
-        }
-    }
+    @Value("${fast2sms.sender}")
+    private String fast2smsSender;
 
     private String generateOtp() {
         return String.valueOf(100000 + new Random().nextInt(900000));
     }
 
-    // =====================================
-    // SEND EMAIL OTP
-    // =====================================
+    // ==================================================
+    // SEND EMAIL OTP (UNCHANGED – WORKING)
+    // ==================================================
     public boolean sendEmailOtp(String email) {
         String otp = generateOtp();
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
 
-        // Remove any old OTP for same email
         otpRepository.findByEmail(email).ifPresent(otpRepository::delete);
         otpRepository.save(new OtpEntity(email, null, otp, expiry));
 
         try {
-            // ✅ Compose and send email
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(email);
-            message.setFrom(senderEmail); // 👈 Dynamically set from properties
+            message.setFrom(senderEmail);
             message.setSubject("ExamHub OTP Verification");
             message.setText(
                     "Hello,\n\nYour ExamHub verification OTP is: " + otp +
@@ -76,7 +60,6 @@ public class OtpService {
                             "Do not share it with anyone.\n\n" +
                             "- ExamHub Authentication System");
 
-            // ✅ Send email
             mailSender.send(message);
 
             System.out.println("📧 OTP email sent to: " + email);
@@ -89,61 +72,77 @@ public class OtpService {
         }
     }
 
-    // =====================================
-    // SEND PHONE OTP (placeholder for Twilio)
-    // =====================================
+    // ==================================================
+    // SEND PHONE OTP (FAST2SMS)
+    // ==================================================
     public boolean sendPhoneOtp(String phone) {
         String otp = generateOtp();
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
 
-        otpRepository.findByPhone(phone).ifPresent(otpRepository::delete);
-        otpRepository.save(new OtpEntity(null, phone, otp, expiry));
-
         try {
-            if (twilioSid != null && !twilioSid.startsWith("ACxxxxx")) {
-                Message.creator(
-                        new PhoneNumber(phone),
-                        new PhoneNumber(twilioPhoneNumber),
-                        "Your ExamHub OTP is: " + otp).create();
-                System.out.println("📱 SMS sent via Twilio to: " + phone);
-            } else {
-                System.out.println("📱 [SIMULATION] SMS to " + phone + ": " + otp);
-            }
+            // 1. Send SMS via Fast2SMS
+            String url = "https://www.fast2sms.com/dev/bulkV2" +
+                    "?authorization=" + fast2smsApiKey +
+                    "&sender_id=" + fast2smsSender +
+                    "&message=Your ExamHub OTP is " + otp +
+                    "&language=english" +
+                    "&route=q" +
+                    "&numbers=" + phone;
+
+            RestTemplate restTemplate = new RestTemplate();
+            restTemplate.getForObject(url, String.class);
+            System.out.println("📱 SMS OTP sent to " + phone);
+
+            // 2. Clear old OTPs and Save NEW OTP only if SMS was successful
+            List<OtpEntity> existing = otpRepository.findByPhone(phone);
+            otpRepository.deleteAll(existing);
+            otpRepository.save(new OtpEntity(null, phone, otp, expiry));
+
             return true;
+
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("❌ Failed to send SMS to: " + phone);
-            return false;
+            throw new RuntimeException("SMS failed");
         }
     }
 
-    // =====================================
-    // VERIFY EMAIL OTP
-    // =====================================
+    // ==================================================
+    // VERIFY EMAIL OTP (UNCHANGED)
+    // ==================================================
     public boolean verifyEmailOtp(String email, String otp) {
         Optional<OtpEntity> entity = otpRepository.findByEmail(email);
         if (entity.isEmpty())
             return false;
 
         OtpEntity data = entity.get();
-        boolean valid = data.getOtp().equals(otp) && data.getExpiryTime().isAfter(LocalDateTime.now());
+        boolean valid = data.getOtp().equals(otp)
+                && data.getExpiryTime().isAfter(LocalDateTime.now());
+
         if (valid)
             otpRepository.delete(data);
+
         return valid;
     }
 
-    // =====================================
-    // VERIFY PHONE OTP
-    // =====================================
+    // ==================================================
+    // VERIFY PHONE OTP (FIXED FOR LIST)
+    // ==================================================
     public boolean verifyPhoneOtp(String phone, String otp) {
-        Optional<OtpEntity> entity = otpRepository.findByPhone(phone);
-        if (entity.isEmpty())
+        // ✅ FIXED: findByPhone returns List
+        List<OtpEntity> entities = otpRepository.findByPhone(phone);
+        if (entities.isEmpty())
             return false;
 
-        OtpEntity data = entity.get();
-        boolean valid = data.getOtp().equals(otp) && data.getExpiryTime().isAfter(LocalDateTime.now());
-        if (valid)
-            otpRepository.delete(data);
-        return valid;
+        // Check if ANY of the OTPs match
+        for (OtpEntity data : entities) {
+            boolean valid = data.getOtp().equals(otp)
+                    && data.getExpiryTime().isAfter(LocalDateTime.now());
+            if (valid) {
+                otpRepository.delete(data);
+                return true;
+            }
+        }
+        return false;
     }
 }
