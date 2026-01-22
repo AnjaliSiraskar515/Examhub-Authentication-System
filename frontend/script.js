@@ -235,7 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // === NON-STUDENT LOGIN ===
-    const email = get("loginEmail")?.value.trim();
+    const email = get("authEmail")?.value.trim();
     const password = get("loginPassword")?.value.trim();
     await loginRequest(email, password, role);
   });

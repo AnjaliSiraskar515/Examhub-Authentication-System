@@ -146,6 +146,17 @@
               </div>
               <p id="emailOtpMsg" class="text-xs text-gray-500 mt-1"></p>
             </div>
+
+            <label class="text-sm text-gray-600 mt-3 block">Password</label>
+            <div class="relative">
+              <input type="password" id="loginPassword"
+                class="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-indigo-500 pr-10"
+                placeholder="••••••••" required>
+              <button type="button" onclick="togglePassword('loginPassword', this)"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
           </div>
         </div>
 

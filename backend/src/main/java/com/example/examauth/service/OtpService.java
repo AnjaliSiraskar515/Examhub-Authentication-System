@@ -3,15 +3,17 @@ package com.example.examauth.service;
 import com.example.examauth.model.OtpEntity;
 import com.example.examauth.repo.OtpRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Value;
-import jakarta.annotation.PostConstruct;
-import com.twilio.Twilio;
-import com.twilio.rest.api.v2010.account.Message;
-import com.twilio.type.PhoneNumber;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -30,24 +32,8 @@ public class OtpService {
     @Value("${spring.mail.username}")
     private String senderEmail;
 
-    @Value("${twilio.account.sid}")
-    private String twilioSid;
-
-    @Value("${twilio.auth.token}")
-    private String twilioAuthToken;
-
-    @Value("${twilio.phone.number}")
-    private String twilioPhoneNumber;
-
-    @PostConstruct
-    public void initTwilio() {
-        if (twilioSid != null && !twilioSid.startsWith("ACxxxxx")) {
-            Twilio.init(twilioSid, twilioAuthToken);
-            System.out.println("✅ Twilio initialized successfully.");
-        } else {
-            System.out.println("⚠️ Twilio credentials are placeholders. SMS will be simulated.");
-        }
-    }
+    @Value("${fast2sms.api.key}")
+    private String fast2SmsApiKey;
 
     private String generateOtp() {
         return String.valueOf(100000 + new Random().nextInt(900000));
@@ -90,29 +76,63 @@ public class OtpService {
     }
 
     // =====================================
-    // SEND PHONE OTP (placeholder for Twilio)
+    // SEND PHONE OTP (Fast2SMS)
     // =====================================
     public boolean sendPhoneOtp(String phone) {
+        // Fast2SMS typically expects 10 digit number without +91 for bulk v2,
+        // but verify your specific route needs. For now, we strip non-digits.
+        String cleanPhone = phone.replaceAll("[^0-9]", "");
+        if (cleanPhone.length() > 10) {
+            cleanPhone = cleanPhone.substring(cleanPhone.length() - 10);
+        }
+
         String otp = generateOtp();
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
 
-        otpRepository.findByPhone(phone).ifPresent(otpRepository::delete);
-        otpRepository.save(new OtpEntity(null, phone, otp, expiry));
+        otpRepository.findByPhone(cleanPhone).ifPresent(otpRepository::delete);
+        otpRepository.save(new OtpEntity(null, cleanPhone, otp, expiry));
 
         try {
-            if (twilioSid != null && !twilioSid.startsWith("ACxxxxx")) {
-                Message.creator(
-                        new PhoneNumber(phone),
-                        new PhoneNumber(twilioPhoneNumber),
-                        "Your ExamHub OTP is: " + otp).create();
-                System.out.println("📱 SMS sent via Twilio to: " + phone);
-            } else {
-                System.out.println("📱 [SIMULATION] SMS to " + phone + ": " + otp);
+            if (fast2SmsApiKey == null || fast2SmsApiKey.contains("YOUR_FAST2SMS_API_KEY")) {
+                System.out
+                        .println("⚠️ Fast2SMS API Key is not set. SMS to " + cleanPhone + " : " + otp + " (SIMULATED)");
+                return true;
             }
-            return true;
+
+            // Fast2SMS API Call
+            String url = "https://www.fast2sms.com/dev/bulkV2";
+            String message = "Your ExamHub OTP is: " + otp;
+
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("authorization", fast2SmsApiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            // Example payload for bulkV2.
+            // Note: 'route' usually 'v3' or 'q' for quick transactional.
+            // Adjust according to user's plan if needed. 'dlt_te_id' might be needed for
+            // Indian routes.
+            // Using logic common for generic transactional.
+            // But usually 'message', 'language', 'route', 'numbers' are query params or
+            // body.
+            // Let's use the simplest query param method for now if possible, or body.
+            // Bulk V2 usually accepts JSON body.
+
+            String requestJson = String.format(
+                    "{\"route\" : \"q\", \"message\" : \"%s\", \"language\" : \"english\", \"flash\" : 0, \"numbers\" : \"%s\"}",
+                    message, cleanPhone);
+
+            HttpEntity<String> entity = new HttpEntity<>(requestJson, headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
+            System.out.println("📱 Fast2SMS Response: " + response.getBody());
+
+            return response.getStatusCode().is2xxSuccessful();
+
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("❌ Failed to send SMS to: " + phone);
+            System.out.println("❌ Failed to send SMS to: " + cleanPhone);
             return false;
         }
     }
@@ -136,7 +156,12 @@ public class OtpService {
     // VERIFY PHONE OTP
     // =====================================
     public boolean verifyPhoneOtp(String phone, String otp) {
-        Optional<OtpEntity> entity = otpRepository.findByPhone(phone);
+        String cleanPhone = phone.replaceAll("[^0-9]", "");
+        if (cleanPhone.length() > 10) {
+            cleanPhone = cleanPhone.substring(cleanPhone.length() - 10);
+        }
+
+        Optional<OtpEntity> entity = otpRepository.findByPhone(cleanPhone);
         if (entity.isEmpty())
             return false;
 
