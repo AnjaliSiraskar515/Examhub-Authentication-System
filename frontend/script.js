@@ -266,7 +266,7 @@ async function loginRequest(identifier, password, role = "student") {
 
     if (res.ok && data.role) {
       alert("✅ Login successful!");
-      const userRole = data.role || role;
+      const userRole = (data.role || role).toUpperCase();
       switch (userRole) {
         case "STUDENT": location.href = "student_dashboard.html"; break;
         case "SUPERVISOR": location.href = "supervisor_dashboard.html"; break;
@@ -374,7 +374,7 @@ function togglePassword(id, btn) {
 }
 
 // ✅ Make sure inline handlers in HTML can access functions
-window.updateRegistration = updateRegistration;
+
 window.toggleStudentLoginMethod = toggleStudentLoginMethod;
 window.togglePassword = togglePassword;
 window.sendOTP = sendOTP;
