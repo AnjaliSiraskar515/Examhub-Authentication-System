@@ -1,1 +1,43 @@
-package com.example.examauth.controller; import org.springframework.web.bind.annotation.*; import org.springframework.http.ResponseEntity; import org.springframework.beans.factory.annotation.Autowired; import com.example.examauth.util.AESGcmUtil; import com.example.examauth.repo.QRCodeRepository; import com.example.examauth.model.QRCodeEntry; import javax.crypto.spec.SecretKeySpec; import javax.crypto.SecretKey; import java.util.Base64; import java.util.Map; import com.fasterxml.jackson.databind.ObjectMapper; @RestController @RequestMapping("/api/qr") public class QrController { @Autowired private QRCodeRepository qrRepo; private static final String AES_KEY_B64 = System.getenv().getOrDefault("AES_KEY_B64","REPLACE_BASE64_32_BYTES________________"); @PostMapping("/generate") public ResponseEntity<?> generate(@RequestBody Map<String,Object> body){ try { ObjectMapper om = new ObjectMapper(); String payload = om.writeValueAsString(body); byte[] keyBytes = Base64.getDecoder().decode(AES_KEY_B64); SecretKey key = new SecretKeySpec(keyBytes, "AES"); String token = AESGcmUtil.encrypt(key, payload, null); QRCodeEntry e = new QRCodeEntry(); e.setUserId(Long.valueOf(String.valueOf(body.get("studentId")))); e.setExamId(Long.valueOf(String.valueOf(body.get("examId")))); e.setToken(token); qrRepo.save(e); return ResponseEntity.ok(Map.of("token", token)); } catch(Exception ex){ ex.printStackTrace(); return ResponseEntity.status(500).body(Map.of("error","generate_failed")); } } @PostMapping("/verify") public ResponseEntity<?> verify(@RequestBody Map<String,String> body){ try{ String qrData = body.get("qrData"); byte[] keyBytes = Base64.getDecoder().decode(AES_KEY_B64); SecretKey key = new SecretKeySpec(keyBytes, "AES"); String json = AESGcmUtil.decrypt(key, qrData, null); ObjectMapper om = new ObjectMapper(); Map map = om.readValue(json, Map.class); return ResponseEntity.ok(Map.of("name","Demo Student","aadhaar","XXXX-XXXX-1234","seat", map.getOrDefault("seat","A-1"), "userId", map.getOrDefault("sid", map.get("studentId")), "examId", map.getOrDefault("eid", map.get("examId")))); } catch(Exception e){ e.printStackTrace(); return ResponseEntity.status(400).body(Map.of("error","invalid_or_tampered")); } } }
+package com.example.examauth.controller;
+
+import com.example.examauth.service.QrService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/qr")
+@CrossOrigin // Allow frontend access
+public class QrController {
+
+    @Autowired
+    private QrService qrService;
+
+    @PostMapping("/generate")
+    public Map<String, String> generate(@RequestBody Map<String, Object> req) {
+        try {
+            Object sIdObj = req.get("studentId");
+            Object eIdObj = req.get("examId");
+
+            if (sIdObj == null || eIdObj == null) {
+                throw new IllegalArgumentException("Missing studentId or examId");
+            }
+
+            Long studentId = sIdObj instanceof Number ? ((Number) sIdObj).longValue()
+                    : Long.parseLong(sIdObj.toString());
+            Long examId = eIdObj instanceof Number ? ((Number) eIdObj).longValue() : Long.parseLong(eIdObj.toString());
+
+            String token = qrService.generateQrToken(studentId, examId);
+            return Map.of("qrToken", token);
+        } catch (Exception e) {
+            e.printStackTrace(); // Log error for debugging
+            throw new RuntimeException("Error generating QR: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/verify")
+    public com.example.examauth.dto.QrVerificationResponse verify(@RequestBody Map<String, String> req) {
+        return qrService.verifyQr(req.get("qrToken"));
+    }
+}

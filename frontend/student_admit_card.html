@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,13 +9,29 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     @media print {
-      body * { visibility: hidden; }
-      #admitCard, #admitCard * { visibility: visible; }
-      #admitCard { position: absolute; left: 0; top: 0; width: 100%; }
-      #downloadBtn { display: none; }
+      body * {
+        visibility: hidden;
+      }
+
+      #admitCard,
+      #admitCard * {
+        visibility: visible;
+      }
+
+      #admitCard {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+
+      #downloadBtn {
+        display: none;
+      }
     }
   </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen flex flex-col items-center justify-center py-10">
 
   <!-- HEADER -->
@@ -30,7 +47,9 @@
         <h2 class="text-xl font-semibold text-gray-800">Student Admit Card</h2>
         <p class="text-sm text-gray-500">Download & carry a printed copy to the examination hall</p>
       </div>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=ExamHub12345" class="w-24 h-24 border rounded" alt="QR Code">
+      <div id="qrContainer" class="w-24 h-24 border rounded flex items-center justify-center bg-gray-50">
+        <span class="text-xs text-gray-400">Loading...</span>
+      </div>
     </div>
 
     <!-- Student Info -->
@@ -87,38 +106,85 @@
 
     <!-- Footer -->
     <div class="mt-6 text-sm text-gray-600 border-t pt-4">
-      <p><strong>Note:</strong> Please carry this admit card along with a valid photo ID. Entry will not be allowed without verification.</p>
+      <p><strong>Note:</strong> Please carry this admit card along with a valid photo ID. Entry will not be allowed
+        without verification.</p>
       <p class="mt-1">Generated on <span id="genDate"></span> by <strong>ExamHub Authentication System</strong>.</p>
     </div>
   </div>
 
   <!-- BUTTONS -->
   <div class="mt-6 flex gap-3">
-    <button id="downloadBtn" onclick="window.print()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+    <button id="downloadBtn" onclick="window.print()"
+      class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
       <i class="fa-solid fa-download mr-2"></i>Download PDF
     </button>
-    <button onclick="window.location.href='student_dashboard.html'" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">
+    <button onclick="window.location.href='student_dashboard.html'"
+      class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">
       <i class="fa-solid fa-arrow-left mr-2"></i>Back to Dashboard
     </button>
   </div>
 
   <!-- Script -->
+  <!-- QRCode Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     document.getElementById("genDate").innerText = new Date().toLocaleString();
 
-    // (Later you can fetch this data dynamically from backend)
+    // Mock data - In real flow, get this from localStorage or URL params
     const studentData = {
       name: "Arti Kulkarni",
       roll: "EXH-2025-1042",
       course: "B.Tech Computer Science",
-      status: "Verified"
+      status: "Verified",
+      studentId: 1, // Example ID
+      examId: 101   // Example Exam ID
     };
 
     document.getElementById("studentName").innerText = studentData.name;
     document.getElementById("rollNo").innerText = studentData.roll;
     document.getElementById("course").innerText = studentData.course;
     document.getElementById("verifyStatus").innerText = studentData.status;
+
+    // GENERATE SECURE QR CODE
+    async function generateSecureQR() {
+      try {
+        const res = await fetch('http://localhost:8080/api/qr/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentId: studentData.studentId,
+            examId: studentData.examId
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const token = data.qrToken;
+          console.log("Secure Token:", token);
+
+          // Render QR
+          const container = document.getElementById("qrContainer");
+          container.innerHTML = ""; // Clear loader
+          new QRCode(container, {
+            text: token,
+            width: 100,
+            height: 100
+          });
+        } else {
+          console.error("Failed to generate token", res.status, res.statusText);
+          const txt = await res.text(); // Get server error if any
+          console.error("Server Error:", txt);
+          document.getElementById("qrContainer").innerHTML = `<span class='text-xs text-red-500'>Error ${res.status}</span>`;
+        }
+      } catch (err) {
+        console.error("QR Generation Error:", err);
+      }
+    }
+
+    // Call generation on load
+    generateSecureQR();
   </script>
 
 </body>
+
 </html>
