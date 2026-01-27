@@ -431,8 +431,15 @@
     }
 
     function qrSuccess(decodedText, decodedResult) {
-      // Stop scanning after success
-      if (qrScanner) qrScanner.stop().catch(err => console.log('Stop failed', err));
+      if (qrScanner) {
+        qrScanner.stop().then(() => {
+          qrScanner.clear();
+          qrScanner = null;
+        }).catch(err => {
+          console.warn('Stop failed', err);
+          qrScanner = null;
+        });
+      }
 
       // call backend to verify token
       fetch('http://localhost:8080/api/qr/verify', {
@@ -444,6 +451,8 @@
         .then(js => {
           const resBox = document.getElementById('scanResult');
           if (js.valid) {
+            // Update stats AFTER verification confirmed
+            loadProfile();
 
             // Build Profile Card HTML
             const student = js.student || {};
@@ -486,10 +495,10 @@
                   </div>
 
                   <div class="mt-6 pt-4 border-t border-gray-100 flex justify-end space-x-3">
-                    <button onclick="initQrScanner()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
+                    <button onclick="resetScanner()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
                       Scan Next
                     </button>
-                    <button class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                    <button onclick="markPresent()" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
                       <i class="fas fa-check mr-1"></i> Mark Present
                     </button>
                   </div>
@@ -508,7 +517,7 @@
                   </div>
                 </div>
                 <div class="mt-4 text-right">
-                   <button onclick="initQrScanner()" class="text-red-700 font-semibold hover:underline">Try Scanning Again</button>
+                   <button onclick="resetScanner()" class="text-red-700 font-semibold hover:underline">Try Scanning Again</button>
                 </div>
               </div>
             `;
@@ -519,6 +528,18 @@
         });
     }
     function qrError(err) { /* ignore scanning errors */ }
+
+    // Helper functions
+    function resetScanner() {
+      document.getElementById('scanResult').innerHTML = '';
+      initQrScanner();
+    }
+
+    function markPresent() {
+      alert('Student successfully marked present.');
+      loadProfile(); // refresh stats
+      resetScanner();
+    }
 
     // Manual Verify Handler
     function handleManualVerify() {

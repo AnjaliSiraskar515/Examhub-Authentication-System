@@ -1,6 +1,7 @@
 com\example\examauth\service\OtpService.class
 com\example\examauth\config\CorsConfig.class
 com\example\examauth\repo\ExamRepository.class
+com\example\examauth\controller\SupervisorController.class
 com\example\examauth\controller\InstitutionController.class
 com\example\examauth\model\Attendance.class
 com\example\examauth\model\User.class

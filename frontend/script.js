@@ -210,7 +210,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = get("signinForm");
   const loginBtn = get("loginButton");
 
-  if (!form) return console.error("❌ signinForm not found!");
+  if (!form) {
+      // console.warn("ℹ️ signinForm not found (expected on dashboard pages).");
+      return; 
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();

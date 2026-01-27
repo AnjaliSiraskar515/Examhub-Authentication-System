@@ -9,6 +9,7 @@ C:\Exam_Authentication_System_Advanced_Final\backend\src\main\java\com\example\e
 C:\Exam_Authentication_System_Advanced_Final\backend\src\main\java\com\example\examauth\model\QrCode.java
 C:\Exam_Authentication_System_Advanced_Final\backend\src\main\java\com\example\examauth\util\AESGcmUtil.java
 C:\Exam_Authentication_System_Advanced_Final\backend\src\main\java\com\example\examauth\controller\TestController.java
+C:\Exam_Authentication_System_Advanced_Final\backend\src\main\java\com\example\examauth\controller\SupervisorController.java
 C:\Exam_Authentication_System_Advanced_Final\backend\src\main\java\com\example\examauth\model\Institution.java
 C:\Exam_Authentication_System_Advanced_Final\backend\src\main\java\com\example\examauth\service\AttendanceService.java
 C:\Exam_Authentication_System_Advanced_Final\backend\src\main\java\com\example\examauth\controller\ProfileController.java
