@@ -13,3 +13,4 @@ node_modules/
 # IDE
 .vscode/
 .idea/
+exam_auth_db.sql
