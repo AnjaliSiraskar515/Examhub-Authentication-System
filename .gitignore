@@ -1,15 +1,31 @@
-# Maven / Java build files
-target/
+# Java build files
 *.class
 *.jar
 *.war
 
-# Node
-node_modules/
+# Maven
+/target/
+*.class
+*.jar
+
+
+# Gradle
+build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Database dumps
+*.sql
 
 # Logs
 *.log
 
-# IDE
-.vscode/
-.idea/
+# Uploads
+uploads/
+ai_verification/uploads/
+/backend/target/
+/backend/**/*.class
+*.jar
