@@ -11,4 +11,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // ✅ NEW: Find user by username (for student login)
     Optional<User> findByUsername(String username);
+
+    // ✅ NEW: Count students for dashboard
+    long countByRole(String role);
+
+    // ✅ NEW: List students by role
+    java.util.List<User> findByRole(String role);
 }
