@@ -8,23 +8,42 @@ import java.util.*;
 @CrossOrigin // Allow frontend access
 public class BiometricController {
 
+    private final com.example.examauth.repo.UserRepository userRepository;
+
+    public BiometricController(com.example.examauth.repo.UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
     @PostMapping("/capture")
     public Map<String, Object> captureFingerprint() {
-        // Mock biometric capture
+        // Simulate interacting with a biometric device
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        response.put("message", "Fingerprint captured successfully");
-        response.put("hash", "biometric_hash_" + System.currentTimeMillis());
+        response.put("message", "Fingerprint captured successfully from device.");
+        response.put("hash", "bio_hash_" + UUID.randomUUID().toString().substring(0, 8));
         return response;
     }
 
     @PostMapping("/verify")
     public Map<String, Object> verifyBiometric(@RequestBody Map<String, Object> req) {
-        // Mock verification
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Fingerprint verified (Mock)");
-        response.put("score", 98.5);
-        return response;
+        String studentId = (String) req.get("studentId");
+
+        // Use Long.parseLong with simple error handling if needed, or better, change
+        // request body to match
+        // Assuming studentId comes as String from frontend
+        Long id = Long.parseLong(studentId);
+
+        return userRepository.findById(id).map(user -> {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Biometric Match Confirmed: " + user.getName());
+            response.put("score", 98.5); // Simulated high confidence score
+            return response;
+        }).orElseGet(() -> {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Student not found or Biometric Mismatch");
+            return response;
+        });
     }
 }

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CertiGuard - Super Admin Dashboard</title>
+  <title>Super Admin Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
@@ -19,7 +20,7 @@
       --success: #22c55e;
       --teal: #14b8a6;
     }
-    
+
     body {
       background: var(--bg);
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -182,10 +183,21 @@
       border-left: 4px solid;
     }
 
-    .stat-card.blue { border-left-color: var(--primary); }
-    .stat-card.green { border-left-color: var(--success); }
-    .stat-card.teal { border-left-color: var(--teal); }
-    .stat-card.orange { border-left-color: #f59e0b; }
+    .stat-card.blue {
+      border-left-color: var(--primary);
+    }
+
+    .stat-card.green {
+      border-left-color: var(--success);
+    }
+
+    .stat-card.teal {
+      border-left-color: var(--teal);
+    }
+
+    .stat-card.orange {
+      border-left-color: #f59e0b;
+    }
 
     .stat-title {
       color: var(--text-light);
@@ -211,10 +223,25 @@
       font-size: 1.5rem;
     }
 
-    .stat-card.blue .stat-icon { background: #eff6ff; color: var(--primary); }
-    .stat-card.green .stat-icon { background: #f0fdf4; color: var(--success); }
-    .stat-card.teal .stat-icon { background: #f0fdfa; color: var(--teal); }
-    .stat-card.orange .stat-icon { background: #fffbeb; color: #f59e0b; }
+    .stat-card.blue .stat-icon {
+      background: #eff6ff;
+      color: var(--primary);
+    }
+
+    .stat-card.green .stat-icon {
+      background: #f0fdf4;
+      color: var(--success);
+    }
+
+    .stat-card.teal .stat-icon {
+      background: #f0fdfa;
+      color: var(--teal);
+    }
+
+    .stat-card.orange .stat-icon {
+      background: #fffbeb;
+      color: #f59e0b;
+    }
 
     /* Tabs */
     .tabs-container {
@@ -346,9 +373,20 @@
       font-weight: 500;
     }
 
-    .badge.success { background: #dcfce7; color: #166534; }
-    .badge.warning { background: #fef3c7; color: #92400e; }
-    .badge.danger { background: #fee2e2; color: #991b1b; }
+    .badge.success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge.warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge.danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
 
     .action-btn {
       padding: 0.375rem 0.75rem;
@@ -374,17 +412,19 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="dashboard-container">
-    
+
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <svg class="sidebar-logo" viewBox="0 0 54 54" fill="none">
-          <rect x="8" y="8" width="38" height="32" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
-          <path d="M27 7L42 14L27 21L12 14L27 7Z" fill="#14b8a6" stroke="#14b8a6" stroke-width="1"/>
-          <path d="M34.5 30.6l3.2 2.7 5.6-8.4" stroke="#14b8a6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="8" y="8" width="38" height="32" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2" />
+          <path d="M27 7L42 14L27 21L12 14L27 7Z" fill="#14b8a6" stroke="#14b8a6" stroke-width="1" />
+          <path d="M34.5 30.6l3.2 2.7 5.6-8.4" stroke="#14b8a6" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round" />
         </svg>
         <div>
           <div class="sidebar-title">ExamHub</div>
@@ -429,7 +469,9 @@
 
       <div style="padding: 1.5rem; border-top: 1px solid #e2e8f0;">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-          <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">SA</div>
+          <div
+            style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+            SA</div>
           <div>
             <div style="font-weight: 600; font-size: 0.875rem;">Super Admin</div>
             <div style="font-size: 0.75rem; color: var(--text-light);">admin@ExamHub.com</div>
@@ -444,7 +486,7 @@
 
     <!-- Main Content -->
     <main class="main-content">
-      
+
       <!-- Overview Section -->
       <div id="section-overview" class="content-section">
         <div class="top-header">
@@ -596,7 +638,9 @@
           <h2 class="section-title"><i class="fas fa-user"></i> My Profile</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="flex items-center space-x-4">
-              <div class="w-20 h-20 bg-indigo-600 text-white rounded-full flex items-center justify-center font-semibold text-xl">SA</div>
+              <div
+                class="w-20 h-20 bg-indigo-600 text-white rounded-full flex items-center justify-center font-semibold text-xl">
+                SA</div>
               <div>
                 <h3 class="text-xl font-semibold text-gray-900">Super Admin</h3>
                 <p class="text-gray-600">admin@ExamHub.com</p>
@@ -614,7 +658,8 @@
             </div>
           </div>
           <div class="mt-6 flex space-x-4">
-            <button onclick="openProfileModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Edit Profile</button>
+            <button onclick="openProfileModal()"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Edit Profile</button>
           </div>
         </div>
       </div>
@@ -673,19 +718,23 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label class="block text-sm font-medium text-red-600 mb-2">Name *</label>
-              <input type="text" id="profileName" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Super Admin Name" aria-label="Super Admin Name">
+              <input type="text" id="profileName" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly
+                placeholder="Super Admin Name" aria-label="Super Admin Name">
             </div>
             <div>
               <label class="block text-sm font-medium text-red-600 mb-2">Email *</label>
-              <input type="email" id="profileEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Super Admin Email" aria-label="Super Admin Email">
+              <input type="email" id="profileEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly
+                placeholder="Super Admin Email" aria-label="Super Admin Email">
             </div>
             <div>
               <label class="block text-sm font-medium text-red-600 mb-2">Phone Number *</label>
-              <input type="tel" id="profilePhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Super Admin Phone Number" aria-label="Super Admin Phone Number">
+              <input type="tel" id="profilePhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly
+                placeholder="Super Admin Phone Number" aria-label="Super Admin Phone Number">
             </div>
             <div>
               <label class="block text-sm font-medium text-red-600 mb-2">Passport Photo *</label>
-              <input type="file" id="passportFile" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Passport Photo">
+              <input type="file" id="passportFile" accept="image/*"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Passport Photo">
               <span id="passportStatus" class="text-sm text-gray-500">Not uploaded</span>
             </div>
           </div>
@@ -695,32 +744,38 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-red-600 mb-2">Aadhar Card *</label>
-                <input type="file" id="aadharFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Aadhar Card file">
+                <input type="file" id="aadharFile" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Aadhar Card file">
                 <span id="aadharStatus" class="text-sm text-gray-500">Not uploaded</span>
               </div>
               <div>
                 <label class="block text-sm font-medium text-red-600 mb-2">10th Marksheet *</label>
-                <input type="file" id="marks10File" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 10th Marksheet file">
+                <input type="file" id="marks10File" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 10th Marksheet file">
                 <span id="marks10Status" class="text-sm text-gray-500">Not uploaded</span>
               </div>
               <div>
                 <label class="block text-sm font-medium text-red-600 mb-2">12th Marksheet *</label>
-                <input type="file" id="marks12File" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 12th Marksheet file">
+                <input type="file" id="marks12File" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 12th Marksheet file">
                 <span id="marks12Status" class="text-sm text-gray-500">Not uploaded</span>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">UG Certificate (Optional)</label>
-                <input type="file" id="ugFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose UG Certificate file">
+                <input type="file" id="ugFile" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose UG Certificate file">
                 <span id="ugStatus" class="text-sm text-gray-500">Not uploaded</span>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">PG Certificate (Optional)</label>
-                <input type="file" id="pgFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose PG Certificate file">
+                <input type="file" id="pgFile" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose PG Certificate file">
                 <span id="pgStatus" class="text-sm text-gray-500">Not uploaded</span>
               </div>
               <div>
                 <label class="block text-sm font-medium text-red-600 mb-2">Biometric Data *</label>
-                <input type="file" id="biometricFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Biometric Data file">
+                <input type="file" id="biometricFile" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Biometric Data file">
                 <span id="biometricStatus" class="text-sm text-gray-500">Not uploaded</span>
               </div>
             </div>
@@ -730,7 +785,8 @@
             <button onclick="uploadDocuments()" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
               Upload Documents
             </button>
-            <button onclick="completeProfile()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            <button onclick="completeProfile()"
+              class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
               Complete Profile
             </button>
           </div>
@@ -794,4 +850,5 @@
     });
   </script>
 </body>
+
 </html>

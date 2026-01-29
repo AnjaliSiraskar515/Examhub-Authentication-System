@@ -1,19 +1,27 @@
-# Maven / Java build files
-target/
+# ===== Java / Spring Boot =====
 *.class
 *.jar
 *.war
 
-# Node
-node_modules/
+# Maven / Gradle build output
+/target
+/backend/target/
+build/
 
-# Logs
+# ===== IDE files =====
+.idea/
+.vscode/
+*.iml
+
+# ===== Database =====
+*.sql
+
+# ===== Logs =====
 *.log
 
-# IDE
-.vscode/
-.idea/
+# ===== Uploads =====
+uploads/
+ai_verification/uploads/
 
-/backend/target/
-*.class
-*.jar
+# ===== Safety =====
+/backend/**/*.class
