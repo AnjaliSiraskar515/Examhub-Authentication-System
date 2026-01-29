@@ -23,3 +23,6 @@ build/
 # Uploads
 uploads/
 ai_verification/uploads/
+/backend/target/
+/backend/**/*.class
+*.jar
