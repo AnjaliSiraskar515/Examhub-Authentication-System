@@ -4,7 +4,10 @@
 *.war
 
 # Maven
-target/
+/target/
+*.class
+*.jar
+
 
 # Gradle
 build/
