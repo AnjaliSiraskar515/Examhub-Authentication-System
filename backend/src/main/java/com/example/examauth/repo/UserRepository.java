@@ -7,7 +7,11 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
 
     // Find user by email
+    // Find user by email
     Optional<User> findByEmail(String email);
+
+    // ✅ NEW: Find FIRST user by email (handles duplicates safely)
+    Optional<User> findFirstByEmail(String email);
 
     // ✅ NEW: Find user by username (for student login)
     Optional<User> findByUsername(String username);
@@ -17,4 +21,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // ✅ NEW: List students by role
     java.util.List<User> findByRole(String role);
+
+    // ✅ NEW: Count by biometric verification status
+    long countByBiometricVerified(Boolean verified);
+
+    // ✅ NEW: Count by role and biometric verification status
+    // ✅ NEW: Count by role and biometric verification status
+    long countByRoleAndBiometricVerified(String role, Boolean verified);
+
+    // ✅ NEW: Find user by phone number (for mobile login)
+    Optional<User> findByPhoneNumber(String phoneNumber);
 }

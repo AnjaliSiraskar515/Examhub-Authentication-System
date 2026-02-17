@@ -49,6 +49,20 @@ document.addEventListener("DOMContentLoaded", () => {
       student.classList.toggle("hidden", role !== "STUDENT");
       authority.classList.toggle("hidden", role === "STUDENT");
 
+      // Dynamic Label for Supervisor
+      const authLabel = authority.querySelector("label");
+      const authInput = get("authEmail");
+
+      if (role === "SUPERVISOR") {
+        authLabel.textContent = "Official Email or Mobile Number";
+        authInput.placeholder = "Enter Email or Phone";
+        authInput.type = "text"; // Allow Mobile Number (removes email validation)
+      } else {
+        authLabel.textContent = "Official Email";
+        authInput.placeholder = "email@institution.edu";
+        authInput.type = "email"; // Enforce Email Validation for others
+      }
+
       loginBtn.disabled = false;
       loginBtn.classList.remove("bg-gray-400");
       loginBtn.classList.add("bg-indigo-600", "hover:bg-indigo-700");
@@ -90,13 +104,19 @@ async function sendOTP(type) {
   const cfg = map[type];
   if (!cfg) return alert("Unknown OTP type!");
 
-  const [inputId, msgId, sectionId, btnId, key] = cfg;
+  let [inputId, msgId, sectionId, btnId, key] = cfg;
   const value = get(inputId)?.value.trim();
   const msg = get(msgId);
   const btn = get(btnId);
   const section = get(sectionId);
 
   if (!value) return alert(`Enter your ${key} first!`);
+
+  // ✅ HYBRID LOGIN FIX: Detect if "email" input is actually a Phone Number
+  if (type === "email" && /^\d{10}$/.test(value)) {
+    console.log("📲 Detected Phone Number for Login OTP");
+    key = "phone"; // Switch key to phone
+  }
 
   msg.textContent = "⏳ Sending OTP...";
   msg.className = "text-xs text-gray-500 mt-1";
@@ -167,12 +187,20 @@ async function verifyOTP(type) {
   const cfg = map[type];
   if (!cfg) return alert("Unknown OTP type!");
 
-  const [otpId, idInputId, msgId, key] = cfg;
+  let [otpId, idInputId, msgId, key] = cfg;
   const otp = get(otpId)?.value.trim();
   const value = get(idInputId)?.value.trim();
   const msg = get(msgId);
 
   if (!otp || !value) return alert("Enter OTP and corresponding ID.");
+
+  // ✅ HYBRID LOGIN FIX: Detect if "email" input is actually a Phone Number
+  let isHybridPhone = false;
+  if (type === "email" && /^\d{10}$/.test(value)) {
+    console.log("📲 Detected Phone Number for Login Verification");
+    key = "phone"; // Switch key to phone
+    isHybridPhone = true;
+  }
 
   msg.textContent = "⏳ Verifying OTP...";
   msg.className = "text-xs text-gray-500 mt-1";
@@ -189,8 +217,17 @@ async function verifyOTP(type) {
       msg.textContent = "✅ Verified successfully!";
       msg.className = "text-xs text-green-600 mt-1";
       if (type === "studentLoginEmail") studentEmailVerified = true;
+
+      // ✅ Handle hybrid verification state
       if (key === "email") emailVerified = true;
-      if (key === "phone") phoneVerified = true;
+      if (key === "phone" || isHybridPhone) {
+        phoneVerified = true;
+        // Also set emailVerified to true to pass the generic check in signup if needed,
+        // but specifically for login, it doesn't matter much as login doesn't check this flag for supervisors.
+        // However, consistency is good.
+        emailVerified = true;
+      }
+
       get(otpId).disabled = true;
     } else {
       msg.textContent = "❌ Invalid or expired OTP.";
@@ -211,8 +248,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginBtn = get("loginButton");
 
   if (!form) {
-      // console.warn("ℹ️ signinForm not found (expected on dashboard pages).");
-      return; 
+    // console.warn("ℹ️ signinForm not found (expected on dashboard pages).");
+    return;
   }
 
   form.addEventListener("submit", async (e) => {
@@ -269,12 +306,21 @@ async function loginRequest(identifier, password, role = "student") {
 
     if (res.ok && data.role) {
       alert("✅ Login successful!");
+
+      // Save Token
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
       const userRole = (data.role || role).toUpperCase();
       switch (userRole) {
         case "STUDENT": location.href = "student_dashboard.html"; break;
         case "SUPERVISOR": location.href = "supervisor_dashboard.html"; break;
         case "UNIVERSITY_ADMIN": location.href = "university_dashboard.html"; break;
-        case "SUPERADMIN": location.href = "super_admin_dashboard.html"; break;
+        case "SUPERADMIN":
+        case "SUPER_ADMIN":
+        case "SUPER ADMIN":
+          location.href = "super_admin_dashboard.html"; break;
         default: alert("Unknown role: " + userRole);
       }
     } else {

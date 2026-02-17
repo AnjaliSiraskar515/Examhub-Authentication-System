@@ -41,10 +41,89 @@ public class User {
     // Profile completion status
     private Boolean profileCompleted = false;
 
+    // Exam Verification Status
+    private Boolean qrVerified = false;
+    private Boolean biometricVerified = false;
+
+    public Boolean getQrVerified() {
+        return qrVerified;
+    }
+
+    public void setQrVerified(Boolean qrVerified) {
+        this.qrVerified = qrVerified;
+    }
+
+    public Boolean getBiometricVerified() {
+        return biometricVerified;
+    }
+
+    public void setBiometricVerified(Boolean biometricVerified) {
+        this.biometricVerified = biometricVerified;
+    }
+
+    private java.time.LocalDateTime lastLogin;
+
+    public java.time.LocalDateTime getLastLogin() {
+        return lastLogin;
+    }
+
+    public void setLastLogin(java.time.LocalDateTime lastLogin) {
+        this.lastLogin = lastLogin;
+    }
+
     // Academic Info
     private String department;
     private String major;
     private String year;
+
+    // ===========================================================
+    // Supervisor Profile Fields (Added)
+    // ===========================================================
+    private String universityName;
+    private String collegeName;
+    private String designation; // e.g. Chief Supervisor, Room Invigilator
+    private String employeeId;
+    private String appointmentLetterPath;
+
+    public String getUniversityName() {
+        return universityName;
+    }
+
+    public void setUniversityName(String universityName) {
+        this.universityName = universityName;
+    }
+
+    public String getCollegeName() {
+        return collegeName;
+    }
+
+    public void setCollegeName(String collegeName) {
+        this.collegeName = collegeName;
+    }
+
+    public String getDesignation() {
+        return designation;
+    }
+
+    public void setDesignation(String designation) {
+        this.designation = designation;
+    }
+
+    public String getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
+    }
+
+    public String getAppointmentLetterPath() {
+        return appointmentLetterPath;
+    }
+
+    public void setAppointmentLetterPath(String appointmentLetterPath) {
+        this.appointmentLetterPath = appointmentLetterPath;
+    }
 
     // ===========================================================
     // Getters and Setters

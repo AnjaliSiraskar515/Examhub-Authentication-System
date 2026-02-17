@@ -43,6 +43,11 @@ public class ExamController {
         return ResponseEntity.ok(exams);
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllExams() {
+        return ResponseEntity.ok(examService.getAllExams());
+    }
+
     @GetMapping("/student/{userId}")
     public ResponseEntity<?> getStudentExams(@PathVariable Long userId) {
         // For now, return all exams; later filter by assigned students

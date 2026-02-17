@@ -12,4 +12,7 @@ public interface QrRepository extends JpaRepository<QrCode, Long> {
 
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT q.studentId) FROM QrCode q WHERE q.used = :used")
     long countDistinctStudentIdByUsed(@org.springframework.data.repository.query.Param("used") boolean used);
+
+    // Count today's scans
+    long countByUsedAndIssuedAtAfter(boolean used, java.time.LocalDateTime issuedAt);
 }
