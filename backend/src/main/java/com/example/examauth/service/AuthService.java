@@ -18,7 +18,7 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     // =====================================================
-    //  REGISTER USER
+    // REGISTER USER
     // =====================================================
     public User registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -27,29 +27,41 @@ public class AuthService {
     }
 
     // =====================================================
-    //  FIND USER BY EMAIL
+    // FIND USER BY EMAIL
     // =====================================================
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
     // =====================================================
-    //  FIND USER BY USERNAME (for student login)
+    // FIND USER BY USERNAME (for student login)
     // =====================================================
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
     // =====================================================
-    //  AUTHENTICATE (EMAIL OR USERNAME)
+    // FIND USER BY PHONE
+    // =====================================================
+    public Optional<User> findByPhoneNumber(String phoneNumber) {
+        return userRepository.findByPhoneNumber(phoneNumber);
+    }
+
+    // =====================================================
+    // AUTHENTICATE (EMAIL OR USERNAME OR PHONE)
     // =====================================================
     public boolean authenticate(String identifier, String password) {
-        // First try to find by email
+        // 1. Try Email
         Optional<User> userOpt = userRepository.findByEmail(identifier);
 
-        // If not found by email, try username
+        // 2. Try Username
         if (userOpt.isEmpty()) {
             userOpt = userRepository.findByUsername(identifier);
+        }
+
+        // 3. Try Phone
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByPhoneNumber(identifier);
         }
 
         if (userOpt.isPresent()) {
@@ -61,7 +73,7 @@ public class AuthService {
     }
 
     // =====================================================
-    //  SAVE USER
+    // SAVE USER
     // =====================================================
     public User saveUser(User user) {
         return userRepository.save(user);

@@ -5,17 +5,29 @@ import com.example.examauth.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
+import com.example.examauth.repo.UserRepository; // Added import
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     @Autowired
+    private UserRepository userRepository; // Added UserRepository autowiring
+
+    @Autowired
     private AuthService authService;
+
+    @Autowired
+    private RestTemplate restTemplate; // Added RestTemplate autowiring
+
+    @Autowired
+    private com.example.examauth.util.JwtUtil jwtUtil; // Added JwtUtil autowiring
 
     // ===========================================================
     // REGISTER USER
@@ -87,10 +99,16 @@ public class AuthController {
             // Try to find by username if not found by email
             if (userOpt.isEmpty()) {
                 try {
-                    // Only call this if your AuthService has the method
                     userOpt = authService.findByUsername(identifier);
                 } catch (Exception ignored) {
-                    // If method doesn’t exist, ignore safely
+                }
+            }
+
+            // 3. Try Phone
+            if (userOpt.isEmpty()) {
+                try {
+                    userOpt = authService.findByPhoneNumber(identifier);
+                } catch (Exception ignored) {
                 }
             }
 
@@ -110,11 +128,16 @@ public class AuthController {
                 return ResponseEntity.status(401).body(resp);
             }
 
+            // Update Last Login
+            user.setLastLogin(java.time.LocalDateTime.now());
+            userRepository.save(user);
+
             // ✅ Successful login response
             Map<String, Object> resp = new HashMap<>();
             resp.put("message", "Login successful");
             resp.put("role", user.getRole());
             resp.put("userId", user.getUserId());
+            resp.put("token", jwtUtil.generateToken(user.getEmail()));
 
             return ResponseEntity.ok(resp);
 

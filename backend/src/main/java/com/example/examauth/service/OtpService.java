@@ -46,8 +46,8 @@ public class OtpService {
         String otp = generateOtp();
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
 
-        // Remove any old OTP for same email
-        otpRepository.findByEmail(email).ifPresent(otpRepository::delete);
+        // Remove all old OTPs for same email
+        otpRepository.deleteByEmail(email);
         otpRepository.save(new OtpEntity(email, null, otp, expiry));
 
         try {
@@ -78,6 +78,9 @@ public class OtpService {
     // =====================================
     // SEND PHONE OTP (Fast2SMS)
     // =====================================
+    // =====================================
+    // SEND PHONE OTP (Fast2SMS)
+    // =====================================
     public boolean sendPhoneOtp(String phone) {
         // Fast2SMS typically expects 10 digit number without +91 for bulk v2,
         // but verify your specific route needs. For now, we strip non-digits.
@@ -89,8 +92,12 @@ public class OtpService {
         String otp = generateOtp();
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
 
-        otpRepository.findByPhone(cleanPhone).ifPresent(otpRepository::delete);
+        // Remove old OTPs (handle duplicates)
+        otpRepository.findByPhone(cleanPhone).forEach(otpRepository::delete);
         otpRepository.save(new OtpEntity(null, cleanPhone, otp, expiry));
+
+        // ✅ ALWAYS Log OTP for troubleshooting/demo purposes
+        System.out.println("🔐 GENERATED MOBILE OTP for " + cleanPhone + ": " + otp);
 
         try {
             if (fast2SmsApiKey == null || fast2SmsApiKey.contains("YOUR_FAST2SMS_API_KEY")) {
@@ -107,16 +114,6 @@ public class OtpService {
             HttpHeaders headers = new HttpHeaders();
             headers.set("authorization", fast2SmsApiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // Example payload for bulkV2.
-            // Note: 'route' usually 'v3' or 'q' for quick transactional.
-            // Adjust according to user's plan if needed. 'dlt_te_id' might be needed for
-            // Indian routes.
-            // Using logic common for generic transactional.
-            // But usually 'message', 'language', 'route', 'numbers' are query params or
-            // body.
-            // Let's use the simplest query param method for now if possible, or body.
-            // Bulk V2 usually accepts JSON body.
 
             String requestJson = String.format(
                     "{\"route\" : \"q\", \"message\" : \"%s\", \"language\" : \"english\", \"flash\" : 0, \"numbers\" : \"%s\"}",
@@ -141,15 +138,21 @@ public class OtpService {
     // VERIFY EMAIL OTP
     // =====================================
     public boolean verifyEmailOtp(String email, String otp) {
-        Optional<OtpEntity> entity = otpRepository.findByEmail(email);
-        if (entity.isEmpty())
+        java.util.List<OtpEntity> entities = otpRepository.findByEmail(email);
+        if (entities.isEmpty())
             return false;
 
-        OtpEntity data = entity.get();
-        boolean valid = data.getOtp().equals(otp) && data.getExpiryTime().isAfter(LocalDateTime.now());
-        if (valid)
-            otpRepository.delete(data);
-        return valid;
+        // Find any valid OTP match
+        Optional<OtpEntity> validOtp = entities.stream()
+                .filter(e -> e.getOtp().equals(otp) && e.getExpiryTime().isAfter(LocalDateTime.now()))
+                .findFirst();
+
+        if (validOtp.isPresent()) {
+            // Clean up ALL OTPs for this email upon successful verification
+            otpRepository.deleteByEmail(email);
+            return true;
+        }
+        return false;
     }
 
     // =====================================
@@ -161,14 +164,20 @@ public class OtpService {
             cleanPhone = cleanPhone.substring(cleanPhone.length() - 10);
         }
 
-        Optional<OtpEntity> entity = otpRepository.findByPhone(cleanPhone);
-        if (entity.isEmpty())
+        java.util.List<OtpEntity> entities = otpRepository.findByPhone(cleanPhone);
+        if (entities.isEmpty())
             return false;
 
-        OtpEntity data = entity.get();
-        boolean valid = data.getOtp().equals(otp) && data.getExpiryTime().isAfter(LocalDateTime.now());
-        if (valid)
-            otpRepository.delete(data);
-        return valid;
+        // Find any valid OTP match
+        Optional<OtpEntity> validOtp = entities.stream()
+                .filter(e -> e.getOtp().equals(otp) && e.getExpiryTime().isAfter(LocalDateTime.now()))
+                .findFirst();
+
+        if (validOtp.isPresent()) {
+            // Clean up ALL OTPs for this phone upon successful verification
+            otpRepository.deleteByPhone(cleanPhone);
+            return true;
+        }
+        return false;
     }
 }

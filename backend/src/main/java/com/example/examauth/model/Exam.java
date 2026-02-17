@@ -22,30 +22,75 @@ public class Exam {
     private String status; // upcoming, completed
 
     // Getters and setters
-    public Long getExamId() { return examId; }
-    public void setExamId(Long examId) { this.examId = examId; }
+    public Long getExamId() {
+        return examId;
+    }
 
-    public String getExamName() { return examName; }
-    public void setExamName(String examName) { this.examName = examName; }
+    public void setExamId(Long examId) {
+        this.examId = examId;
+    }
 
-    public String getInstitutionName() { return institutionName; }
-    public void setInstitutionName(String institutionName) { this.institutionName = institutionName; }
+    public String getExamName() {
+        return examName;
+    }
 
-    public LocalDate getDate() { return date; }
-    public void setDate(LocalDate date) { this.date = date; }
+    public void setExamName(String examName) {
+        this.examName = examName;
+    }
 
-    public LocalTime getStartTime() { return startTime; }
-    public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
+    public String getInstitutionName() {
+        return institutionName;
+    }
 
-    public Integer getDurationMinutes() { return durationMinutes; }
-    public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
+    public void setInstitutionName(String institutionName) {
+        this.institutionName = institutionName;
+    }
 
-    public String getMode() { return mode; }
-    public void setMode(String mode) { this.mode = mode; }
+    public LocalDate getDate() {
+        return date;
+    }
 
-    public String getLocation() { return location; }
-    public void setLocation(String location) { this.location = location; }
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public Integer getDurationMinutes() {
+        return durationMinutes;
+    }
+
+    public void setDurationMinutes(Integer durationMinutes) {
+        this.durationMinutes = durationMinutes;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }
