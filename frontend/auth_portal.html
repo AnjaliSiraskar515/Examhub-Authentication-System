@@ -309,27 +309,6 @@
 
   <!-- Script -->
   <script src="script.js"></script>
-  <script>
-    // Safe updateRegistration function
-    function updateRegistration() {
-      const roleEl = document.getElementById("regRole");
-      if (!roleEl) return;
-      const role = roleEl.value;
-      const student = document.getElementById("studentReg");
-      const authority = document.getElementById("authorityReg");
-      if (!student || !authority) return;
-      student.classList.toggle("hidden", role !== "STUDENT");
-      authority.classList.toggle("hidden", role === "STUDENT" || role === "");
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const roleSelect = document.getElementById("regRole");
-      if (roleSelect) {
-        roleSelect.addEventListener("change", updateRegistration);
-        updateRegistration();
-      }
-    });
-  </script>
 </body>
 
 </html>

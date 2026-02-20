@@ -21,6 +21,9 @@ public class SupervisorController {
         this.examRepository = examRepository;
     }
 
+    @org.springframework.beans.factory.annotation.Value("${file.upload-dir}")
+    private String uploadDir;
+
     @GetMapping("/profile")
     public Map<String, Object> getProfile() {
         // Fetch real counts
@@ -86,7 +89,7 @@ public class SupervisorController {
     }
 
     @GetMapping("/students")
-    public List<Map<String, Object>> getStudents(@RequestParam(required = false) Long examId) {
+    public List<Map<String, Object>> getStudents(@RequestParam(value = "examId", required = false) Long examId) {
         // Determine target exam name for filtering
         String targetExamName = null;
         String examStatus = "UPCOMING";
@@ -110,9 +113,10 @@ public class SupervisorController {
             // Mock Exam Assignment for Demo
             String assignedExam = "Advanced Java Programming";
             if (user.getUsername() != null) {
-                if (user.getUsername().startsWith("student")) {
+                String lowerUser = user.getUsername().trim().toLowerCase();
+                if (lowerUser.startsWith("student")) {
                     assignedExam = "Theory of Computation";
-                } else if (user.getUsername().startsWith("os_student")) {
+                } else if (lowerUser.startsWith("os_student") || lowerUser.startsWith("os")) {
                     assignedExam = "Operating System";
                 }
             }
@@ -178,7 +182,7 @@ public class SupervisorController {
     // --- Phase 1: Exam Control Endpoints ---
 
     @PutMapping("/exam/{id}/status")
-    public Map<String, Object> updateExamStatus(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+    public Map<String, Object> updateExamStatus(@PathVariable("id") Long id, @RequestBody Map<String, String> payload) {
         String status = payload.get("status");
         com.example.examauth.model.Exam exam = examRepository.findById(id).orElseThrow();
         exam.setStatus(status);
@@ -212,7 +216,7 @@ public class SupervisorController {
     }
 
     @GetMapping("/exam/{id}/alerts")
-    public List<com.example.examauth.model.Alert> getExamAlerts(@PathVariable Long id) {
+    public List<com.example.examauth.model.Alert> getExamAlerts(@PathVariable("id") Long id) {
         return alertRepository.findByExamIdOrderByTimestampDesc(id);
     }
 
@@ -235,7 +239,7 @@ public class SupervisorController {
     }
 
     @GetMapping("/exam/{id}/summary")
-    public org.springframework.http.ResponseEntity<?> getExamSummary(@PathVariable Long id) {
+    public org.springframework.http.ResponseEntity<?> getExamSummary(@PathVariable("id") Long id) {
         // 1. Get Exam Details to filter students (Reusing logic from getStudents)
         com.example.examauth.model.Exam exam = examRepository.findById(id).orElse(null);
         String targetExamName = (exam != null) ? exam.getExamName() : "";
@@ -245,9 +249,10 @@ public class SupervisorController {
                 .filter(user -> {
                     String assignedExam = "Advanced Java Programming";
                     if (user.getUsername() != null) {
-                        if (user.getUsername().startsWith("student")) {
+                        String lowerUser = user.getUsername().trim().toLowerCase();
+                        if (lowerUser.startsWith("student")) {
                             assignedExam = "Theory of Computation";
-                        } else if (user.getUsername().startsWith("os_student")) {
+                        } else if (lowerUser.startsWith("os_student") || lowerUser.startsWith("os")) {
                             assignedExam = "Operating System";
                         }
                     }
@@ -390,14 +395,18 @@ public class SupervisorController {
     // Helper method to save file locally
     private void saveFile(org.springframework.web.multipart.MultipartFile file, String fileName)
             throws java.io.IOException {
-        String uploadDir = "uploads/";
-        java.nio.file.Path uploadPath = java.nio.file.Paths.get(uploadDir);
-        if (!java.nio.file.Files.exists(uploadPath)) {
-            java.nio.file.Files.createDirectories(uploadPath);
+        java.io.File dir = new java.io.File(uploadDir).getAbsoluteFile();
+        if (!dir.exists()) {
+            boolean created = dir.mkdirs();
+            if (!created && !dir.exists()) {
+                System.err.println("Failed to create upload directory: " + dir.getAbsolutePath());
+                throw new java.io.IOException("Failed to create upload directory: " + dir.getAbsolutePath());
+            }
         }
+
         try (java.io.InputStream inputStream = file.getInputStream()) {
-            java.nio.file.Path filePath = uploadPath.resolve(fileName);
-            java.nio.file.Files.copy(inputStream, filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            java.io.File filePath = new java.io.File(dir, fileName);
+            java.nio.file.Files.copy(inputStream, filePath.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (java.io.IOException ioe) {
             throw new java.io.IOException("Could not save image file: " + fileName, ioe);
         }
