@@ -49,6 +49,16 @@ document.addEventListener("DOMContentLoaded", () => {
       student.classList.toggle("hidden", role !== "STUDENT");
       authority.classList.toggle("hidden", role === "STUDENT");
 
+      // Helper to toggle disabled state
+      const toggleInputs = (container, shouldEnable) => {
+        container.querySelectorAll("input, select, button").forEach(el => {
+          el.disabled = !shouldEnable;
+        });
+      };
+
+      toggleInputs(student, role === "STUDENT");
+      toggleInputs(authority, role !== "STUDENT");
+
       // Dynamic Label for Supervisor
       const authLabel = authority.querySelector("label");
       const authInput = get("authEmail");
@@ -406,6 +416,29 @@ if (signupForm) {
       alert("⚠️ Something went wrong during registration.");
     }
   });
+
+  // ✅ Registration Role Visibility Logic
+  const regRoleSelect = get("regRole");
+  if (regRoleSelect) {
+    regRoleSelect.addEventListener("change", () => {
+      const role = regRoleSelect.value;
+      const student = get("studentReg");
+      const authority = get("authorityReg");
+
+      student.classList.toggle("hidden", role !== "STUDENT");
+      authority.classList.toggle("hidden", role === "STUDENT" || role === "");
+
+      const toggleRegInputs = (container, shouldEnable) => {
+        if (!container) return;
+        container.querySelectorAll("input, select, button").forEach(el => {
+          el.disabled = !shouldEnable;
+        });
+      };
+
+      toggleRegInputs(student, role === "STUDENT");
+      toggleRegInputs(authority, role !== "STUDENT" && role !== "");
+    });
+  }
 } else {
   console.warn("⚠️ signupForm not found in DOM.");
 }

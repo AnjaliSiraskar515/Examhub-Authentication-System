@@ -78,9 +78,17 @@ public class ProfileController {
                 return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             }
 
-            File dir = new File(uploadDir);
-            if (!dir.exists())
-                dir.mkdirs();
+            // Fix: Ensure upload directory is absolute and exists
+            File dir = new File(uploadDir).getAbsoluteFile();
+            if (!dir.exists()) {
+                boolean created = dir.mkdirs();
+                if (!created && !dir.exists()) {
+                    System.err.println("Failed to create upload directory: " + dir.getAbsolutePath());
+                    return ResponseEntity.status(500).body(Map.of("error", "Failed to create upload directory"));
+                }
+            }
+
+            System.out.println("Uploading to: " + dir.getAbsolutePath());
 
             String timestamp = String.valueOf(System.currentTimeMillis());
 
@@ -129,7 +137,7 @@ public class ProfileController {
             return ResponseEntity.ok(Map.of("status", "uploaded"));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error", "upload failed"));
+            return ResponseEntity.status(500).body(Map.of("error", "upload failed: " + e.getMessage()));
         }
     }
 

@@ -35,7 +35,7 @@ public class AdminService {
     public AnalyticsDTO getAnalytics() {
         // In a real production system, use JPQL GROUP BY queries.
         // For this implementation, we will aggregate in memory but structured cleanly.
-        
+
         List<String> labels = Arrays.asList("Sep", "Oct", "Nov", "Dec", "Jan", "Feb");
         // Mock data logic for demonstration where real historical data might be sparse
         // ideally fetch from DB with: examRepo.countByMonth()
@@ -49,24 +49,34 @@ public class AdminService {
 
     public Page<ActivityLogDTO> getActivityLog(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("detectedOn").descending());
-        
+
         // 1. Fetch Real Fraud Logs
         Page<FraudLog> fraudLogs = fraudLogRepo.findAll(pageable);
-        
+
         // Convert to DTO
-        List<ActivityLogDTO> dtos = fraudLogs.stream().map(log -> new ActivityLogDTO(
-                log.getDetectedOn().toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
-                "User ID: " + log.getUserId(),
-                "Fraud Detected: " + log.getDescription(),
-                "Security",
-                "danger"
-        )).collect(Collectors.toList());
+        List<ActivityLogDTO> dtos = fraudLogs.stream().map(log -> {
+            String dateStr = "Unknown Date";
+            if (log.getDetectedOn() != null) {
+                try {
+                    dateStr = log.getDetectedOn().toLocalDateTime()
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+                } catch (Exception e) {
+                    dateStr = log.getDetectedOn().toString();
+                }
+            }
+            return new ActivityLogDTO(
+                    dateStr,
+                    "User ID: " + log.getUserId(),
+                    "Fraud Detected: " + log.getDescription(),
+                    "Security",
+                    "danger");
+        }).collect(Collectors.toList());
 
         // If not enough data, add some mock system events for "aliveness"
         if (dtos.size() < size) {
-             dtos.add(new ActivityLogDTO("Just now", "System", "Health Check", "Monitor", "success"));
-             dtos.add(new ActivityLogDTO("10 mins ago", "Pune Univ", "Upload Sched", "Exams", "success"));
-             dtos.add(new ActivityLogDTO("1 hour ago", "Mumbai Tech", "New Batch", "Users", "success"));
+            dtos.add(new ActivityLogDTO("Just now", "System", "Health Check", "Monitor", "success"));
+            dtos.add(new ActivityLogDTO("10 mins ago", "Pune Univ", "Upload Sched", "Exams", "success"));
+            dtos.add(new ActivityLogDTO("1 hour ago", "Mumbai Tech", "New Batch", "Users", "success"));
         }
 
         return new PageImpl<>(dtos, pageable, fraudLogs.getTotalElements() + 3);

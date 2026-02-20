@@ -2402,6 +2402,9 @@
 
     // --- Enterprise Chart & Data Helpers ---
 
+    // Chart Instances Storage
+    let chartInstances = {};
+
     async function initDashboardCharts() {
       if (typeof Chart === 'undefined') return;
 
@@ -2410,106 +2413,110 @@
         if (!response.ok) throw new Error("Failed to fetch analytics");
         const data = await response.json();
 
+        // Helper to safely create chart
+        const createChart = (canvasId, config) => {
+          const ctx = document.getElementById(canvasId);
+          if (!ctx) return;
+
+          // Destroy existing if any
+          if (chartInstances[canvasId]) {
+            chartInstances[canvasId].destroy();
+          }
+
+          chartInstances[canvasId] = new Chart(ctx.getContext('2d'), config);
+        };
+
         // Exams Chart
-        const ctxExams = document.getElementById('examsChart');
-        if (ctxExams) {
-          new Chart(ctxExams.getContext('2d'), {
-            type: 'line',
-            data: {
-              labels: data.labels,
-              datasets: [{
-                label: 'Exams',
-                data: data.examCounts,
-                borderColor: '#2563eb', // blue-600
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                tension: 0.4,
-                fill: true
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
-            }
-          });
-        }
+        createChart('examsChart', {
+          type: 'line',
+          data: {
+            labels: data.labels,
+            datasets: [{
+              label: 'Exams',
+              data: data.examCounts,
+              borderColor: '#2563eb', // blue-600
+              backgroundColor: 'rgba(37, 99, 235, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+          }
+        });
 
         // Students Chart
-        const ctxStudents = document.getElementById('studentsChart');
-        if (ctxStudents) {
-          new Chart(ctxStudents.getContext('2d'), {
-            type: 'bar',
-            data: {
-              labels: data.labels,
-              datasets: [{
-                label: 'Registered',
-                data: data.studentCounts,
-                backgroundColor: '#7c3aed', // violet-600
-                borderRadius: 4
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
-            }
-          });
-        }
+        createChart('studentsChart', {
+          type: 'bar',
+          data: {
+            labels: data.labels,
+            datasets: [{
+              label: 'Registered',
+              data: data.studentCounts,
+              backgroundColor: '#7c3aed', // violet-600
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+          }
+        });
 
         // Reports Trend Chart
-        const ctxReportTrend = document.getElementById('reportsTrendChart');
-        if (ctxReportTrend) {
-          new Chart(ctxReportTrend.getContext('2d'), {
-            type: 'line',
-            data: {
-              labels: data.labels,
-              datasets: [{
-                label: 'Avg Score',
-                data: data.avgScores,
-                borderColor: '#10b981', // green-500
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                yAxisID: 'y',
-                tension: 0.3,
-                fill: true
-              }, {
-                label: 'Participation',
-                data: data.participants,
-                borderColor: '#6366f1', // indigo-500
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                yAxisID: 'y1',
-                tension: 0.3,
-                fill: true
-              }]
+        createChart('reportsTrendChart', {
+          type: 'line',
+          data: {
+            labels: data.labels,
+            datasets: [{
+              label: 'Avg Score',
+              data: data.avgScores,
+              borderColor: '#10b981', // green-500
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              yAxisID: 'y',
+              tension: 0.3,
+              fill: true
+            }, {
+              label: 'Participation',
+              data: data.participants,
+              borderColor: '#6366f1', // indigo-500
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              yAxisID: 'y1',
+              tension: 0.3,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false,
             },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              interaction: {
-                mode: 'index',
-                intersect: false,
+            plugins: { legend: { position: 'top' } },
+            scales: {
+              y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: { display: true, text: 'Score (%)' },
+                grid: { color: '#f3f4f6' }
               },
-              plugins: { legend: { position: 'top' } },
-              scales: {
-                y: {
-                  type: 'linear',
-                  display: true,
-                  position: 'left',
-                  title: { display: true, text: 'Score (%)' },
-                  grid: { color: '#f3f4f6' }
-                },
-                y1: {
-                  type: 'linear',
-                  display: true,
-                  position: 'right',
-                  grid: { drawOnChartArea: false },
-                  title: { display: true, text: 'Participants' }
-                }
+              y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: 'Participants' }
               }
             }
-          });
-        }
+          }
+        });
 
       } catch (error) {
         console.error("Error loading charts:", error);
