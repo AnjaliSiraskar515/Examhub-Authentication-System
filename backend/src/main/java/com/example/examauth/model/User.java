@@ -11,11 +11,12 @@ public class User {
     private Long userId;
 
     private String name;
+    private String username; // Added username field for Supervisor/Auth controllers
     private String email;
 
     // ✅ New field added here
-    @Column(unique = true)
-    private String username; // For student login via username/roll number
+    @Column(unique = true, nullable = true, length = 20)
+    private String prn; // For student login via PRN
 
     private String password;
     private String role;
@@ -41,10 +42,89 @@ public class User {
     // Profile completion status
     private Boolean profileCompleted = false;
 
+    // Exam Verification Status
+    private Boolean qrVerified = false;
+    private Boolean biometricVerified = false;
+
+    public Boolean getQrVerified() {
+        return qrVerified;
+    }
+
+    public void setQrVerified(Boolean qrVerified) {
+        this.qrVerified = qrVerified;
+    }
+
+    public Boolean getBiometricVerified() {
+        return biometricVerified;
+    }
+
+    public void setBiometricVerified(Boolean biometricVerified) {
+        this.biometricVerified = biometricVerified;
+    }
+
+    private java.time.LocalDateTime lastLogin;
+
+    public java.time.LocalDateTime getLastLogin() {
+        return lastLogin;
+    }
+
+    public void setLastLogin(java.time.LocalDateTime lastLogin) {
+        this.lastLogin = lastLogin;
+    }
+
     // Academic Info
     private String department;
     private String major;
     private String year;
+
+    // ===========================================================
+    // Supervisor Profile Fields (Added)
+    // ===========================================================
+    private String universityName;
+    private String collegeName;
+    private String designation; // e.g. Chief Supervisor, Room Invigilator
+    private String employeeId;
+    private String appointmentLetterPath;
+
+    public String getUniversityName() {
+        return universityName;
+    }
+
+    public void setUniversityName(String universityName) {
+        this.universityName = universityName;
+    }
+
+    public String getCollegeName() {
+        return collegeName;
+    }
+
+    public void setCollegeName(String collegeName) {
+        this.collegeName = collegeName;
+    }
+
+    public String getDesignation() {
+        return designation;
+    }
+
+    public void setDesignation(String designation) {
+        this.designation = designation;
+    }
+
+    public String getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
+    }
+
+    public String getAppointmentLetterPath() {
+        return appointmentLetterPath;
+    }
+
+    public void setAppointmentLetterPath(String appointmentLetterPath) {
+        this.appointmentLetterPath = appointmentLetterPath;
+    }
 
     // ===========================================================
     // Getters and Setters
@@ -74,13 +154,21 @@ public class User {
         this.name = n;
     }
 
-    // ✅ New getter/setter for username
     public String getUsername() {
         return username;
     }
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    // ✅ New getter/setter for PRN
+    public String getPrn() {
+        return prn;
+    }
+
+    public void setPrn(String prn) {
+        this.prn = prn;
     }
 
     public String getPassword() {
