@@ -11,11 +11,12 @@ public class User {
     private Long userId;
 
     private String name;
+    private String username; // Added username field for Supervisor/Auth controllers
     private String email;
 
     // ✅ New field added here
-    @Column(unique = true)
-    private String username; // For student login via username/roll number
+    @Column(unique = true, nullable = true, length = 20)
+    private String prn; // For student login via PRN
 
     private String password;
     private String role;
@@ -153,13 +154,21 @@ public class User {
         this.name = n;
     }
 
-    // ✅ New getter/setter for username
     public String getUsername() {
         return username;
     }
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    // ✅ New getter/setter for PRN
+    public String getPrn() {
+        return prn;
+    }
+
+    public void setPrn(String prn) {
+        this.prn = prn;
     }
 
     public String getPassword() {

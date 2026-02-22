@@ -30,14 +30,14 @@ public class AuthService {
     // FIND USER BY EMAIL
     // =====================================================
     public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        return userRepository.findFirstByEmail(email);
     }
 
     // =====================================================
-    // FIND USER BY USERNAME (for student login)
+    // FIND USER BY PRN (for student login)
     // =====================================================
-    public Optional<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+    public Optional<User> findByPrn(String prn) {
+        return userRepository.findByPrn(prn);
     }
 
     // =====================================================
@@ -52,11 +52,11 @@ public class AuthService {
     // =====================================================
     public boolean authenticate(String identifier, String password) {
         // 1. Try Email
-        Optional<User> userOpt = userRepository.findByEmail(identifier);
+        Optional<User> userOpt = userRepository.findFirstByEmail(identifier);
 
-        // 2. Try Username
+        // 2. Try PRN
         if (userOpt.isEmpty()) {
-            userOpt = userRepository.findByUsername(identifier);
+            userOpt = userRepository.findByPrn(identifier);
         }
 
         // 3. Try Phone
@@ -66,7 +66,14 @@ public class AuthService {
 
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            return passwordEncoder.matches(password, user.getPassword());
+            String dbPassword = user.getPassword();
+
+            // Allow matching of both hashed and legacy plain text passwords
+            if (dbPassword != null && dbPassword.startsWith("$2a$")) {
+                return passwordEncoder.matches(password, dbPassword);
+            } else if (dbPassword != null) {
+                return dbPassword.equals(password);
+            }
         }
 
         return false;

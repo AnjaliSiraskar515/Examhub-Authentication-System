@@ -12,13 +12,16 @@ public class SupervisorController {
     private final com.example.examauth.repo.UserRepository userRepository;
     private final com.example.examauth.repo.QrRepository qrRepository;
     private final com.example.examauth.repo.ExamRepository examRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public SupervisorController(com.example.examauth.repo.UserRepository userRepository,
             com.example.examauth.repo.QrRepository qrRepository,
-            com.example.examauth.repo.ExamRepository examRepository) {
+            com.example.examauth.repo.ExamRepository examRepository,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.qrRepository = qrRepository;
         this.examRepository = examRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @org.springframework.beans.factory.annotation.Value("${file.upload-dir}")
@@ -49,7 +52,8 @@ public class SupervisorController {
         profile.put("assignedExamsCount", examRepository.count()); // Blue card: Exams
 
         // Supervisor Identity & Affiliation
-        User user = userRepository.findByEmail("supervisor@examhub.edu").orElse(new User());
+        User user = userRepository.findByUsername("supervisor_admin")
+                .orElseGet(() -> userRepository.findByEmail("supervisor@examhub.edu").orElse(new User()));
         profile.put("name", user.getName() != null ? user.getName() : "Dr. Supervisor");
         profile.put("email", user.getEmail() != null ? user.getEmail() : "supervisor@examhub.edu");
         profile.put("phone", user.getPhoneNumber());
@@ -108,7 +112,7 @@ public class SupervisorController {
             map.put("id", user.getUserId());
             map.put("name", user.getName());
             map.put("email", user.getEmail());
-            map.put("regno", user.getUsername());
+            map.put("regno", "EXH-2025-" + user.getUserId());
 
             // Mock Exam Assignment for Demo
             String assignedExam = "Advanced Java Programming";
@@ -301,6 +305,7 @@ public class SupervisorController {
     @PostMapping("/update-profile")
     public Map<String, Object> updateProfile(
             @RequestParam(value = "name", defaultValue = "") String name,
+            @RequestParam(value = "email", required = false) String email,
             @RequestParam(value = "phone", defaultValue = "") String phone,
             @RequestParam(value = "university", defaultValue = "") String university,
             @RequestParam(value = "college", defaultValue = "") String college,
@@ -313,20 +318,16 @@ public class SupervisorController {
         System.out.println("DEBUG: updateProfile called");
         System.out.println("DEBUG: isBiometricEnrolled=" + isBiometricEnrolled);
         try {
-            Optional<User> userOpt = userRepository.findByEmail("supervisor@examhub.edu");
+            Optional<User> userByUsername = userRepository.findByUsername("supervisor_admin");
             User user;
 
-            if (userOpt.isPresent()) {
-                user = userOpt.get();
+            if (userByUsername.isPresent()) {
+                user = userByUsername.get();
             } else {
-                // If not found by email, try by username to avoid unique constraint if exists
-                Optional<User> userByUsername = userRepository.findByUsername("supervisor_admin");
-                if (userByUsername.isPresent()) {
-                    user = userByUsername.get();
-                    // If found by username but email is different/missing, update it
-                    if (!"supervisor@examhub.edu".equals(user.getEmail())) {
-                        user.setEmail("supervisor@examhub.edu");
-                    }
+                Optional<User> userOpt = userRepository.findByEmail("supervisor@examhub.edu");
+                if (userOpt.isPresent()) {
+                    user = userOpt.get();
+                    user.setUsername("supervisor_admin");
                 } else {
                     System.out.println("DEBUG: Creating new user");
                     user = new User();
@@ -339,6 +340,9 @@ public class SupervisorController {
             }
 
             user.setName(name);
+            if (email != null && !email.trim().isEmpty()) {
+                user.setEmail(email.trim());
+            }
             user.setPhoneNumber(phone);
             user.setUniversityName(university);
             user.setCollegeName(college);
@@ -409,6 +413,47 @@ public class SupervisorController {
             java.nio.file.Files.copy(inputStream, filePath.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (java.io.IOException ioe) {
             throw new java.io.IOException("Could not save image file: " + fileName, ioe);
+        }
+    }
+
+    @PostMapping("/update-password")
+    public Map<String, Object> updatePassword(
+            @RequestParam("currentPassword") String currentPassword,
+            @RequestParam("newPassword") String newPassword) {
+
+        Map<String, Object> response = new HashMap<>();
+        try {
+            User user = userRepository.findByUsername("supervisor_admin")
+                    .orElseGet(() -> userRepository.findByEmail("supervisor@examhub.edu").orElse(null));
+
+            if (user == null) {
+                response.put("success", false);
+                response.put("message", "User not found");
+                return response;
+            }
+
+            // 1. Verify current password
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                response.put("success", false);
+                response.put("message", "Current password incorrect");
+                return response;
+            }
+
+            // 2. Encode new password
+            user.setPassword(passwordEncoder.encode(newPassword));
+
+            // 3. Save
+            userRepository.save(user);
+
+            response.put("success", true);
+            response.put("message", "Password updated successfully");
+            return response;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Error updating password: " + e.getMessage());
+            return response;
         }
     }
 
