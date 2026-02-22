@@ -13,8 +13,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // ✅ NEW: Find FIRST user by email (handles duplicates safely)
     Optional<User> findFirstByEmail(String email);
 
-    // ✅ NEW: Find user by username (for student login)
-    Optional<User> findByUsername(String username);
+    Optional<User> findFirstByEmailAndRole(String email, String role);
+
+    // ✅ NEW: Find user by PRN (for student login)
+    Optional<User> findByPrn(String prn);
 
     // ✅ NEW: Count students for dashboard
     long countByRole(String role);
@@ -31,4 +33,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // ✅ NEW: Find user by phone number (for mobile login)
     Optional<User> findByPhoneNumber(String phoneNumber);
+
+    Optional<User> findFirstByPhoneNumberAndRole(String phoneNumber, String role);
+
+    // ✅ NEW: Find user by username
+    Optional<User> findByUsername(String username);
 }

@@ -3,13 +3,14 @@ package com.example.examauth.controller;
 import com.example.examauth.service.OtpService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired; // added import
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/otp")
-@CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500"})
+@CrossOrigin(origins = { "http://127.0.0.1:5500", "http://localhost:5500" })
 public class OtpController {
 
     private final OtpService otpService;

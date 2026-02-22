@@ -511,12 +511,13 @@
 
       <div style="padding: 1.5rem; border-top: 1px solid #e2e8f0;">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-          <div
-            style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+          <div id="sidebar-profile-initials"
+            style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; overflow: hidden;">
             SA</div>
           <div>
-            <div style="font-weight: 600; font-size: 0.875rem;">Super Admin</div>
-            <div style="font-size: 0.75rem; color: var(--text-light);">admin@ExamHub.com</div>
+            <div id="sidebar-profile-name" style="font-weight: 600; font-size: 0.875rem;">Super Admin</div>
+            <div id="sidebar-profile-email" style="font-size: 0.75rem; color: var(--text-light);">admin@ExamHub.com
+            </div>
           </div>
         </div>
         <button onclick="logout()" class="btn secondary-btn" style="width: 100%; justify-content: center;">
@@ -3148,6 +3149,24 @@
           if (nameInput) nameInput.value = data.name;
           if (nameDisplay) nameDisplay.textContent = data.name;
 
+          // Update Sidebar Name & Initials
+          const sidebarName = document.getElementById('sidebar-profile-name');
+          const sidebarInitials = document.getElementById('sidebar-profile-initials');
+          if (sidebarName && data.name) {
+            sidebarName.textContent = data.name;
+
+            const nameParts = data.name.trim().split(' ');
+            let initials = '';
+            if (nameParts.length >= 2) {
+              initials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+            } else if (nameParts.length === 1 && nameParts[0].length >= 2) {
+              initials = nameParts[0].substring(0, 2).toUpperCase();
+            } else if (nameParts.length > 0) {
+              initials = nameParts[0].toUpperCase();
+            }
+            if (sidebarInitials) sidebarInitials.textContent = initials;
+          }
+
           // Update Profile Photo
           const profilePhotoContainer = document.querySelector('#profile-name').previousElementSibling;
           if (data.photoPath) {
@@ -3155,8 +3174,16 @@
             // Since we save to 'uploads', we need an endpoint to serve it or use a relative path if served by static resources.
             // For now, let's assume valid URL or handle it. 
             // Ideally: <img src="..." ...>
-            profilePhotoContainer.innerHTML = `<img src="http://localhost:8080/uploads/${data.photoPath}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
+            const imgHtml = `<img src="http://localhost:8080/uploads/${data.photoPath}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
+            profilePhotoContainer.innerHTML = imgHtml;
             profilePhotoContainer.classList.remove('bg-indigo-600', 'text-4xl', 'text-white', 'font-bold');
+
+            if (sidebarInitials) {
+              sidebarInitials.innerHTML = imgHtml;
+              sidebarInitials.classList.remove('bg-[var(--primary)]', 'text-white');
+              sidebarInitials.style.background = 'transparent';
+              sidebarInitials.style.border = '1px solid #e2e8f0';
+            }
           }
 
           if (emailInput) {
@@ -3164,6 +3191,11 @@
             originalEmail = data.email;
             initialIdentityEmail = data.email; // Sync identity
             handleProfileInput('email'); // Update UI state
+          }
+
+          const sidebarEmail = document.getElementById('sidebar-profile-email');
+          if (sidebarEmail && data.email) {
+            sidebarEmail.textContent = data.email;
           }
 
           if (phoneInput && data.phoneNumber) {

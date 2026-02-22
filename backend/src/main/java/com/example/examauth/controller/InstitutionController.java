@@ -5,6 +5,7 @@ import com.example.examauth.repo.InstitutionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder; // Added import
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,6 +17,9 @@ public class InstitutionController {
 
     @Autowired
     private InstitutionRepository institutionRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder; // Added PasswordEncoder autowiring
 
     @PostMapping("/register")
     public ResponseEntity<?> registerInstitution(@RequestBody Map<String, String> request) {
@@ -59,15 +63,21 @@ public class InstitutionController {
                 institution.setStatus("approved");
 
                 // Generate Unique Login Key
-                String loginKey = "INST-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-                institution.setLoginKey(loginKey);
+                String rawLoginKey = "INST-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+                // Hash it before saving
+                institution.setLoginKey(passwordEncoder.encode(rawLoginKey));
 
                 institutionRepository.save(institution);
 
-                // Send Email Notification
-                sendApprovalEmail(institution);
+                // Send Email Notification with raw (unhashed) key
+                sendApprovalEmail(institution, rawLoginKey);
 
-                return ResponseEntity.ok(Map.of("message", "Institution approved"));
+                // DEBUG INJECTED FOR TESTING
+                Map<String, String> resp = Map.of(
+                        "message", "Institution approved",
+                        "debug_rawLoginKey", rawLoginKey);
+                return ResponseEntity.ok(resp);
             } else {
                 return ResponseEntity.status(404).body(Map.of("error", "Institution not found"));
             }
@@ -113,7 +123,7 @@ public class InstitutionController {
         }
     }
 
-    private void sendApprovalEmail(Institution institution) {
+    private void sendApprovalEmail(Institution institution, String plainLoginKey) {
         try {
             if (institution.getContactEmail() == null || institution.getContactEmail().isEmpty())
                 return;
@@ -124,7 +134,7 @@ public class InstitutionController {
             message.setSubject("Institution Approval Notification - ExamHub");
             message.setText("Dear " + institution.getAdminName() + ",\n\n" +
                     "Congratulations! Your institution '" + institution.getName() + "' has been approved.\n\n" +
-                    "Here is your Unique Login Key: " + institution.getLoginKey() + "\n\n" +
+                    "Here is your Unique Login Key: " + plainLoginKey + "\n\n" +
                     "Please use this key to access your institution dashboard.\n" +
                     "Do not share this key with unauthorized personnel.\n\n" +
                     "Best Regards,\nExamHub Team");

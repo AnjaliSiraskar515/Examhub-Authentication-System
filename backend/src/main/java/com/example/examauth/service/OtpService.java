@@ -148,11 +148,21 @@ public class OtpService {
                 .findFirst();
 
         if (validOtp.isPresent()) {
-            // Clean up ALL OTPs for this email upon successful verification
-            otpRepository.deleteByEmail(email);
+            OtpEntity entity = validOtp.get();
+            entity.setVerified(true);
+            otpRepository.save(entity);
             return true;
         }
         return false;
+    }
+
+    public boolean isEmailVerified(String email) {
+        java.util.List<OtpEntity> entities = otpRepository.findByEmail(email);
+        return entities.stream().anyMatch(e -> e.isVerified() && e.getExpiryTime().isAfter(LocalDateTime.now()));
+    }
+
+    public void clearVerifiedEmailOtp(String email) {
+        otpRepository.deleteByEmail(email);
     }
 
     // =====================================
@@ -174,10 +184,28 @@ public class OtpService {
                 .findFirst();
 
         if (validOtp.isPresent()) {
-            // Clean up ALL OTPs for this phone upon successful verification
-            otpRepository.deleteByPhone(cleanPhone);
+            OtpEntity entity = validOtp.get();
+            entity.setVerified(true);
+            otpRepository.save(entity);
             return true;
         }
         return false;
+    }
+
+    public boolean isPhoneVerified(String phone) {
+        String cleanPhone = phone.replaceAll("[^0-9]", "");
+        if (cleanPhone.length() > 10) {
+            cleanPhone = cleanPhone.substring(cleanPhone.length() - 10);
+        }
+        java.util.List<OtpEntity> entities = otpRepository.findByPhone(cleanPhone);
+        return entities.stream().anyMatch(e -> e.isVerified() && e.getExpiryTime().isAfter(LocalDateTime.now()));
+    }
+
+    public void clearVerifiedPhoneOtp(String phone) {
+        String cleanPhone = phone.replaceAll("[^0-9]", "");
+        if (cleanPhone.length() > 10) {
+            cleanPhone = cleanPhone.substring(cleanPhone.length() - 10);
+        }
+        otpRepository.deleteByPhone(cleanPhone);
     }
 }
