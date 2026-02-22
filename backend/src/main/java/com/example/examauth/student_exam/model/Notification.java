@@ -24,6 +24,9 @@ public class Notification {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
+    @Column(name = "student_id")
+    private Long studentId;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 

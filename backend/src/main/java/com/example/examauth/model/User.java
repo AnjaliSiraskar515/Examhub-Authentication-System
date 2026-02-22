@@ -76,6 +76,13 @@ public class User {
     private String department;
     private String major;
     private String year;
+    private String semester;
+    private String enrollmentNo;
+    private String cgpa;
+
+    // Personal Info
+    private String dob;
+    private String gender;
 
     // ===========================================================
     // Supervisor Profile Fields (Added)
@@ -313,5 +320,45 @@ public class User {
 
     public void setYear(String year) {
         this.year = year;
+    }
+
+    public String getSemester() {
+        return semester;
+    }
+
+    public void setSemester(String semester) {
+        this.semester = semester;
+    }
+
+    public String getEnrollmentNo() {
+        return enrollmentNo;
+    }
+
+    public void setEnrollmentNo(String enrollmentNo) {
+        this.enrollmentNo = enrollmentNo;
+    }
+
+    public String getCgpa() {
+        return cgpa;
+    }
+
+    public void setCgpa(String cgpa) {
+        this.cgpa = cgpa;
+    }
+
+    public String getDob() {
+        return dob;
+    }
+
+    public void setDob(String dob) {
+        this.dob = dob;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
     }
 }
