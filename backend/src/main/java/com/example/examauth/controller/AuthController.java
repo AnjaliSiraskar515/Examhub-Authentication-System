@@ -11,14 +11,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import java.util.Optional;
-
-import com.example.examauth.repo.InstitutionRepository; // Added import
+import com.example.examauth.repo.InstitutionRepository;
 import com.example.examauth.repo.UserRepository; // Added import
 import com.example.examauth.model.Institution; // Added import
 import org.springframework.security.crypto.password.PasswordEncoder; // Added import
-import com.example.examauth.service.OtpService; // Added import
-import com.example.examauth.service.OtpService; // Added import
+import com.example.examauth.service.OtpService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -215,30 +212,8 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(resp);
             }
 
-            Optional<User> userOpt = Optional.empty();
-
-            // Special handling for SUPERVISOR login to ensure they get the right account
-            if ("SUPERVISOR".equalsIgnoreCase(role)) {
-                userOpt = userRepository.findByUsername("supervisor_admin");
-            }
-
-            if (userOpt.isEmpty()) {
-                userOpt = userRepository.findFirstByEmailAndRole(identifier, role);
-            }
-            if (userOpt.isEmpty()) {
-                userOpt = authService.findByEmail(identifier); // General Fallback
-            }
-
-            // Try Phone if not found
-            if (userOpt.isEmpty()) {
-                try {
-                    userOpt = userRepository.findFirstByPhoneNumberAndRole(identifier, role);
-                    if (userOpt.isEmpty()) {
-                        userOpt = authService.findByPhoneNumber(identifier);
-                    }
-                } catch (Exception ignored) {
-                }
-            }
+            // Unified identity resolution: always by email (no username, no role-specific overrides)
+            Optional<User> userOpt = userRepository.findByEmail(identifier);
 
             if (userOpt.isEmpty()) {
                 Map<String, Object> resp = new HashMap<>();
@@ -248,7 +223,14 @@ public class AuthController {
 
             User user = userOpt.get();
 
-            // ✅ Enforce PRN Matching for Students
+            // Verify role matches requested role
+            if (role == null || !role.equalsIgnoreCase(user.getRole())) {
+                Map<String, Object> resp = new HashMap<>();
+                resp.put("error", "Role mismatch");
+                return ResponseEntity.status(401).body(resp);
+            }
+
+            // STUDENT: enforce PRN matching (unchanged)
             if ("STUDENT".equalsIgnoreCase(role)) {
                 if (prn == null || prn.isBlank()) {
                     Map<String, Object> resp = new HashMap<>();
@@ -262,10 +244,9 @@ public class AuthController {
                 }
             }
 
-            // ✅ Validate password directly against the specifically found User record
+            // Verify password (hashed or legacy plain)
             String dbPassword = user.getPassword();
             boolean authenticated = false;
-
             if (dbPassword != null && dbPassword.startsWith("$2a$")) {
                 authenticated = passwordEncoder.matches(password, dbPassword);
             } else if (dbPassword != null) {

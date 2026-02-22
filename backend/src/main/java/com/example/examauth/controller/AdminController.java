@@ -1,5 +1,7 @@
 package com.example.examauth.controller;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,7 @@ import com.example.examauth.repo.QRCodeRepository;
 import com.example.examauth.model.QRCodeEntry;
 import com.example.examauth.repo.FraudLogRepository;
 import com.example.examauth.model.FraudLog;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,6 +40,9 @@ public class AdminController {
 
     @Autowired
     private com.example.examauth.service.PdfService pdfService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/analytics")
     public ResponseEntity<?> getAnalytics() {
@@ -254,5 +260,86 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+            return ResponseEntity.status(401).body(Map.<String, Object>of("error", "Unauthorized"));
+        }
+        String email = authentication.getName();
+        User user = userRepo.findFirstByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.<String, Object>of("error", "User not found"));
+        }
+
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("id", user.getUserId());
+        profile.put("name", user.getName());
+        profile.put("email", user.getEmail());
+        profile.put("phoneNumber", user.getPhoneNumber());
+        profile.put("role", user.getRole());
+        profile.put("status", user.getStatus());
+        profile.put("lastLogin", user.getLastLogin());
+        profile.put("photoPath", user.getPhotoPath());
+        profile.put("profileCompleted", user.getProfileCompleted());
+        return ResponseEntity.ok(profile);
+    }
+
+    @PostMapping("/update-profile")
+    public ResponseEntity<?> updateProfile(Authentication authentication, @RequestBody Map<String, Object> body) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        String email = authentication.getName();
+        User user = userRepo.findFirstByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        }
+
+        String newName = (String) body.get("name");
+        String newEmail = (String) body.get("email");
+        String newPhone = (String) body.get("phoneNumber");
+
+        if (newName != null && !newName.isEmpty()) {
+            user.setName(newName);
+        }
+        if (newPhone != null && !newPhone.isEmpty()) {
+            user.setPhoneNumber(newPhone);
+        }
+        if (newEmail != null && !newEmail.isEmpty() && !newEmail.equals(user.getEmail())) {
+            if (userRepo.findFirstByEmail(newEmail).isPresent()) {
+                return ResponseEntity.status(400).body(Map.of("error", "Email already in use"));
+            }
+            user.setEmail(newEmail);
+        }
+
+        userRepo.save(user);
+        return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
+    }
+
+    @PostMapping("/update-password")
+    public ResponseEntity<?> updatePassword(Authentication authentication, @RequestBody Map<String, String> body) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        String email = authentication.getName();
+        User user = userRepo.findFirstByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        }
+
+        String currentPassword = body.get("currentPassword");
+        String newPassword = body.get("newPassword");
+        if (currentPassword == null || newPassword == null) {
+            return ResponseEntity.status(400).body(Map.of("error", "Missing password fields"));
+        }
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            return ResponseEntity.status(400).body(Map.of("error", "Incorrect current password"));
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepo.save(user);
+        return ResponseEntity.ok(Map.of("message", "Password updated successfully"));
     }
 }
