@@ -683,6 +683,13 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col items-end"></div>
 
   <script>
+    // JWT auth for dashboard profile APIs (logged-in user's data only)
+    function authHeaders(extra) {
+      const token = localStorage.getItem('token');
+      const h = extra ? { ...extra } : {};
+      if (token) h['Authorization'] = 'Bearer ' + token;
+      return h;
+    }
     // --- OTP Verification Logic ---
     let originalEmail = "";
     let originalPhone = "";
@@ -803,7 +810,7 @@
       const profileBox = document.getElementById('tab-profile');
       // if (profileBox.dataset.loaded) return; // Removed to allow auto-refresh
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/profile');
+        const res = await fetch('http://localhost:8080/api/supervisor/profile', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-profile');
         const p = await res.json();
         document.getElementById('profileAvatar').src = p.avatar || 'placeholder-avatar.png';
@@ -1557,6 +1564,7 @@
 
         const res = await fetch('http://localhost:8080/api/supervisor/update-profile', {
           method: 'POST',
+          headers: authHeaders(),
           body: formData // Content-Type handled automatically with boundary
         });
 
@@ -1587,7 +1595,7 @@
 
       const profileBox = document.getElementById('tab-profile');
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/profile');
+        const res = await fetch('http://localhost:8080/api/supervisor/profile', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-profile');
         const p = await res.json();
 
@@ -2233,9 +2241,7 @@
 
         const res = await fetch('http://localhost:8080/api/supervisor/update-password', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
+          headers: authHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
           body: formData.toString()
         });
 

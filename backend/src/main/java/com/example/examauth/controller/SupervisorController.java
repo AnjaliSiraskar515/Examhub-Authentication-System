@@ -1,6 +1,8 @@
 package com.example.examauth.controller;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 import java.util.*;
 import com.example.examauth.model.User;
 
@@ -28,40 +30,39 @@ public class SupervisorController {
     private String uploadDir;
 
     @GetMapping("/profile")
-    public Map<String, Object> getProfile() {
-        // Fetch real counts
-        // Fetch real counts
+    public ResponseEntity<?> getProfile(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+            return ResponseEntity.status(401).body(Map.<String, Object>of("error", "Unauthorized"));
+        }
+        String email = authentication.getName();
+        User user = userRepository.findFirstByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.<String, Object>of("error", "User not found"));
+        }
+
+        // Fetch real counts (dashboard stats)
         java.time.LocalDateTime startOfDay = java.time.LocalDate.now().atStartOfDay();
         long totalScans = qrRepository.countByUsedAndIssuedAtAfter(true, startOfDay);
-        long fullyVerifiedCount = userRepository.countByRoleAndBiometricVerified("STUDENT", true); // Fix: Only count
-                                                                                                   // students
+        long fullyVerifiedCount = userRepository.countByRoleAndBiometricVerified("STUDENT", true);
         long totalStudents = userRepository.countByRole("STUDENT");
-
-        System.out.println("DEBUG: Profile Stats Calculation");
-        System.out.println("DEBUG: totalScans=" + totalScans);
-        System.out.println("DEBUG: fullyVerifiedCount=" + fullyVerifiedCount);
-        System.out.println("DEBUG: totalStudents=" + totalStudents);
-
         long pendingCount = Math.max(0, totalStudents - fullyVerifiedCount);
 
         Map<String, Object> profile = new HashMap<>();
-        profile.put("scansToday", totalScans); // Purple card: Total Scans
-        profile.put("pendingVerifications", pendingCount); // Red card: Pending
-        profile.put("studentsCount", totalStudents); // Profile Stats: Total Assigned
-        profile.put("verifiedStudentsCount", fullyVerifiedCount); // Green card: Real Verified Count
-        profile.put("assignedExamsCount", examRepository.count()); // Blue card: Exams
+        profile.put("scansToday", totalScans);
+        profile.put("pendingVerifications", pendingCount);
+        profile.put("studentsCount", totalStudents);
+        profile.put("verifiedStudentsCount", fullyVerifiedCount);
+        profile.put("assignedExamsCount", examRepository.count());
 
-        // Supervisor Identity & Affiliation
-        User user = userRepository.findByUsername("supervisor_admin")
-                .orElseGet(() -> userRepository.findByEmail("supervisor@examhub.edu").orElse(new User()));
-        profile.put("name", user.getName() != null ? user.getName() : "Dr. Supervisor");
-        profile.put("email", user.getEmail() != null ? user.getEmail() : "supervisor@examhub.edu");
+        // Logged-in supervisor's identity & affiliation only
+        profile.put("name", user.getName() != null ? user.getName() : "");
+        profile.put("email", user.getEmail() != null ? user.getEmail() : "");
         profile.put("phone", user.getPhoneNumber());
         profile.put("university", user.getUniversityName());
         profile.put("college", user.getCollegeName());
         profile.put("designation", user.getDesignation());
         profile.put("employeeId", user.getEmployeeId());
-        profile.put("avatar", user.getPhotoPath()); // Add avatar path
+        profile.put("avatar", user.getPhotoPath());
         profile.put("biometricEnrolled", user.getBiometricHash() != null && !user.getBiometricHash().isEmpty());
 
         List<Map<String, String>> docs = new ArrayList<>();
@@ -73,7 +74,7 @@ public class SupervisorController {
             docs.add(Map.of("filename", "Supervisor_Guidelines.pdf", "status", "Pending"));
 
         profile.put("documents", docs);
-        return profile;
+        return ResponseEntity.ok(profile);
     }
 
     @GetMapping("/exams")
@@ -304,8 +305,9 @@ public class SupervisorController {
 
     @PostMapping("/update-profile")
     public Map<String, Object> updateProfile(
+            Authentication authentication,
             @RequestParam(value = "name", defaultValue = "") String name,
-            @RequestParam(value = "email", required = false) String email,
+            @RequestParam(value = "email", required = false) String profileEmail,
             @RequestParam(value = "phone", defaultValue = "") String phone,
             @RequestParam(value = "university", defaultValue = "") String university,
             @RequestParam(value = "college", defaultValue = "") String college,
@@ -317,31 +319,24 @@ public class SupervisorController {
             @RequestParam(value = "idProof", required = false) org.springframework.web.multipart.MultipartFile idProof) {
         System.out.println("DEBUG: updateProfile called");
         System.out.println("DEBUG: isBiometricEnrolled=" + isBiometricEnrolled);
+        Map<String, Object> response = new HashMap<>();
         try {
-            Optional<User> userByUsername = userRepository.findByUsername("supervisor_admin");
-            User user;
-
-            if (userByUsername.isPresent()) {
-                user = userByUsername.get();
-            } else {
-                Optional<User> userOpt = userRepository.findByEmail("supervisor@examhub.edu");
-                if (userOpt.isPresent()) {
-                    user = userOpt.get();
-                    user.setUsername("supervisor_admin");
-                } else {
-                    System.out.println("DEBUG: Creating new user");
-                    user = new User();
-                    user.setEmail("supervisor@examhub.edu");
-                    user.setRole("SUPERVISOR");
-                    user.setPassword("supervisor123");
-                    user.setStatus("ACTIVE");
-                    user.setUsername("supervisor_admin");
-                }
+            if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Unauthorized");
+                return response;
+            }
+            String loggedInEmail = authentication.getName();
+            User user = userRepository.findFirstByEmail(loggedInEmail).orElse(null);
+            if (user == null) {
+                response.put("success", false);
+                response.put("message", "User not found");
+                return response;
             }
 
             user.setName(name);
-            if (email != null && !email.trim().isEmpty()) {
-                user.setEmail(email.trim());
+            if (profileEmail != null && !profileEmail.trim().isEmpty()) {
+                user.setEmail(profileEmail.trim());
             }
             user.setPhoneNumber(phone);
             user.setUniversityName(university);
@@ -381,14 +376,12 @@ public class SupervisorController {
             userRepository.save(user); // Persist all changes
             System.out.println("DEBUG: User saved successfully");
 
-            Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Profile updated successfully");
             return response;
         } catch (Exception e) {
             System.out.println("DEBUG: Exception in updateProfile: " + e.getMessage());
             e.printStackTrace();
-            Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message",
                     "Error updating profile: " + (e.getMessage() != null ? e.getMessage() : "Unknown Error"));
@@ -418,13 +411,19 @@ public class SupervisorController {
 
     @PostMapping("/update-password")
     public Map<String, Object> updatePassword(
+            Authentication authentication,
             @RequestParam("currentPassword") String currentPassword,
             @RequestParam("newPassword") String newPassword) {
 
         Map<String, Object> response = new HashMap<>();
         try {
-            User user = userRepository.findByUsername("supervisor_admin")
-                    .orElseGet(() -> userRepository.findByEmail("supervisor@examhub.edu").orElse(null));
+            if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Unauthorized");
+                return response;
+            }
+            String email = authentication.getName();
+            User user = userRepository.findFirstByEmail(email).orElse(null);
 
             if (user == null) {
                 response.put("success", false);
