@@ -1,3 +1,8 @@
+
+backend/target/
+target/
+
+
 # Maven / Java build files
 target/
 *.class
@@ -14,5 +19,3 @@ node_modules/
 .vscode/
 .idea/
 
-backend/target/
-target/
