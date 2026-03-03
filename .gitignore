@@ -13,3 +13,6 @@ node_modules/
 # IDE
 .vscode/
 .idea/
+
+backend/target/
+target/
