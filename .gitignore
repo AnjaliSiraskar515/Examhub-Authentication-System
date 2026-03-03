@@ -1,3 +1,4 @@
+ HEAD
 
 backend/target/
 target/
@@ -5,17 +6,40 @@ target/
 
 # Maven / Java build files
 target/
+#  Java / Spring Boot =====
+origin/main
 *.class
 *.jar
 *.war
 
-# Node
-node_modules/
+# Maven / Gradle build output
+/target
+/backend/target/
+build/
 
-# Logs
+# ===== IDE files =====
+.idea/
+.vscode/
+*.iml
+
+# ===== Database =====
+*.sql
+
+# ===== Logs =====
 *.log
-
+HEAD
 # IDE
 .vscode/
 .idea/
 
+# ===== Uploads =====
+uploads/
+ai_verification/uploads/
+
+# ===== Safety =====
+/backend/**/*.class
+
+backend/uploaded_documents/
+*.json
+*.ps1
+origin/main
