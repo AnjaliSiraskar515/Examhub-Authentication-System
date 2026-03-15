@@ -72,9 +72,17 @@ public class ExamRegistrationService {
         }
 
         // ========== VALIDATION 3: Duplicate Registration Check ==========
-        if (examRegistrationRepository.existsByPrnAndExamId(request.getPrn(), request.getExamId())) {
-            throw new AlreadyRegisteredException("Already registered: Student with PRN " + request.getPrn()
-                    + " is already registered for Exam ID " + request.getExamId());
+        // Primary check by studentId (set from authenticated user in controller)
+        if (request.getStudentId() != null &&
+                examRegistrationRepository.existsByStudentIdAndExamId(request.getStudentId(), request.getExamId())) {
+            throw new AlreadyRegisteredException("Already registered: You have already registered for this exam.");
+        }
+        // Secondary check by PRN (only when studentId unavailable)
+        if (request.getStudentId() == null &&
+                request.getPrn() != null && !request.getPrn().startsWith("TEMP-") &&
+                examRegistrationRepository.existsByPrnAndExamId(request.getPrn(), request.getExamId())) {
+            throw new AlreadyRegisteredException("Already registered: PRN " + request.getPrn()
+                    + " is already registered for this exam.");
         }
 
         // 4. Save Registration

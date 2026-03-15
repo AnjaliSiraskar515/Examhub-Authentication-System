@@ -464,4 +464,64 @@ public class SupervisorController {
         response.put("message", "Biometric scan simulation successful. Please save profile to commit.");
         return response;
     }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.example.examauth.student_exam.repo.ExamRegistrationRepository examRegistrationRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.example.examauth.student_exam.service.NotificationService notificationService;
+
+    @GetMapping("/exam-forms")
+    public List<Map<String, Object>> getPendingExamForms() {
+        List<com.example.examauth.student_exam.model.ExamRegistration> applied = examRegistrationRepository
+                .findByRegistrationStatus(
+                        com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPLIED);
+        List<com.example.examauth.student_exam.model.ExamRegistration> pending = examRegistrationRepository
+                .findByRegistrationStatus(
+                        com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.PENDING);
+
+        List<com.example.examauth.student_exam.model.ExamRegistration> allPending = new ArrayList<>();
+        allPending.addAll(applied);
+        allPending.addAll(pending);
+
+        return allPending.stream().map(reg -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", reg.getId());
+            map.put("studentId", reg.getStudentId());
+            map.put("examId", reg.getExamId());
+            map.put("prn", reg.getPrn());
+            map.put("fullName", reg.getFullName());
+            map.put("course", reg.getCourse());
+            map.put("examSession", reg.getExamSession());
+            map.put("selectedSubjects", reg.getSelectedSubjects());
+            map.put("status", reg.getRegistrationStatus().name());
+
+            com.example.examauth.model.Exam exam = examRepository.findById(reg.getExamId()).orElse(null);
+            if (exam != null) {
+                map.put("examName", exam.getExamName());
+            } else {
+                map.put("examName", "Unknown Exam");
+            }
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
+    @PostMapping("/exam-forms/{id}/accept")
+    public Map<String, Object> acceptExamForm(@PathVariable Long id) {
+        com.example.examauth.student_exam.model.ExamRegistration reg = examRegistrationRepository.findById(id)
+                .orElseThrow();
+        reg.setRegistrationStatus(com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPROVED);
+        examRegistrationRepository.save(reg);
+
+        String examName = "Exam ID " + reg.getExamId();
+        com.example.examauth.model.Exam exam = examRepository.findById(reg.getExamId()).orElse(null);
+        if (exam != null) {
+            examName = exam.getExamName();
+        }
+
+        notificationService.createNotification(reg.getStudentId(), "Exam Registration Verified",
+                "Your exam form for " + examName + " has been verified and accepted by the supervisor.");
+
+        return Map.of("success", true, "message", "Form accepted successfully");
+    }
 }

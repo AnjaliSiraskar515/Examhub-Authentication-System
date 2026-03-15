@@ -172,7 +172,6 @@ public class DataSeeder {
                 admin.setAadharPath("/documents/aadhar_placeholder.pdf");
                 admin.setMarks10Path("/documents/marks10.pdf");
                 admin.setMarks12Path("/documents/marks12.pdf");
-                admin.setBiometricPath("biometric_data.bin");
 
                 userRepository.save(admin);
                 System.out.println("✅ Super Admin Seeded: admin@examhub.com / admin123");

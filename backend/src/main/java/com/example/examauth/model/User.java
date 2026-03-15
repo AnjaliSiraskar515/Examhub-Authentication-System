@@ -31,9 +31,14 @@ public class User {
     private String aadharPath;
     private String marks10Path;
     private String marks12Path;
-    private String ugPath;
-    private String pgPath;
-    private String biometricPath;
+    private String sem1MarksheetPath;
+    private String sem2MarksheetPath;
+    private String sem3MarksheetPath;
+    private String sem4MarksheetPath;
+    private String sem5MarksheetPath;
+    private String sem6MarksheetPath;
+    private String sem7MarksheetPath;
+    private String sem8MarksheetPath;
 
     private String phoneNumber;
     private String passportPhotoPath;
@@ -242,28 +247,68 @@ public class User {
         this.marks12Path = marks12Path;
     }
 
-    public String getUgPath() {
-        return ugPath;
+    public String getSem1MarksheetPath() {
+        return sem1MarksheetPath;
     }
 
-    public void setUgPath(String ugPath) {
-        this.ugPath = ugPath;
+    public void setSem1MarksheetPath(String sem1MarksheetPath) {
+        this.sem1MarksheetPath = sem1MarksheetPath;
     }
 
-    public String getPgPath() {
-        return pgPath;
+    public String getSem2MarksheetPath() {
+        return sem2MarksheetPath;
     }
 
-    public void setPgPath(String pgPath) {
-        this.pgPath = pgPath;
+    public void setSem2MarksheetPath(String sem2MarksheetPath) {
+        this.sem2MarksheetPath = sem2MarksheetPath;
     }
 
-    public String getBiometricPath() {
-        return biometricPath;
+    public String getSem3MarksheetPath() {
+        return sem3MarksheetPath;
     }
 
-    public void setBiometricPath(String biometricPath) {
-        this.biometricPath = biometricPath;
+    public void setSem3MarksheetPath(String sem3MarksheetPath) {
+        this.sem3MarksheetPath = sem3MarksheetPath;
+    }
+
+    public String getSem4MarksheetPath() {
+        return sem4MarksheetPath;
+    }
+
+    public void setSem4MarksheetPath(String sem4MarksheetPath) {
+        this.sem4MarksheetPath = sem4MarksheetPath;
+    }
+
+    public String getSem5MarksheetPath() {
+        return sem5MarksheetPath;
+    }
+
+    public void setSem5MarksheetPath(String sem5MarksheetPath) {
+        this.sem5MarksheetPath = sem5MarksheetPath;
+    }
+
+    public String getSem6MarksheetPath() {
+        return sem6MarksheetPath;
+    }
+
+    public void setSem6MarksheetPath(String sem6MarksheetPath) {
+        this.sem6MarksheetPath = sem6MarksheetPath;
+    }
+
+    public String getSem7MarksheetPath() {
+        return sem7MarksheetPath;
+    }
+
+    public void setSem7MarksheetPath(String sem7MarksheetPath) {
+        this.sem7MarksheetPath = sem7MarksheetPath;
+    }
+
+    public String getSem8MarksheetPath() {
+        return sem8MarksheetPath;
+    }
+
+    public void setSem8MarksheetPath(String sem8MarksheetPath) {
+        this.sem8MarksheetPath = sem8MarksheetPath;
     }
 
     public Boolean getProfileCompleted() {

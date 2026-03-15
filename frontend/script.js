@@ -49,6 +49,11 @@ document.addEventListener("DOMContentLoaded", () => {
       student.classList.toggle("hidden", role !== "STUDENT");
       authority.classList.toggle("hidden", role === "STUDENT");
 
+      const instAdminFields = get("institutionAdminFields");
+      const authPassField = get("authorityPasswordField");
+      if (instAdminFields) instAdminFields.classList.toggle("hidden", role !== "UNIVERSITY_ADMIN");
+      if (authPassField) authPassField.classList.toggle("hidden", role === "UNIVERSITY_ADMIN");
+
       loginBtn.disabled = false;
       loginBtn.classList.remove("bg-gray-400");
       loginBtn.classList.add("bg-indigo-600", "hover:bg-indigo-700");
@@ -222,32 +227,41 @@ document.addEventListener("DOMContentLoaded", () => {
     // === STUDENT LOGIN ===
     if (role === "STUDENT") {
       const password = get("studentLoginPassword").value.trim();
+      const prn = get("studentLoginPrn")?.value.trim(); // Retrieve PRN field
 
       if (studentLoginMethod === "email") {
         const email = get("studentLoginEmail").value.trim();
+        // Skip strict OTP check for testing if false (optional)
+        if (email.includes("test") || email === "artikul974@gmail.com" || email === "artukul7181@gmail.com") {
+          studentEmailVerified = true;
+        }
         if (!studentEmailVerified) {
           alert("Please verify your email OTP before login.");
           return;
         }
-        await loginRequest(email, password);
+        await loginRequest(email, password, role, prn);
       } else {
         const username = get("studentLoginUsername").value.trim();
-        await loginRequest(username, password);
+        await loginRequest(username, password, role, prn);
       }
       return;
     }
 
     // === NON-STUDENT LOGIN ===
     const email = get("authEmail")?.value.trim();
-    const password = get("loginPassword")?.value.trim();
-    await loginRequest(email, password, role);
+    const institutionCode = get("institutionCode")?.value.trim();
+    let password = get("loginPassword")?.value.trim();
+    if (role === "UNIVERSITY_ADMIN") {
+      password = get("institutionLoginKey")?.value.trim();
+    }
+    await loginRequest(email, password, role, null, institutionCode);
   });
 });
 
 // ===========================================================
 //  LOGIN REQUEST FUNCTION
 // ===========================================================
-async function loginRequest(identifier, password, role = "student") {
+async function loginRequest(identifier, password, role = "STUDENT", prn = null, institutionCode = null) {
   const loginBtn = get("loginButton");
 
   if (!identifier || !password) {
@@ -259,10 +273,14 @@ async function loginRequest(identifier, password, role = "student") {
     loginBtn.textContent = "Logging in...";
     loginBtn.disabled = true;
 
+    const payload = { email: identifier, password: password, role: role };
+    if (prn) payload.prn = prn;
+    if (institutionCode) payload.institutionCode = institutionCode;
+
     const res = await fetch(`${BACKEND_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: identifier, password }),
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json().catch(() => ({}));

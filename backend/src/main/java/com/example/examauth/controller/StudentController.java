@@ -45,14 +45,20 @@ public class StudentController {
         profile.put("photoPath", user.getPhotoPath());
         profile.put("passportPhotoPath", user.getPassportPhotoPath());
         profile.put("profileCompleted", user.getProfileCompleted());
-        profile.put("documents", Map.of(
-                "aadhar", user.getAadharPath() != null,
-                "marks10", user.getMarks10Path() != null,
-                "marks12", user.getMarks12Path() != null,
-                "ug", user.getUgPath() != null,
-                "pg", user.getPgPath() != null,
-                "biometric", user.getBiometricPath() != null,
-                "passportPhoto", user.getPassportPhotoPath() != null));
+        Map<String, Boolean> docs = new HashMap<>();
+        docs.put("aadhar", user.getAadharPath() != null);
+        docs.put("marks10", user.getMarks10Path() != null);
+        docs.put("marks12", user.getMarks12Path() != null);
+        docs.put("sem1Marksheet", user.getSem1MarksheetPath() != null);
+        docs.put("sem2Marksheet", user.getSem2MarksheetPath() != null);
+        docs.put("sem3Marksheet", user.getSem3MarksheetPath() != null);
+        docs.put("sem4Marksheet", user.getSem4MarksheetPath() != null);
+        docs.put("sem5Marksheet", user.getSem5MarksheetPath() != null);
+        docs.put("sem6Marksheet", user.getSem6MarksheetPath() != null);
+        docs.put("sem7Marksheet", user.getSem7MarksheetPath() != null);
+        docs.put("sem8Marksheet", user.getSem8MarksheetPath() != null);
+        docs.put("passportPhoto", user.getPassportPhotoPath() != null);
+        profile.put("documents", docs);
         return ResponseEntity.ok(profile);
     }
 
