@@ -5,9 +5,7 @@ import com.example.examauth.student_exam.dto.ExamRegistrationResponseDTO;
 import com.example.examauth.student_exam.exception.AlreadyRegisteredException;
 import com.example.examauth.student_exam.exception.ExamNotFoundException;
 import com.example.examauth.student_exam.model.ExamRegistration;
-import com.example.examauth.student_exam.model.StudentExam;
 import com.example.examauth.student_exam.repo.ExamRegistrationRepository;
-import com.example.examauth.student_exam.repo.StudentExamRepository;
 import com.example.examauth.service.AiVerificationClientService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +23,6 @@ import java.util.stream.Collectors;
 public class ExamRegistrationService {
 
     private final ExamRegistrationRepository examRegistrationRepository;
-    private final StudentExamRepository studentExamRepository;
     private final com.example.examauth.student_exam.service.NotificationService notificationService;
     private final AiVerificationClientService aiVerificationClientService;
 
@@ -44,20 +41,11 @@ public class ExamRegistrationService {
             throw new IllegalArgumentException("Declaration must be accepted to proceed with registration");
         }
 
-        // 1. Check if Exam exists (Handle UNIVERSITY vs COLLEGE exams)
-        if ("UNIVERSITY".equalsIgnoreCase(request.getExamType())) {
-            com.example.examauth.student_exam.university.model.UniversityExam exam = universityExamRepository
-                    .findById(request.getExamId())
-                    .orElseThrow(() -> new ExamNotFoundException(
-                            "University Exam not found with ID: " + request.getExamId()));
-            examName = exam.getExamName();
-        } else {
-            // Default to StudentExam (College Level)
-            StudentExam exam = studentExamRepository.findById(request.getExamId())
-                    .orElseThrow(
-                            () -> new ExamNotFoundException("College Exam not found with ID: " + request.getExamId()));
-            examName = exam.getExamName();
-        }
+        // 1. Check if Exam exists
+        com.example.examauth.student_exam.university.model.UniversityExam exam = universityExamRepository
+                .findById(request.getExamId())
+                .orElseThrow(() -> new ExamNotFoundException("Exam not found with ID: " + request.getExamId()));
+        examName = exam.getExamName();
 
         // ========== VALIDATION 2: Eligible Subjects Check ==========
         if (request.getSelectedSubjects() != null && !request.getSelectedSubjects().isEmpty()) {
@@ -113,6 +101,9 @@ public class ExamRegistrationService {
         }
         if (request.getPaymentStatus() != null) {
             registration.setPaymentStatus(ExamRegistration.PaymentStatus.valueOf(request.getPaymentStatus()));
+        }
+        if (request.getTotalFee() != null) {
+            registration.setTotalFee(request.getTotalFee());
         }
 
         // Use APPLIED for new workflow, PENDING for backward compatibility
@@ -182,6 +173,12 @@ public class ExamRegistrationService {
         dto.setPrn(registration.getPrn());
         dto.setFullName(registration.getFullName());
         dto.setCourse(registration.getCourse());
+        dto.setExamSession(registration.getExamSession());
+        dto.setSelectedSubjects(registration.getSelectedSubjects());
+        dto.setTotalFee(registration.getTotalFee());
+        dto.setPaymentStatus(
+                registration.getPaymentStatus() != null ? registration.getPaymentStatus().name() : "PENDING");
+        dto.setExamType(registration.getExamType());
         dto.setRegistrationStatus(registration.getRegistrationStatus().name());
         dto.setAppliedDate(registration.getAppliedDate() != null ? registration.getAppliedDate().toString() : null);
         return dto;
@@ -215,7 +212,6 @@ public class ExamRegistrationService {
 
         for (ExamRegistration reg : registrations) {
             if (reg.getRegistrationStatus() == ExamRegistration.RegistrationStatus.APPROVED) {
-                // Try to find the exam and check its date
                 try {
                     com.example.examauth.student_exam.university.model.UniversityExam exam = universityExamRepository
                             .findById(reg.getExamId()).orElse(null);
@@ -223,11 +219,7 @@ public class ExamRegistrationService {
                         upcomingExams++;
                     }
                 } catch (Exception e) {
-                    // If not a university exam, try student exam
-                    StudentExam exam = studentExamRepository.findById(reg.getExamId()).orElse(null);
-                    if (exam != null && exam.getExamDate() != null && exam.getExamDate().isAfter(today)) {
-                        upcomingExams++;
-                    }
+                    log.error("Error fetching exam for stats: {}", e.getMessage());
                 }
             }
         }

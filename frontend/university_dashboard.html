@@ -173,7 +173,7 @@
                         <div class="flex flex-col md:flex-row gap-3">
                             <input type="text" placeholder="Search by Course, Date, or Room..."
                                 class="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                            <button onclick="showModal('create-exam-modal')"
+                            <button id="load-create-exam-btn"
                                 class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/30 flex items-center gap-2 justify-center">
                                 <i class="fas fa-plus"></i> Schedule New Exam
                             </button>
@@ -445,6 +445,9 @@
                     <!-- This section is no longer used in the new design -->
                 </div>
 
+                <!-- SPA Container isolated for CreateExam.js -->
+                <div id="app" class="tab-content hidden space-y-6"></div>
+
             </main>
         </div>
     </div>
@@ -576,6 +579,28 @@
     <script src="js/university/exams.js"></script>
     <script src="js/university/registrations.js"></script>
     <script src="js/university/analytics.js"></script>
+
+    <!-- Safe ES6 Injection of CreateExam -->
+    <script type="module">
+        import CreateExam from './js/pages/CreateExam.js';
+
+        window.loadExamIntoWizard = async function (examId = null) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            const appContainer = document.getElementById('app');
+            appContainer.classList.remove('hidden');
+
+            // Pass the examId; internal fetch & populate will happen if id exists
+            await CreateExam(examId);
+        };
+
+        const scheduleBtn = document.getElementById('load-create-exam-btn');
+        if (scheduleBtn) {
+            scheduleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.loadExamIntoWizard(null);
+            });
+        }
+    </script>
 </body>
 
 </html>

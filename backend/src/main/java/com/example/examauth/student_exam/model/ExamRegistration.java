@@ -42,6 +42,9 @@ public class ExamRegistration {
 
     private LocalDate appliedDate;
 
+    @Column(name = "total_fee")
+    private Double totalFee;
+
     // ========== NEW PROFESSIONAL FIELDS ==========
 
     /**

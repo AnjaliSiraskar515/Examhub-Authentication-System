@@ -27,4 +27,25 @@ public class JwtUtil {
                 .getBody()
                 .getSubject();
     }
+
+    public boolean validateToken(String token, String email) {
+        try {
+            final String extractedEmail = extractUsername(token);
+            return (extractedEmail.equals(email) && !isTokenExpired(token));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    private Date extractExpiration(String token) {
+        return Jwts.parser()
+                .setSigningKey(SECRET_KEY)
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+    }
 }
