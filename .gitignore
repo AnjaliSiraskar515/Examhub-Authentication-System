@@ -2,17 +2,15 @@
 # Maven / Java build files
 backend/target/
 target/
+build/
+uploads/
+uploaded_documents/
 
 # ===== Java / Spring Boot =====
  466aa2a1cf4b8c14fc67c89c4a68974d8435ada7
 *.class
 *.jar
 *.war
-
-# Maven / Gradle build output
-/target
-/backend/target/
-build/
 
 # ===== IDE files =====
 .idea/
@@ -31,6 +29,8 @@ ai_verification/uploads/
 
 # ===== Safety =====
 /backend/**/*.class
+
+FETCH_HEAD
 
 backend/uploaded_documents/
 *.json
