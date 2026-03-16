@@ -1,0 +1,40 @@
+[33m897e5e4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Updated gitignore for project
+[33m5591e7d[m Resolved merge conflict
+[33m612a0c2[m Cleaned project structure and removed duplicate module
+[33m466aa2a[m Merge pull request #8 from AnjaliSiraskar515/UI_changes
+[33m9de79b9[m[33m ([m[1;31morigin/UI_changes[m[33m)[m authentication improvement
+[33me86b25d[m Merge pull request #7 from AnjaliSiraskar515/UI_changes
+[33m7d75104[m UI improvements
+[33m8728f1b[m Merge pull request #6 from AnjaliSiraskar515/super_admin_dashboard_update
+[33m5e18b9f[m[33m ([m[1;31morigin/super_admin_dashboard_update[m[33m)[m Remove uploaded files and local scripts from repository
+[33mc7e4b64[m Minor fixes before rebase
+[33m9a10aec[m Update super admin dashboard UI improvements
+[33mf871bf2[m Merge pull request #5 from AnjaliSiraskar515/super_admin_dashboard_update
+[33m5187416[m Merge pull request #4 from AnjaliSiraskar515/jdk_update
+[33m0f5e5b8[m Restore and finalize dashboard + backend updates
+[33m9cd163b[m[33m ([m[1;31morigin/jdk_update[m[33m)[m Add JDK utility scripts and student data files
+[33m64b9725[m Merge pull request #3 from AnjaliSiraskar515/super_admin_dashboard_update
+[33mfd11019[m Super Admin Dashboard Update
+[33mf024ae7[m[33m ([m[1;31morigin/feature-srushti-work[m[33m)[m Resolve .gitignore conflict after removing compiled files
+[33m5b501fb[m Remove compiled files from repo and ignore target directory
+[33m217e9f9[m updation in biomatric
+[33mdcd35b2[m Merge pull request #2 from AnjaliSiraskar515/doc-verification
+[33m676e96f[m Resolve merge conflicts by removing compiled files
+[33m50d3e27[m Remove compiled files from git tracking and ignore target directory
+[33m919afaa[m Fix conflicts: remove compiled files and ignore target directory
+[33m3be92a9[m Remove compiled files and add gitignore
+[33m52b24dd[m Cleanup: remove compiled files and prepare doc-verification for merge
+[33m5e49175[m doc-verification module
+[33m82864cd[m updated supervisor dashboard
+[33m0a4da51[m updated supervisor dashboard
+[33maa4ff76[m camera permission accessed
+[33mb9d93de[m[33m ([m[1;32msnehal[m[33m, [m[1;32mfeature-university-exam-module[m[33m)[m qe code creation completed
+[33m0f367b4[m[33m ([m[1;31morigin/qrcode-module[m[33m)[m Add secure QR code generation and verification module
+[33m63ac5cb[m deleted unactive backend folder
+[33m5e746ad[m Fix OTP flow and restore email-based login
+[33mb00949d[m (otp part completed)
+[33m37e6c63[m Add gitignore and remove build/zip files
+[33m1008277[m[33m ([m[1;31morigin/otppart1-complete[m[33m)[m Update frontend authentication UI
+[33ma08cdb6[m Merge branch 'main' of https://github.com/AnjaliSiraskar515/final-year-project
+[33m9255f40[m Initial project upload
+[33m19403cf[m Initial commit
