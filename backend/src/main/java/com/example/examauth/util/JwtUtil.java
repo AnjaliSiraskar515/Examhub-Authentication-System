@@ -21,28 +21,31 @@ public class JwtUtil {
     }
 
     public String extractUsername(String token) {
-        return extractClaim(token, io.jsonwebtoken.Claims::getSubject);
+        return Jwts.parser()
+                .setSigningKey(SECRET_KEY)
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
     }
 
-    public Date extractExpiration(String token) {
-        return extractClaim(token, io.jsonwebtoken.Claims::getExpiration);
+    public boolean validateToken(String token, String email) {
+        try {
+            final String extractedEmail = extractUsername(token);
+            return (extractedEmail.equals(email) && !isTokenExpired(token));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
-    public <T> T extractClaim(String token, java.util.function.Function<io.jsonwebtoken.Claims, T> claimsResolver) {
-        final io.jsonwebtoken.Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    private io.jsonwebtoken.Claims extractAllClaims(String token) {
-        return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
-    }
-
-    private Boolean isTokenExpired(String token) {
+    private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    public Boolean validateToken(String token, String email) {
-        final String username = extractUsername(token);
-        return (username.equals(email) && !isTokenExpired(token));
+    private Date extractExpiration(String token) {
+        return Jwts.parser()
+                .setSigningKey(SECRET_KEY)
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
     }
 }

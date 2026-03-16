@@ -1,0 +1,1 @@
+import io.jsonwebtoken.Jwts; public class Test2 { public static void main(String[] args) { try { Jwts.parser().parseClaimsJws("mock-token-xyz"); } catch(Exception e) { System.out.println("Result for NO periods: " + e.getMessage()); } try { Jwts.parser().parseClaimsJws("1.2.3.4.5.6.7"); } catch(Exception e) { System.out.println("Result for 6 periods: " + e.getMessage()); } } }

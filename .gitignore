@@ -1,4 +1,10 @@
+ HEAD
+# Maven / Java build files
+backend/target/
+target/
+
 # ===== Java / Spring Boot =====
+ 466aa2a1cf4b8c14fc67c89c4a68974d8435ada7
 *.class
 *.jar
 *.war

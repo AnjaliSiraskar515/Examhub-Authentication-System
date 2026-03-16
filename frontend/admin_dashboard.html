@@ -1,333 +1,1474 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - ExamHub</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>University Administration Dashboard (Enhanced)</title>
   <style>
+    /* --- CSS Variables for Theme Colors --- */
     :root {
-      --primary: #2563eb;
-      --teal: #14b8a6;
-      --bg: #f8fafc;
+      --color-primary: #1e3a8a;
+      /* Deep Blue */
+      --color-secondary: #3b82f6;
+      /* Brighter Blue */
+      --color-light-bg: #f0f4f8;
+      /* Lighter background */
+      --color-white: #ffffff;
+      --color-text-dark: #1f2937;
+      --color-text-gray: #6b7280;
+      --color-hover-light: #dbeafe;
+      /* Light Blue Hover */
     }
-    body { background: var(--bg); font-family: Inter, ui-sans-serif, system-ui; }
-    .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-    .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+
+    /* --- Base Styles and Typography --- */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--color-light-bg);
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      body {
+        padding: 2rem;
+      }
+    }
+
+    .main-container {
+      max-width: 80rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* --- Utility & Component Base Styles --- */
+    .card {
+      background-color: var(--color-white);
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+      margin-bottom: 2rem;
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15);
+    }
+
+    .text-primary {
+      color: var(--color-primary);
+    }
+
+    .text-secondary {
+      color: var(--color-secondary);
+    }
+
+    .font-extrabold {
+      font-weight: 800;
+    }
+
+    .font-semibold {
+      font-weight: 600;
+    }
+
+    .title-section {
+      border-bottom: 2px solid var(--color-hover-light);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.5rem;
+      font-size: 1.75rem;
+    }
+
+    /* --- Tab Content Visibility & Animation --- */
+    .tab-content-section {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* --- Horizontal Navigation Tabs --- */
+    .nav-tabs {
+      display: flex;
+      flex-direction: column;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      background-color: var(--color-primary);
+    }
+
+    @media (min-width: 768px) {
+      .nav-tabs {
+        flex-direction: row;
+      }
+    }
+
+    .tab-btn {
+      flex-grow: 1;
+      padding: 1rem 1rem;
+      text-align: center;
+      font-weight: 600;
+      color: #d1d5db;
+      background-color: var(--color-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .tab-btn:last-child {
+      border-bottom: none;
+    }
+
+    .tab-btn:hover:not(.active) {
+      background-color: #1a3275;
+      color: var(--color-white);
+    }
+
+    /* Active Tab Styling */
+    .tab-btn.active {
+      color: var(--color-white);
+      background-color: #12285a;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      border-bottom: 4px solid var(--color-secondary) !important;
+    }
+
+    .tab-btn.active:not(:last-child) {
+      border-bottom: 4px solid var(--color-secondary) !important;
+    }
+
+    /* --- Stat Cards (Grid Layout) --- */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .stat-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .stat-card {
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border-width: 1px;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card p:first-child {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .stat-card p:last-child {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    /* Specific Card Colors (Keeping consistency) */
+    .bg-blue-50 {
+      background-color: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .text-blue-700 {
+      color: #1d4ed8;
+    }
+
+    .text-blue-900 {
+      color: #1e40af;
+    }
+
+    .bg-green-50 {
+      background-color: #f0fdf4;
+      border-color: #dcfce7;
+      color: #15803d;
+    }
+
+    .text-green-700 {
+      color: #15803d;
+    }
+
+    .text-green-900 {
+      color: #065f46;
+    }
+
+    .bg-yellow-50 {
+      background-color: #fffbeb;
+      border-color: #fef3c7;
+      color: #b45309;
+    }
+
+    .text-yellow-700 {
+      color: #b45309;
+    }
+
+    .text-yellow-900 {
+      color: #92400e;
+    }
+
+    .bg-indigo-50 {
+      background-color: #eef2ff;
+      border-color: #c7d2fe;
+      color: #4338ca;
+    }
+
+    .text-indigo-700 {
+      color: #4338ca;
+    }
+
+    .text-indigo-900 {
+      color: #3730a3;
+    }
+
+    .bg-red-50 {
+      background-color: #fef2f2;
+      border-color: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .text-red-700 {
+      color: #b91c1c;
+    }
+
+    .text-red-900 {
+      color: #991b1b;
+    }
+
+    .bg-lime-50 {
+      background-color: #f7fee7;
+      border-color: #ecfccb;
+      color: #4d7c0f;
+    }
+
+    .text-lime-700 {
+      color: #4d7c0f;
+    }
+
+    .text-lime-900 {
+      color: #3f6212;
+    }
+
+    .bg-purple-50 {
+      background-color: #faf5ff;
+      border-color: #ddd6fe;
+      color: #7c3aed;
+    }
+
+    .text-purple-700 {
+      color: #7c3aed;
+    }
+
+    .text-purple-900 {
+      color: #6d28d9;
+    }
+
+    .bg-orange-50 {
+      background-color: #fff7ed;
+      border-color: #fed7aa;
+      color: #c2410c;
+    }
+
+    .text-orange-700 {
+      color: #c2410c;
+    }
+
+    .text-orange-900 {
+      color: #9a3412;
+    }
+
+    .bg-pink-50 {
+      background-color: #fdf2f8;
+      border-color: #fbcfe8;
+      color: #be185d;
+    }
+
+    .text-pink-700 {
+      color: #be185d;
+    }
+
+    .text-pink-900 {
+      color: #9d174d;
+    }
+
+
+    /* --- Standard Buttons & Inputs --- */
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: var(--color-white);
+      font-weight: 700;
+      padding: 0.65rem 1.25rem;
+      border-radius: 0.5rem;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      border: none;
+    }
+
+    .btn-primary:hover {
+      background-color: #1a3275;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    .input-field {
+      flex-grow: 1;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 0.5rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .input-field:focus {
+      border-color: var(--color-secondary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    /* --- Data Table Controls (New Feature Layout) --- */
+    .data-controls-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .data-controls-row {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .data-controls-left,
+    .data-controls-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .select-entries {
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.5rem;
+    }
+
+    /* --- Filter Buttons (Shared Style) --- */
+    .filter-header {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--color-text-dark);
+      margin-bottom: 0.75rem;
+    }
+
+    .filter-buttons-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-btn {
+      padding: 0.375rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+      background-color: #e5e7eb;
+      color: #4b5563;
+    }
+
+    .filter-btn:hover:not(.active-filter) {
+      background-color: #d1d5db;
+      color: var(--color-text-dark);
+    }
+
+    .filter-btn.active-filter {
+      background-color: var(--color-secondary);
+      color: var(--color-white);
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.4);
+    }
+
+    /* --- Table Styles --- */
+    .table-container {
+      overflow-x: auto;
+      background-color: #f9fafb;
+      border-radius: 0.5rem;
+    }
+
+    .data-table {
+      min-width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table thead {
+      background-color: #eef2ff;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 1rem 1.5rem;
+      text-align: left;
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+
+    .data-table th {
+      font-weight: 600;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Sortable Header Styles */
+    .data-table th.sortable {
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+      transition: background-color 0.15s;
+    }
+
+    .data-table th.sortable:hover {
+      background-color: #e0e7ff;
+    }
+
+    .data-table th.sortable:after {
+      content: '';
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid var(--color-text-gray);
+      opacity: 0.3;
+    }
+
+    .data-table th.sortable.asc:after {
+      border-bottom: 5px solid var(--color-primary);
+      border-top: none;
+      opacity: 1;
+    }
+
+    .data-table th.sortable.desc:after {
+      border-top: 5px solid var(--color-primary);
+      border-bottom: none;
+      opacity: 1;
+    }
+
+    .data-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .data-table tbody tr:hover {
+      background-color: #fef2f2;
+    }
+
+    .data-table a {
+      color: var(--color-secondary);
+      font-weight: 500;
+    }
+
+    .data-table a:hover {
+      text-decoration: underline;
+    }
+
+    /* Pagination Footer Styles */
+    .pagination-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid #eef2ff;
+      background-color: #f9fafb;
+      border-radius: 0 0 0.5rem 0.5rem;
+      font-size: 0.875rem;
+      color: var(--color-text-gray);
+    }
+
+    .pagination-btn {
+      padding: 0.3rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.25rem;
+      background-color: var(--color-white);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background-color: #eef2ff;
+      border-color: var(--color-secondary);
+    }
+
+    .pagination-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    /* Status Badges */
+    .badge {
+      display: inline-flex;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 9999px;
+    }
+
+    .badge-green {
+      background-color: #dcfce7;
+      color: #047857;
+    }
+
+    .badge-yellow {
+      background-color: #fef3c7;
+      color: #b45309;
+    }
+
+    .badge-red {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .badge-blue {
+      background-color: #eff6ff;
+      color: #1e40af;
+    }
+
+    /* --- Progress Bar (Exams) --- */
+    .progress-component {
+      background-color: var(--color-white);
+      border-color: #e0e7ff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid;
+    }
+
+    .progress-container {
+      width: 90%;
+      background-color: #e5e7eb;
+      border-radius: 9999px;
+      height: 1.5rem;
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-top: 0.5rem;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: var(--color-secondary);
+      transition: width 0.5s ease-in-out;
+    }
   </style>
 </head>
-<body class="min-h-screen">
 
-  <!-- Header -->
-  <header class="bg-white shadow-sm border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <svg class="w-10 h-10" viewBox="0 0 54 54" fill="none">
-          <rect x="8" y="8" width="38" height="32" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
-          <path d="M27 7L42 14L27 21L12 14L27 7Z" fill="#14b8a6" stroke="#14b8a6" stroke-width="1"/>
+<body>
+
+  <div class="main-container">
+    <!-- Dashboard Header -->
+    <header class="card" style="border-top: 5px solid var(--color-primary);">
+      <h1 class="text-3xl font-extrabold text-primary" style="display: flex; align-items: center;">
+        <svg style="width: 2rem; height: 2rem; margin-right: 0.75rem; color: var(--color-secondary);" fill="none"
+          stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+          </path>
         </svg>
-        <div>
-          <h1 class="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
-          <p class="text-sm text-gray-500">ExamHub - Secure Authentication System</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-4">
-        <button onclick="openProfileModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">My Profile</button>
-        <div class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-semibold">A</div>
-      </div>
-    </div>
-  </header>
+        University Admin Panel
+      </h1>
+      <p style="color: var(--color-text-gray); margin-top: 0.25rem;">Centralized control for academic and
+        personnel resources.</p>
+    </header>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      <div class="stat-card p-6 rounded-lg">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-indigo-100">Total Users</p>
-            <p class="text-2xl font-bold" id="statUsers">--</p>
-          </div>
-          <i class="fas fa-users text-3xl text-indigo-200"></i>
-        </div>
-      </div>
-      <div class="stat-card p-6 rounded-lg">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-indigo-100">Institutions</p>
-            <p class="text-2xl font-bold" id="statInstitutions">--</p>
-          </div>
-          <i class="fas fa-building text-3xl text-indigo-200"></i>
-        </div>
-      </div>
-      <div class="stat-card p-6 rounded-lg">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-indigo-100">Exams</p>
-            <p class="text-2xl font-bold" id="statExams">--</p>
-          </div>
-          <i class="fas fa-file-alt text-3xl text-indigo-200"></i>
-        </div>
-      </div>
-      <div class="stat-card p-6 rounded-lg">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-indigo-100">Pending Approvals</p>
-            <p class="text-2xl font-bold" id="statPending">--</p>
-          </div>
-          <i class="fas fa-clock text-3xl text-indigo-200"></i>
-        </div>
-      </div>
+    <!-- Horizontal Navigation Menu (Tabs) -->
+    <div style="margin-bottom: 1.5rem; padding: 0; overflow: hidden; border-radius: 0.75rem;">
+      <nav class="nav-tabs" id="dashboard-tabs">
+        <button data-tab="exam" class="tab-btn active" onclick="showTab('exam')">
+          Manage Exams
+        </button>
+        <button data-tab="students" class="tab-btn" onclick="showTab('students')">
+          Manage Students
+        </button>
+        <button data-tab="staff" class="tab-btn" onclick="showTab('staff')">
+          Manage Staff
+        </button>
+      </nav>
     </div>
 
-    <!-- Main Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <!-- Institutions -->
-      <div class="card p-6">
-        <h2 class="text-2xl font-semibold mb-6 text-gray-900"><i class="fas fa-building mr-2"></i> Institutions</h2>
-        <div id="institutions" class="space-y-4">
-          <!-- Dynamic content -->
+    <!-- Content Area -->
+    <main id="content-area">
+
+      <!-- 1. Manage Exam Content -->
+      <div id="exam-content" class="tab-content-section card">
+        <h2 class="text-2xl font-semibold text-primary title-section">Manage Exams & Scheduling</h2>
+
+        <div class="stat-grid">
+          <!-- Stat Card 1 -->
+          <div class="stat-card bg-blue-50">
+            <p class="text-blue-700">Upcoming Exams</p>
+            <p class="text-3xl text-blue-900" id="exam-stat-upcoming">--</p>
+          </div>
+          <!-- Stat Card 2 -->
+          <div class="stat-card bg-green-50">
+            <p class="text-green-700">Evaluations Due</p>
+            <p class="text-3xl text-green-900" id="exam-stat-evals">--</p>
+          </div>
+          <!-- Stat Card 3: PROGRESS BAR -->
+          <div class="progress-component bg-yellow-50">
+            <h3 class="font-semibold text-lg text-yellow-700">Semester Completion</h3>
+            <div class="progress-container">
+              <div id="exam-progress-bar" class="progress-bar" style="width: 75%;"></div>
+            </div>
+            <p style="text-align: center; margin-top: 0.5rem; color: var(--color-text-gray); font-size: 0.875rem;">
+              <span id="progress-value">75%</span> of scheduled exams completed.
+            </p>
+          </div>
+        </div>
+
+        <!-- Exam Filters -->
+        <div style="margin-bottom: 2rem;">
+          <h3 class="filter-header">Filter by Exam Status:</h3>
+          <div id="exam-filters" class="filter-buttons-group">
+            <!-- Filter Buttons -->
+            <button class="filter-btn" data-filter-type="status" data-filter-value="all"
+              onclick="applyFilter('exam-list-body', 'exam-search-input', 'status', 'all', this)">All
+              Statuses</button>
+            <button class="filter-btn" data-filter-type="status" data-filter-value="upcoming"
+              onclick="applyFilter('exam-list-body', 'exam-search-input', 'status', 'upcoming', this)">Upcoming</button>
+            <button class="filter-btn" data-filter-type="status" data-filter-value="completed"
+              onclick="applyFilter('exam-list-body', 'exam-search-input', 'status', 'completed', this)">Completed</button>
+            <button class="filter-btn" data-filter-type="status" data-filter-value="draft"
+              onclick="applyFilter('exam-list-body', 'exam-search-input', 'status', 'draft', this)">Draft</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <input type="text" id="exam-search-input" placeholder="Search by Course, Date, or Room..."
+              class="input-field" onkeyup="applyFilter('exam-list-body', 'exam-search-input', 'status', null, null)">
+            <button onclick="openModal('exam')" class="btn-primary"
+              style="background-color: var(--color-secondary); align-self: flex-start; min-width: 120px;">
+              + Schedule New Exam
+            </button>
+          </div>
+          <script>
+            if (window.innerWidth < 640) {
+              document.querySelector('#exam-content .btn-primary').style.width = '100%';
+            }
+          </script>
+        </div>
+
+
+        <!-- Mock Exam List -->
+        <h3 class="text-xl font-semibold" style="margin-top: 1rem; margin-bottom: 1rem; color: var(--color-text-gray);">
+          Current Semester
+          Schedule</h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Room</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="exam-list-body">
+              <!-- Rows will be dynamically injected by JavaScript -->
+              <tr>
+                <td colspan="6" class="text-center p-4">Loading exams...</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- Users -->
-      <div class="card p-6">
-        <h2 class="text-2xl font-semibold mb-6 text-gray-900"><i class="fas fa-users mr-2"></i> Users</h2>
-        <div id="users" class="space-y-4">
-          <!-- Dynamic content -->
+      <!-- 2. Manage Students Content - ENHANCED DATA TABLE -->
+      <div id="students-content" class="tab-content-section card">
+        <h2 class="text-2xl font-semibold text-primary title-section">Manage Student Enrollment</h2>
+
+        <div class="stat-grid">
+          <!-- Stat Card 1 -->
+          <div class="stat-card bg-indigo-50">
+            <p class="text-indigo-700">Total Enrollment</p>
+            <p class="text-3xl text-indigo-900">1,248</p>
+          </div>
+          <!-- Stat Card 2 -->
+          <div class="stat-card bg-red-50">
+            <p class="text-red-700">Fees Overdue</p>
+            <p class="text-3xl text-red-900">86</p>
+          </div>
+          <!-- Stat Card 3 -->
+          <div class="stat-card bg-lime-50">
+            <p class="text-lime-700">New Applications (Pending)</p>
+            <p class="text-3xl text-lime-900">15</p>
+          </div>
+        </div>
+
+        <!-- Student Filters (Class Year) -->
+        <div style="margin-bottom: 2rem;">
+          <h3 class="filter-header">Filter by Class Year:</h3>
+          <div id="class-filters" class="filter-buttons-group">
+            <!-- Filter Buttons -->
+            <button class="filter-btn" data-filter-type="class" data-filter-value="all"
+              onclick="updateStudentFilters('class', 'all', this)">All Years</button>
+            <button class="filter-btn" data-filter-type="class" data-filter-value="first"
+              onclick="updateStudentFilters('class', 'first', this)">First Year</button>
+            <button class="filter-btn" data-filter-type="class" data-filter-value="second"
+              onclick="updateStudentFilters('class', 'second', this)">Second Year</button>
+            <button class="filter-btn" data-filter-type="class" data-filter-value="third"
+              onclick="updateStudentFilters('class', 'third', this)">Third Year</button>
+            <button class="filter-btn" data-filter-type="class" data-filter-value="fourth"
+              onclick="updateStudentFilters('class', 'fourth', this)">Fourth Year</button>
+          </div>
+        </div>
+
+        <!-- New Data Table Controls (Entries per page, Search) -->
+        <div class="data-controls-row">
+          <div class="data-controls-left">
+            <label for="students-entries">Show</label>
+            <select id="students-entries" class="select-entries" onchange="updateStudentFilters('entries', this.value)">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+            <label for="students-entries">entries</label>
+          </div>
+          <div class="data-controls-right">
+            <input type="text" id="students-search-input" placeholder="Search: ID, Name, Major..." class="input-field"
+              style="max-width: 250px;" onkeyup="updateStudentFilters('search', this.value)">
+            <button onclick="openModal('student')" class="btn-primary" style="min-width: 120px;">
+              + Add Student
+            </button>
+          </div>
+        </div>
+
+
+        <!-- Student List Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="sortable" data-sort-key="id" onclick="sortStudentTable(this)">ID</th>
+                <th class="sortable" data-sort-key="name" onclick="sortStudentTable(this)">Name</th>
+                <th class="sortable" data-sort-key="year" onclick="sortStudentTable(this)">Year</th>
+                <th class="sortable" data-sort-key="major" onclick="sortStudentTable(this)">Major</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="students-list-body">
+              <!-- Rows will be dynamically injected by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Footer -->
+        <div id="students-pagination-footer" class="pagination-footer">
+          <div id="students-info">Showing 1 to 10 of 12 entries</div>
+          <div id="students-pagination">
+            <button class="pagination-btn" onclick="updateStudentFilters('page', 'prev')">Previous</button>
+            <button class="pagination-btn" onclick="updateStudentFilters('page', 'next')">Next</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Exams -->
-    <div class="card p-6 mt-8">
-      <h2 class="text-2xl font-semibold mb-6 text-gray-900"><i class="fas fa-file-alt mr-2"></i> Exams</h2>
-      <div id="exams" class="space-y-4">
-        <!-- Dynamic content -->
+      <!-- 3. Manage Staff Content - UPDATED WITH DATATABLE FUNCTIONALITY -->
+      <div id="staff-content" class="tab-content-section card">
+        <h2 class="text-2xl font-semibold text-primary title-section">Manage Staff & Faculty</h2>
+
+        <div class="stat-grid">
+          <!-- Stat Card 1 -->
+          <div class="stat-card bg-purple-50">
+            <p class="text-purple-700">Full-Time Faculty</p>
+            <p class="text-3xl text-purple-900">150</p>
+          </div>
+          <!-- Stat Card 2 -->
+          <div class="stat-card bg-orange-50">
+            <p class="text-orange-700">Admin/Support Staff</p>
+            <p class="text-3xl text-orange-900">42</p>
+          </div>
+          <!-- Stat Card 3 -->
+          <div class="stat-card bg-pink-50">
+            <p class="text-pink-700">Open Positions</p>
+            <p class="text-3xl text-pink-900">5</p>
+          </div>
+        </div>
+
+        <!-- Staff Filters (Department) -->
+        <div style="margin-bottom: 2rem;">
+          <h3 class="filter-header">Filter by Department:</h3>
+          <div id="department-filters" class="filter-buttons-group">
+            <!-- Filter Buttons -->
+            <button class="filter-btn" data-filter-type="department" data-filter-value="all"
+              onclick="updateStaffFilters('department', 'all', this)">All Departments</button>
+            <button class="filter-btn" data-filter-type="department" data-filter-value="cs"
+              onclick="updateStaffFilters('department', 'cs', this)">Computer Science</button>
+            <button class="filter-btn" data-filter-type="department" data-filter-value="admin"
+              onclick="updateStaffFilters('department', 'admin', this)">Administration</button>
+            <button class="filter-btn" data-filter-type="department" data-filter-value="finance"
+              onclick="updateStaffFilters('department', 'finance', this)">Finance</button>
+            <button class="filter-btn" data-filter-type="department" data-filter-value="humanities"
+              onclick="updateStaffFilters('department', 'humanities', this)">Humanities</button>
+          </div>
+        </div>
+
+        <!-- Data Table Controls (Entries per page, Search) -->
+        <div class="data-controls-row">
+          <div class="data-controls-left">
+            <label for="staff-entries">Show</label>
+            <select id="staff-entries" class="select-entries" onchange="updateStaffFilters('entries', this.value)">
+              <option value="5" selected>5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+            </select>
+            <label for="staff-entries">entries</label>
+          </div>
+          <div class="data-controls-right">
+            <input type="text" id="staff-search-input" placeholder="Search: ID, Name, Role..." class="input-field"
+              style="max-width: 250px;" onkeyup="updateStaffFilters('search', this.value)">
+            <button onclick="openModal('staff')" class="btn-primary"
+              style="background-color: #16a34a; min-width: 120px;">
+              + Onboard New Staff
+            </button>
+          </div>
+        </div>
+
+        <!-- Staff Directory Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="sortable" data-sort-key="id" onclick="sortStaffTable(this)">Employee ID</th>
+                <th class="sortable" data-sort-key="name" onclick="sortStaffTable(this)">Name</th>
+                <th class="sortable" data-sort-key="department" onclick="sortStaffTable(this)">
+                  Department</th>
+                <th class="sortable" data-sort-key="role" onclick="sortStaffTable(this)">Role</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="staff-list-body">
+              <!-- Rows will be dynamically injected by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Footer -->
+        <div id="staff-pagination-footer" class="pagination-footer">
+          <div id="staff-info">Showing 1 to 5 of 10 entries</div>
+          <div id="staff-pagination">
+            <button class="pagination-btn" onclick="updateStaffFilters('page', 'prev')">Previous</button>
+            <button class="pagination-btn" onclick="updateStaffFilters('page', 'next')">Next</button>
+          </div>
+        </div>
       </div>
-    </div>
+
   </div>
 
-  <!-- Profile Modal -->
-  <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-      <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-semibold text-gray-900">My Profile</h2>
-            <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600" title="Close modal">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
+  <!-- Modals Overlay -->
+  <div id="modal-overlay"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center;">
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label class="block text-sm font-medium text-red-600 mb-2">Name *</label>
-              <input type="text" id="profileName" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Admin Name" aria-label="Admin Name">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-red-600 mb-2">Email *</label>
-              <input type="email" id="profileEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Admin Email" aria-label="Admin Email">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-red-600 mb-2">Phone Number *</label>
-              <input type="tel" id="profilePhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly placeholder="Admin Phone Number" aria-label="Admin Phone Number">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-red-600 mb-2">Passport Photo *</label>
-              <input type="file" id="passportFile" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Passport Photo">
-              <span id="passportStatus" class="text-sm text-gray-500">Not uploaded</span>
-            </div>
-          </div>
-
-          <div class="mb-6">
-            <h3 class="text-lg font-semibold mb-4">Document Upload</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-red-600 mb-2">Aadhar Card *</label>
-                <input type="file" id="aadharFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Aadhar Card file">
-                <span id="aadharStatus" class="text-sm text-gray-500">Not uploaded</span>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-red-600 mb-2">10th Marksheet *</label>
-                <input type="file" id="marks10File" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 10th Marksheet file">
-                <span id="marks10Status" class="text-sm text-gray-500">Not uploaded</span>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-red-600 mb-2">12th Marksheet *</label>
-                <input type="file" id="marks12File" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 12th Marksheet file">
-                <span id="marks12Status" class="text-sm text-gray-500">Not uploaded</span>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">UG Certificate (Optional)</label>
-                <input type="file" id="ugFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose UG Certificate file">
-                <span id="ugStatus" class="text-sm text-gray-500">Not uploaded</span>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">PG Certificate (Optional)</label>
-                <input type="file" id="pgFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose PG Certificate file">
-                <span id="pgStatus" class="text-sm text-gray-500">Not uploaded</span>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-red-600 mb-2">Biometric Data *</label>
-                <input type="file" id="biometricFile" accept="image/*,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Biometric Data file">
-                <span id="biometricStatus" class="text-sm text-gray-500">Not uploaded</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex space-x-4">
-            <button onclick="uploadDocuments()" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-              Upload Documents
-            </button>
-            <button onclick="completeProfile()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-              Complete Profile
-            </button>
+    <!-- Exam Modal -->
+    <div id="exam-modal" class="card" style="display: none; width: 100%; max-width: 500px;">
+      <h2 class="text-2xl font-semibold text-primary mb-4">Schedule New Exam</h2>
+      <form onsubmit="handleExamSubmit(event)">
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <input type="text" name="examName" placeholder="Exam Name" class="input-field" required>
+          <input type="date" name="date" class="input-field" required>
+          <input type="time" name="startTime" class="input-field" required>
+          <input type="number" name="durationMinutes" placeholder="Duration (Minutes)" class="input-field" required>
+          <input type="text" name="location" placeholder="Location/Room" class="input-field" required>
+          <select name="mode" class="input-field" required>
+            <option value="Offline">Offline</option>
+            <option value="Online">Online</option>
+          </select>
+          <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+            <button type="button" onclick="closeModals()" class="filter-btn">Cancel</button>
+            <button type="submit" class="btn-primary">Schedule</button>
           </div>
         </div>
-      </div>
+      </form>
+    </div>
+
+    <!-- Student Modal -->
+    <div id="student-modal" class="card" style="display: none; width: 100%; max-width: 500px;">
+      <h2 class="text-2xl font-semibold text-primary mb-4">Add New Student</h2>
+      <form onsubmit="handleStudentSubmit(event)">
+        <input type="hidden" name="role" value="student">
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <input type="text" name="name" placeholder="Full Name" class="input-field" required>
+          <input type="email" name="email" placeholder="Email Address" class="input-field" required>
+          <input type="password" name="password" placeholder="Default Password" class="input-field" required>
+          <input type="text" name="username" placeholder="Student ID / Roll No" class="input-field" required>
+          <select name="year" class="input-field" required>
+            <option value="first">First Year</option>
+            <option value="second">Second Year</option>
+            <option value="third">Third Year</option>
+            <option value="fourth">Fourth Year</option>
+          </select>
+          <input type="text" name="major" placeholder="Major (e.g. CS)" class="input-field" required>
+          <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+            <button type="button" onclick="closeModals()" class="filter-btn">Cancel</button>
+            <button type="submit" class="btn-primary">Add Student</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Staff Modal -->
+    <div id="staff-modal" class="card" style="display: none; width: 100%; max-width: 500px;">
+      <h2 class="text-2xl font-semibold text-primary mb-4">Onboard Staff</h2>
+      <form onsubmit="handleStaffSubmit(event)">
+        <input type="hidden" name="role" value="staff">
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <input type="text" name="name" placeholder="Full Name" class="input-field" required>
+          <input type="email" name="email" placeholder="Email Address" class="input-field" required>
+          <input type="password" name="password" placeholder="Default Password" class="input-field" required>
+          <input type="text" name="phone" placeholder="Phone Number" class="input-field">
+          <select name="department" class="input-field" required>
+            <option value="cs">Computer Science</option>
+            <option value="admin">Administration</option>
+            <option value="finance">Finance</option>
+            <option value="humanities">Humanities</option>
+          </select>
+          <input type="text" name="major" placeholder="Job Title (e.g. Professor)" class="input-field" required>
+          <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+            <button type="button" onclick="closeModals()" class="filter-btn">Cancel</button>
+            <button type="submit" class="btn-primary">Onboard</button>
+          </div>
+        </div>
+      </form>
+    </div>
+    <!-- Assign Supervisor Modal -->
+    <div id="assign-supervisor-modal" class="card" style="display: none; width: 100%; max-width: 500px;">
+      <h2 class="text-2xl font-semibold text-primary mb-4">Assign Supervisor</h2>
+      <form onsubmit="handleSupervisorAssignSubmit(event)">
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <label class="text-sm font-semibold text-gray-700">Select Supervisor</label>
+          <select name="supervisorId" class="input-field" required>
+            <option value="">-- Loading Supervisors --</option>
+          </select>
+          <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+            <button type="button" onclick="closeModals()" class="filter-btn">Cancel</button>
+            <button type="submit" class="btn-primary">Assign</button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
-
-  <!-- Footer -->
-  <footer class="bg-white border-t border-gray-200 mt-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-gray-500 text-sm">
-      © 2025 ExamHub Platform. All rights reserved.
-    </div>
-  </footer>
 
   <script>
-    async function loadStats() {
-      try {
-        const [usersRes, instRes, examsRes] = await Promise.all([
-          fetch('/api/auth/stats'),
-          fetch('/api/institution/all'),
-          fetch('/api/exam/all')
-        ]);
-        const users = await usersRes.json();
-        const institutions = await instRes.json();
-        const exams = await examsRes.json();
+    // --- DATA ---
+    let initialStudentData = [];
+    let initialStaffData = [];
+    let initialExamData = [];
+    let selectedExamIdForAssignment = null;
 
-        document.getElementById('statUsers').textContent = users.length;
-        document.getElementById('statInstitutions').textContent = institutions.length;
-        document.getElementById('statExams').textContent = exams.length;
-        document.getElementById('statPending').textContent = institutions.filter(i => i.status === 'pending').length;
-      } catch (error) {
-        console.error('Failed to load stats:', error);
-      }
-    }
+    // --- UNIVERSAL FILTER STATE ---
+    const activeFilters = {
+      exam: { type: 'status', value: 'all' },
+      staff: { type: 'department', value: 'all', search: '', perPage: 5, page: 1, sortBy: 'id', sortDir: 'asc' },
+      students: { type: 'class', value: 'all', search: '', perPage: 10, page: 1, sortBy: 'id', sortDir: 'asc' }
+    };
 
-    async function loadInstitutions() {
-      try {
-        const res = await fetch('/api/institution/all');
-        const institutions = await res.json();
-        const container = document.getElementById('institutions');
-        container.innerHTML = '';
+    // --- API & INITIALIZATION ---
+    const API_BASE = '/api';
+    const UNIVERSITY_ID = 1; // Hardcoded strictly for demo
 
-        institutions.forEach(inst => {
-          const div = document.createElement('div');
-          div.className = 'flex items-center justify-between p-4 border rounded-lg';
-          div.innerHTML = `
-            <div>
-              <h3 class="font-semibold">${inst.name}</h3>
-              <p class="text-sm text-gray-600">${inst.contactEmail}</p>
-            </div>
-            <div>
-              <span class="px-2 py-1 text-xs rounded ${inst.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${inst.status}</span>
-              ${inst.status === 'pending' ? `<button onclick="approveInstitution(${inst.institutionId})" class="ml-2 px-3 py-1 bg-teal-600 text-white rounded text-sm">Approve</button>` : ''}
-            </div>
-          `;
-          container.appendChild(div);
-        });
-      } catch (error) {
-        console.error('Failed to load institutions:', error);
-      }
-    }
-
-    async function approveInstitution(id) {
-      try {
-        await fetch(`/api/institution/approve/${id}`, { method: 'POST' });
-        loadInstitutions();
-        loadStats();
-      } catch (error) {
-        console.error('Failed to approve:', error);
-      }
-    }
-
-    async function loadUsers() {
-      try {
-        const res = await fetch('/api/auth/users');
-        const users = await res.json();
-        const container = document.getElementById('users');
-        container.innerHTML = '';
-
-        users.forEach(user => {
-          const div = document.createElement('div');
-          div.className = 'flex items-center justify-between p-4 border rounded-lg';
-          div.innerHTML = `
-            <div>
-              <h3 class="font-semibold">${user.name}</h3>
-              <p class="text-sm text-gray-600">${user.email} - ${user.role}</p>
-            </div>
-            <span class="px-2 py-1 text-xs rounded ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${user.status}</span>
-          `;
-          container.appendChild(div);
-        });
-      } catch (error) {
-        console.error('Failed to load users:', error);
-      }
-    }
-
-    async function loadExams() {
-      try {
-        const res = await fetch('/api/exam/all');
-        const exams = await res.json();
-        const container = document.getElementById('exams');
-        container.innerHTML = '';
-
-        exams.forEach(exam => {
-          const div = document.createElement('div');
-          div.className = 'flex items-center justify-between p-4 border rounded-lg';
-          div.innerHTML = `
-            <div>
-              <h3 class="font-semibold">${exam.examName}</h3>
-              <p class="text-sm text-gray-600">${exam.institutionName} - ${exam.date}</p>
-            </div>
-            <span class="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">${exam.status}</span>
-          `;
-          container.appendChild(div);
-        });
-      } catch (error) {
-        console.error('Failed to load exams:', error);
-      }
-    }
-
-    // Profile modal functions
-    function openProfileModal() {
-      document.getElementById('profileModal').classList.remove('hidden');
-    }
-
-    function closeProfileModal() {
-      document.getElementById('profileModal').classList.add('hidden');
-    }
-
-    async function uploadDocuments() {
-      // Implement document upload logic
-      alert('Document upload functionality to be implemented');
-    }
-
-    async function completeProfile() {
-      // Implement profile completion logic
-      alert('Profile completion functionality to be implemented');
-    }
-
-    // Load data on page load
     document.addEventListener('DOMContentLoaded', () => {
-      loadStats();
-      loadInstitutions();
-      loadUsers();
-      loadExams();
+      fetchExams();
+      fetchStudents();
+      fetchStaff();
+      updateStats();
     });
+
+    async function fetchExams() {
+      try {
+        // Fetch exams for this university
+        const response = await fetch(`${API_BASE}/university/${UNIVERSITY_ID}/exam`);
+        if (response.ok) {
+          initialExamData = await response.json();
+          renderExamTable();
+          updateStats();
+        }
+      } catch (error) { console.error('Error fetching exams:', error); }
+    }
+
+    async function fetchStudents() {
+      try {
+        // Fetch University-Scoped Students
+        const response = await fetch(`${API_BASE}/university/${UNIVERSITY_ID}/students`);
+        if (response.ok) {
+          const users = await response.json();
+          initialStudentData = users.map(u => ({
+            id: u.username || `S${u.userId}`,
+            name: u.name,
+            year: u.year || 'N/A',
+            major: u.major || 'N/A',
+            status: u.status || 'Active'
+          }));
+          renderStudentTable();
+          updateStats();
+        }
+      } catch (error) { console.error('Error fetching students:', error); }
+    }
+
+    async function fetchStaff() {
+      try {
+        // Fetch University-Scoped Staff (Supervisors)
+        const response = await fetch(`${API_BASE}/university/${UNIVERSITY_ID}/staff`);
+        if (response.ok) {
+          const users = await response.json();
+          initialStaffData = users.map(u => ({
+            id: u.username || `E${u.userId}`,
+            userId: u.userId, // Needed for assignment
+            name: u.name,
+            department: u.department || 'General',
+            role: u.role || 'Supervisor',
+            status: u.status || 'Active'
+          }));
+          renderStaffTable();
+          updateStats();
+        }
+      } catch (error) { console.error('Error fetching staff:', error); }
+    }
+
+    function updateStats() {
+      // Exam Stats
+      const upcomingExams = initialExamData.filter(e => e.status && e.status.toLowerCase() === 'upcoming').length;
+      const elUpcoming = document.getElementById('exam-stat-upcoming');
+      if (elUpcoming) elUpcoming.innerText = upcomingExams;
+
+      // Student Stats
+      const totalStudents = initialStudentData.length;
+      const elStudents = document.querySelector('.stat-card.bg-indigo-50 p:last-child');
+      if (elStudents) elStudents.innerText = totalStudents;
+
+      // Staff Stats
+      const totalStaff = initialStaffData.length;
+      const elStaff = document.querySelector('.stat-card.bg-purple-50 p:last-child');
+      if (elStaff) elStaff.innerText = totalStaff;
+    }
+
+
+    // --- MODAL FUNCTIONS ---
+    function openModal(type) {
+      document.getElementById('modal-overlay').style.display = 'flex';
+      document.querySelectorAll('#modal-overlay > div').forEach(el => el.style.display = 'none');
+      const modal = document.getElementById(`${type}-modal`);
+      if (modal) modal.style.display = 'block';
+    }
+
+    function closeModals() {
+      document.getElementById('modal-overlay').style.display = 'none';
+    }
+
+    function openAssignSupervisorModal(examId) {
+      selectedExamIdForAssignment = examId;
+      // Populate select dropdown
+      const select = document.querySelector('select[name="supervisorId"]');
+      if (select) {
+        select.innerHTML = '<option value="">-- Select Supervisor --</option>';
+        initialStaffData.forEach(s => {
+          select.innerHTML += `<option value="${s.userId}">${s.name} (${s.department})</option>`;
+        });
+      }
+      openModal('assign-supervisor');
+    }
+
+    // --- FORM HANDLERS ---
+    async function handleExamSubmit(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const payload = Object.fromEntries(formData.entries());
+      payload.institutionName = 'University';
+
+      try {
+        // Create Exam via University API
+        const res = await fetch(`${API_BASE}/university/${UNIVERSITY_ID}/exam`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          alert('Exam scheduled successfully!');
+          closeModals();
+          fetchExams();
+          e.target.reset();
+        } else {
+          alert('Failed to schedule exam.');
+        }
+      } catch (err) { console.error(err); alert('Error scheduling exam.'); }
+    }
+
+    async function handleSupervisorAssignSubmit(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const supervisorId = formData.get('supervisorId');
+
+      if (!selectedExamIdForAssignment || !supervisorId) {
+        alert("Please select a supervisor.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/exam/${selectedExamIdForAssignment}/assign-supervisor`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ supervisorId: parseInt(supervisorId) })
+        });
+
+        if (res.ok) {
+          alert('Supervisor assigned successfully!');
+          closeModals();
+        } else {
+          alert('Failed to assign supervisor.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error assigning supervisor.');
+      }
+    }
+
+    async function handleStudentSubmit(e) {
+      e.preventDefault();
+      alert("Student registration via this dashboard is disabled for demo. Use Register page.");
+      closeModals();
+    }
+
+    async function handleStaffSubmit(e) {
+      e.preventDefault();
+      alert("Staff onboarding via this dashboard is disabled for demo. Use Register page.");
+      closeModals();
+    }
+
+
+    // --- DEDICATED RENDER FUNCTIONS (Adapted for Real Data) ---
+
+    /**
+     * Renders the student table based on the current active filters, search, sort, and pagination.
+     */
+    function renderStudentTable() {
+      const state = activeFilters.students;
+      const tableBody = document.getElementById('students-list-body');
+      const infoDiv = document.getElementById('students-info');
+
+      if (!tableBody) return;
+
+      let filteredData = initialStudentData;
+
+      // 1. Apply Class Filter (Year)
+      if (state.value !== 'all') {
+        filteredData = filteredData.filter(student => student.year === state.value);
+      }
+
+      // 2. Apply Search Filter
+      const searchTerm = state.search.toUpperCase();
+      if (searchTerm) {
+        filteredData = filteredData.filter(student =>
+          String(student.id).toUpperCase().includes(searchTerm) ||
+          String(student.name).toUpperCase().includes(searchTerm) ||
+          String(student.major).toUpperCase().includes(searchTerm)
+        );
+      }
+
+      const totalCount = filteredData.length;
+      const totalPages = Math.ceil(totalCount / state.perPage);
+
+      // Ensure current page is valid
+      state.page = Math.max(1, Math.min(state.page, totalPages || 1));
+
+      // 3. Apply Sorting
+      const sortKey = state.sortBy;
+      const sortDir = state.sortDir;
+      filteredData.sort((a, b) => {
+        const aVal = a[sortKey] || '';
+        const bVal = b[sortKey] || '';
+        if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      // 4. Apply Pagination
+      const startIdx = (state.page - 1) * state.perPage;
+      const endIdx = startIdx + state.perPage;
+      const pageData = filteredData.slice(startIdx, endIdx);
+
+      // Render Rows
+      tableBody.innerHTML = '';
+      if (pageData.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">No students found matching filters.</td></tr>';
+      } else {
+        pageData.forEach(student => {
+          const row = `
+                        <tr>
+                            <td class="font-semibold text-primary">${student.id}</td>
+                            <td>${student.name}</td>
+                            <td>${student.year}</td>
+                            <td>${student.major}</td>
+                            <td><span class="badge ${getStatusBadgeColor(student.status)}">${student.status}</span></td>
+                            <td style="text-align: right;">
+                                <a href="#">Edit</a>
+                            </td>
+                        </tr>
+                    `;
+          tableBody.innerHTML += row;
+        });
+      }
+
+      // Update Info & Buttons
+      if (infoDiv) infoDiv.innerText = `Showing ${Math.min(startIdx + 1, totalCount)} to ${Math.min(endIdx, totalCount)} of ${totalCount} entries`;
+
+      const prevBtn = document.querySelector('#students-pagination button:first-child');
+      const nextBtn = document.querySelector('#students-pagination button:last-child');
+      if (prevBtn) prevBtn.disabled = state.page === 1;
+      if (nextBtn) nextBtn.disabled = state.page >= totalPages || totalPages === 0;
+    }
+
+    /**
+     * Renders the staff table with filtering, search, and pagination.
+     */
+    function renderStaffTable() {
+      const state = activeFilters.staff;
+      const tableBody = document.getElementById('staff-list-body');
+      const infoDiv = document.getElementById('staff-info');
+
+      if (!tableBody) return;
+
+      let filteredData = initialStaffData;
+
+      // 1. Department Filter
+      if (state.value !== 'all') {
+        filteredData = filteredData.filter(staff => staff.department === state.value);
+      }
+
+      // 2. Search
+      const searchTerm = state.search.toUpperCase();
+      if (searchTerm) {
+        filteredData = filteredData.filter(staff =>
+          String(staff.id).toUpperCase().includes(searchTerm) ||
+          String(staff.name).toUpperCase().includes(searchTerm) ||
+          String(staff.role).toUpperCase().includes(searchTerm)
+        );
+      }
+
+      const totalCount = filteredData.length;
+      const totalPages = Math.ceil(totalCount / state.perPage);
+      state.page = Math.max(1, Math.min(state.page, totalPages || 1));
+
+      // 3. Sorting
+      const sortKey = state.sortBy;
+      const sortDir = state.sortDir;
+      filteredData.sort((a, b) => {
+        const aVal = a[sortKey] || '';
+        const bVal = b[sortKey] || '';
+        if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      // 4. Pagination
+      const startIdx = (state.page - 1) * state.perPage;
+      const endIdx = startIdx + state.perPage;
+      const pageData = filteredData.slice(startIdx, endIdx);
+
+      tableBody.innerHTML = '';
+      if (pageData.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">No staff found.</td></tr>';
+      } else {
+        pageData.forEach(staff => {
+          const row = `
+                        <tr>
+                            <td class="font-semibold text-primary">${staff.id}</td>
+                            <td>${staff.name}</td>
+                            <td>${staff.department}</td>
+                            <td>${staff.role}</td>
+                            <td><span class="badge ${getStatusBadgeColor(staff.status)}">${staff.status}</span></td>
+                            <td style="text-align: right;"><a href="#">View</a></td>
+                        </tr>
+                    `;
+          tableBody.innerHTML += row;
+        });
+      }
+
+      if (infoDiv) infoDiv.innerText = `Showing ${Math.min(startIdx + 1, totalCount)} to ${Math.min(endIdx, totalCount)} of ${totalCount} entries`;
+      const prevBtn = document.querySelector('#staff-pagination button:first-child');
+      const nextBtn = document.querySelector('#staff-pagination button:last-child');
+      if (prevBtn) prevBtn.disabled = state.page === 1;
+      if (nextBtn) nextBtn.disabled = state.page >= totalPages || totalPages === 0;
+    }
+
+    // --- EXAM RENDER LOGIC ---
+    function renderExamTable() {
+      const tableBody = document.getElementById('exam-list-body');
+      if (!tableBody) return;
+
+      // Using simple client-side status filter for now from activeFilters
+      const statusFilter = activeFilters.exam.value;
+      const searchInput = document.getElementById('exam-search-input');
+      const searchTerm = searchInput ? searchInput.value.toUpperCase() : '';
+
+      let data = initialExamData;
+
+      if (statusFilter !== 'all') {
+        data = data.filter(e => e.status && e.status.toLowerCase() === statusFilter.toLowerCase());
+      }
+      if (searchTerm) {
+        data = data.filter(e => e.examName.toUpperCase().includes(searchTerm) || e.location.toUpperCase().includes(searchTerm));
+      }
+
+      tableBody.innerHTML = '';
+      if (data.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-4">No exams found.</td></tr>';
+        return;
+      }
+
+      data.forEach(exam => {
+        const row = `<tr>
+                     <td>${exam.examName}</td>
+                     <td>${exam.date}</td>
+                     <td>${exam.startTime}</td>
+                     <td>${exam.location}</td>
+                     <td><span class="badge ${getStatusBadgeColor(exam.status)}">${exam.status}</span></td>
+                     <td style="text-align: right;">
+                        <button onclick="openAssignSupervisorModal(${exam.examId})" class="text-indigo-600 hover:text-indigo-900 border border-indigo-200 px-2 py-1 rounded text-xs bg-indigo-50 font-semibold">
+                            Assign Supervisor
+                        </button>
+                     </td>
+                 </tr>`;
+        tableBody.innerHTML += row;
+      });
+    }
+
+
+    // --- HELPERS ---
+    function getStatusBadgeColor(status) {
+      if (!status) return 'badge-blue';
+      status = status.toLowerCase();
+      if (status === 'active' || status === 'full-time' || status === 'upcoming' || status === 'approved') return 'badge-blue';
+      if (status === 'completed' || status === 'graduated') return 'badge-green';
+      if (status === 'probation' || status === 'draft' || status === 'pending') return 'badge-yellow';
+      return 'badge-blue';
+    }
+
+    function showTab(tabId) {
+      // Update Tab Buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-tab') === tabId) {
+          btn.classList.add('active');
+        }
+      });
+
+      // Update Content Areas
+      document.querySelectorAll('.tab-content-section').forEach(section => {
+        section.style.display = 'none';
+      });
+      document.getElementById(tabId + '-content').style.display = 'block';
+    }
+
+    function updateStudentFilters(type, value, btnElement) {
+      const state = activeFilters.students;
+      if (type === 'class') { state.value = value; if (btnElement) toggleActive(btnElement); state.page = 1; }
+      else if (type === 'entries') { state.perPage = parseInt(value); state.page = 1; }
+      else if (type === 'search') { state.search = value; state.page = 1; }
+      else if (type === 'page') { if (value === 'prev') state.page--; if (value === 'next') state.page++; }
+      renderStudentTable();
+    }
+
+    function updateStaffFilters(type, value, btnElement) {
+      const state = activeFilters.staff;
+      if (type === 'department') { state.value = value; if (btnElement) toggleActive(btnElement); state.page = 1; }
+      else if (type === 'entries') { state.perPage = parseInt(value); state.page = 1; }
+      else if (type === 'search') { state.search = value; state.page = 1; }
+      else if (type === 'page') { if (value === 'prev') state.page--; if (value === 'next') state.page++; }
+      renderStaffTable();
+    }
+
+    function applyFilter(tableBodyId, searchInputId, filterType, filterValue, btnElement) {
+      // Updated to work with new renderExamTable logic for exams
+      if (tableBodyId === 'exam-list-body') {
+        if (filterType === 'status' && filterValue) {
+          activeFilters.exam.value = filterValue;
+          if (btnElement) toggleActive(btnElement);
+        }
+        renderExamTable();
+      }
+    }
+
+    function toggleActive(btn) {
+      const parent = btn.parentElement;
+      parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active-filter'));
+      btn.classList.add('active-filter');
+    }
+
+    function sortStudentTable(th) {
+      const key = th.getAttribute('data-sort-key');
+      const state = activeFilters.students;
+
+      // Toggle Direction
+      if (state.sortBy === key) {
+        state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sortBy = key;
+        state.sortDir = 'asc';
+      }
+
+      // Update UI Icons (Simplified)
+      document.querySelectorAll('#students-content th.sortable').forEach(el => {
+        el.classList.remove('asc', 'desc');
+      });
+      th.classList.add(state.sortDir);
+
+      renderStudentTable();
+    }
+
+    function sortStaffTable(th) {
+      const key = th.getAttribute('data-sort-key');
+      const state = activeFilters.staff;
+
+      if (state.sortBy === key) {
+        state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sortBy = key;
+        state.sortDir = 'asc';
+      }
+
+      document.querySelectorAll('#staff-content th.sortable').forEach(el => {
+        el.classList.remove('asc', 'desc');
+      });
+      th.classList.add(state.sortDir);
+
+      renderStaffTable();
+    }
+
+    // Initialize First Tab
+    showTab('exam');
+
   </script>
+</body>
+
+</html>
