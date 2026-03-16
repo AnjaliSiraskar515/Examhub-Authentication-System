@@ -12,7 +12,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -31,8 +30,13 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/otp/**", "/api/auth/**", "/api/test/**").permitAll()
-                        .anyRequest().permitAll())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/student/**").hasRole("STUDENT")
+                        .requestMatchers("/api/supervisor/**", "/api/biometric/**").hasRole("SUPERVISOR")
+                        .requestMatchers("/api/admin/**").hasRole("UNIVERSITY_ADMIN")
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

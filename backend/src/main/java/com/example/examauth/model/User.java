@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users")
+
 public class User {
 
     @Id
@@ -24,6 +25,15 @@ public class User {
 
     @Column(length = 2000)
     private String biometricHash;
+
+    // Biometric module fields
+    private boolean biometricEnrolled;
+
+    @Column(length = 256)
+    private String biometricTemplateHash;
+
+    private java.time.LocalDateTime biometricEnrolledAt;
+    private java.time.LocalDateTime biometricLastVerified;
 
     private String photoPath;
 
@@ -65,6 +75,38 @@ public class User {
 
     public void setBiometricVerified(Boolean biometricVerified) {
         this.biometricVerified = biometricVerified;
+    }
+
+    public boolean isBiometricEnrolled() {
+        return biometricEnrolled;
+    }
+
+    public void setBiometricEnrolled(boolean biometricEnrolled) {
+        this.biometricEnrolled = biometricEnrolled;
+    }
+
+    public String getBiometricTemplateHash() {
+        return biometricTemplateHash;
+    }
+
+    public void setBiometricTemplateHash(String biometricTemplateHash) {
+        this.biometricTemplateHash = biometricTemplateHash;
+    }
+
+    public java.time.LocalDateTime getBiometricEnrolledAt() {
+        return biometricEnrolledAt;
+    }
+
+    public void setBiometricEnrolledAt(java.time.LocalDateTime biometricEnrolledAt) {
+        this.biometricEnrolledAt = biometricEnrolledAt;
+    }
+
+    public java.time.LocalDateTime getBiometricLastVerified() {
+        return biometricLastVerified;
+    }
+
+    public void setBiometricLastVerified(java.time.LocalDateTime biometricLastVerified) {
+        this.biometricLastVerified = biometricLastVerified;
     }
 
     private java.time.LocalDateTime lastLogin;
