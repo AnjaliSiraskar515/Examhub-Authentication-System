@@ -1,4 +1,5 @@
 # Maven / Java build files
+backend/target/
 target/
 *.class
 *.jar
