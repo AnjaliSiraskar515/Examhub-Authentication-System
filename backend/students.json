@@ -1,0 +1,149 @@
+﻿{
+    "value":  [
+                  {
+                      "regno":  "Anjali Siraskar",
+                      "biometricVerified":  null,
+                      "examName":  "Advanced Java Programming",
+                      "qrVerified":  null,
+                      "name":  "Anjali Siraskar",
+                      "id":  1,
+                      "warningCount":  1,
+                      "lastActivityTime":  "00:35:22.576751300",
+                      "email":  "its972025@gmail.com",
+                      "status":  "SUSPICIOUS"
+                  },
+                  {
+                      "regno":  "teststudent",
+                      "biometricVerified":  true,
+                      "examName":  "Advanced Java Programming",
+                      "qrVerified":  true,
+                      "name":  "Test Student",
+                      "id":  7,
+                      "warningCount":  1,
+                      "lastActivityTime":  "00:38:54.576751300",
+                      "email":  "test@student.com",
+                      "status":  "ACTIVE"
+                  },
+                  {
+                      "regno":  "arti123",
+                      "biometricVerified":  null,
+                      "examName":  "Advanced Java Programming",
+                      "qrVerified":  null,
+                      "name":  "Arti Kulkarni",
+                      "id":  9,
+                      "warningCount":  2,
+                      "lastActivityTime":  "00:37:47.576751300",
+                      "email":  "student1@test.com",
+                      "status":  "ACTIVE"
+                  },
+                  {
+                      "regno":  "dummy_student",
+                      "biometricVerified":  null,
+                      "examName":  "Advanced Java Programming",
+                      "qrVerified":  null,
+                      "name":  "Dummy Student",
+                      "id":  10,
+                      "warningCount":  0,
+                      "lastActivityTime":  "00:38:32.576751300",
+                      "email":  "dummy@student.com",
+                      "status":  "DISCONNECTED"
+                  },
+                  {
+                      "regno":  "student1",
+                      "biometricVerified":  false,
+                      "examName":  "Theory of Computation",
+                      "qrVerified":  false,
+                      "name":  "Student 1",
+                      "id":  11,
+                      "warningCount":  0,
+                      "lastActivityTime":  "00:35:50.576751300",
+                      "email":  "student1@examhub.edu",
+                      "status":  "SUSPICIOUS"
+                  },
+                  {
+                      "regno":  "student2",
+                      "biometricVerified":  false,
+                      "examName":  "Theory of Computation",
+                      "qrVerified":  false,
+                      "name":  "Student 2",
+                      "id":  12,
+                      "warningCount":  2,
+                      "lastActivityTime":  "00:38:30.576751300",
+                      "email":  "student2@examhub.edu",
+                      "status":  "ACTIVE"
+                  },
+                  {
+                      "regno":  "student3",
+                      "biometricVerified":  false,
+                      "examName":  "Theory of Computation",
+                      "qrVerified":  false,
+                      "name":  "Student 3",
+                      "id":  13,
+                      "warningCount":  2,
+                      "lastActivityTime":  "00:38:14.576751300",
+                      "email":  "student3@examhub.edu",
+                      "status":  "IDLE"
+                  },
+                  {
+                      "regno":  "student4",
+                      "biometricVerified":  false,
+                      "examName":  "Theory of Computation",
+                      "qrVerified":  false,
+                      "name":  "Student 4",
+                      "id":  14,
+                      "warningCount":  2,
+                      "lastActivityTime":  "00:36:51.576751300",
+                      "email":  "student4@examhub.edu",
+                      "status":  "ACTIVE"
+                  },
+                  {
+                      "regno":  "student5",
+                      "biometricVerified":  false,
+                      "examName":  "Theory of Computation",
+                      "qrVerified":  false,
+                      "name":  "Student 5",
+                      "id":  15,
+                      "warningCount":  1,
+                      "lastActivityTime":  "00:37:18.576751300",
+                      "email":  "student5@examhub.edu",
+                      "status":  "DISCONNECTED"
+                  },
+                  {
+                      "regno":  "os_student1",
+                      "biometricVerified":  false,
+                      "examName":  "Operating System",
+                      "qrVerified":  false,
+                      "name":  "Student OS 1",
+                      "id":  16,
+                      "warningCount":  1,
+                      "lastActivityTime":  "00:34:13.576751300",
+                      "email":  "os1@examhub.edu",
+                      "status":  "SUSPICIOUS"
+                  },
+                  {
+                      "regno":  "os_student2",
+                      "biometricVerified":  false,
+                      "examName":  "Operating System",
+                      "qrVerified":  false,
+                      "name":  "Student OS 2",
+                      "id":  17,
+                      "warningCount":  2,
+                      "lastActivityTime":  "00:34:40.576751300",
+                      "email":  "os2@examhub.edu",
+                      "status":  "ACTIVE"
+                  },
+                  {
+                      "regno":  "os_student3",
+                      "biometricVerified":  false,
+                      "examName":  "Operating System",
+                      "qrVerified":  false,
+                      "name":  "Student OS 3",
+                      "id":  18,
+                      "warningCount":  1,
+                      "lastActivityTime":  "00:34:23.576751300",
+                      "email":  "os3@examhub.edu",
+                      "status":  "IDLE"
+                  }
+              ],
+    "Count":  12
+}

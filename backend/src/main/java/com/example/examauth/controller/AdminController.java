@@ -1,5 +1,7 @@
 package com.example.examauth.controller;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,7 @@ import com.example.examauth.repo.QRCodeRepository;
 import com.example.examauth.model.QRCodeEntry;
 import com.example.examauth.repo.FraudLogRepository;
 import com.example.examauth.model.FraudLog;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,12 +29,46 @@ public class AdminController {
     @Autowired
     private FraudLogRepository fraudRepo;
 
+    @Autowired
+    private com.example.examauth.repo.ExamRepository examRepo;
+
+    @Autowired
+    private com.example.examauth.repo.InstitutionRepository institutionRepo;
+
+    @Autowired
+    private com.example.examauth.service.AdminService adminService;
+
+    @Autowired
+    private com.example.examauth.service.PdfService pdfService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @GetMapping("/analytics")
+    public ResponseEntity<?> getAnalytics() {
+        return ResponseEntity.ok(adminService.getAnalytics());
+    }
+
+    @GetMapping("/activity-log")
+    public ResponseEntity<?> getActivityLog(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(adminService.getActivityLog(page, size));
+    }
+
     @GetMapping("/summary")
     public ResponseEntity<?> summary() {
-        long users = userRepo.count();
+        long users = userRepo.findAll().stream().filter(u -> "student".equalsIgnoreCase(u.getRole())).count();
+        long exams = examRepo.count();
+        long institutions = institutionRepo.count();
         long qrs = qrRepo.count();
         long frauds = fraudRepo.count();
-        return ResponseEntity.ok(Map.of("users", users, "qrs", qrs, "frauds", frauds));
+        return ResponseEntity.ok(Map.of(
+                "users", users,
+                "exams", exams,
+                "institutions", institutions,
+                "qrs", qrs,
+                "frauds", frauds));
     }
 
     @GetMapping("/supervisors")
@@ -84,5 +121,225 @@ public class AdminController {
                 .filter(u -> role.equalsIgnoreCase(u.getRole()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(users);
+    }
+
+
+    @GetMapping("/reports/pdf")
+    public ResponseEntity<byte[]> downloadReport() {
+        try {
+            // Re-use summary logic to get data
+            long users = userRepo.findAll().stream().filter(u -> "student".equalsIgnoreCase(u.getRole())).count();
+            long exams = examRepo.count();
+            long institutions = institutionRepo.count();
+            long qrs = qrRepo.count();
+            long frauds = fraudRepo.count();
+            
+            Map<String, Object> metrics = Map.of(
+                    "users", users,
+                    "exams", exams,
+                    "institutions", institutions,
+                    "qrs", qrs,
+                    "frauds", frauds
+            );
+
+            byte[] pdfBytes = pdfService.generateSystemReport(metrics);
+
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ExamHub_Report.pdf")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/reports/security/pdf")
+    public ResponseEntity<byte[]> downloadSecurityReport() {
+        try {
+            long frauds = fraudRepo.count();
+            // Mock bio failures for demo
+            byte[] pdfBytes = pdfService.generateSecurityReport(frauds, 12);
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Security_Report.pdf")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/reports/rankings/pdf")
+    public ResponseEntity<byte[]> downloadRankingsReport() {
+        try {
+            byte[] pdfBytes = pdfService.generateRankingsReport();
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Institution_Rankings.pdf")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/reports/exams/pdf")
+    public ResponseEntity<byte[]> downloadExamReport() {
+        try {
+            long exams = examRepo.count();
+            byte[] pdfBytes = pdfService.generateExamReport(exams);
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Exam_Performance_Report.pdf")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/reports/logs/csv")
+    public ResponseEntity<byte[]> downloadActivityLog() {
+        try {
+            byte[] csvBytes = pdfService.generateActivityLogCsv();
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=System_Activity_Log.csv")
+                    .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
+                    .body(csvBytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/reports/performance/pdf")
+    public ResponseEntity<byte[]> downloadPerformanceReport() {
+        try {
+            byte[] pdfBytes = pdfService.generatePerformanceTrendsReport();
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Performance_Trends_Report.pdf")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/reports/trends/pdf")
+    public ResponseEntity<byte[]> downloadTrendsReport() {
+        try {
+            byte[] pdfBytes = pdfService.generateDeepDiveReport();
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Deep_Dive_Analytics_Report.pdf")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/reports/system/csv")
+    public ResponseEntity<byte[]> downloadSystemCsv() {
+        try {
+            long users = userRepo.findAll().stream().filter(u -> "student".equalsIgnoreCase(u.getRole())).count();
+            long exams = examRepo.count();
+            long institutions = institutionRepo.count();
+            long qrs = qrRepo.count();
+            long frauds = fraudRepo.count();
+            
+            Map<String, Object> metrics = Map.of(
+                    "users", users,
+                    "exams", exams,
+                    "institutions", institutions,
+                    "qrs", qrs,
+                    "frauds", frauds
+            );
+
+            byte[] csvBytes = pdfService.generateSystemMetricsCsv(metrics);
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=System_Intelligence_Report.csv")
+                    .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
+                    .body(csvBytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+            return ResponseEntity.status(401).body(Map.<String, Object>of("error", "Unauthorized"));
+        }
+        String email = authentication.getName();
+        User user = userRepo.findFirstByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.<String, Object>of("error", "User not found"));
+        }
+
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("id", user.getUserId());
+        profile.put("name", user.getName());
+        profile.put("email", user.getEmail());
+        profile.put("phoneNumber", user.getPhoneNumber());
+        profile.put("role", user.getRole());
+        profile.put("status", user.getStatus());
+        profile.put("lastLogin", user.getLastLogin());
+        profile.put("photoPath", user.getPhotoPath());
+        profile.put("profileCompleted", user.getProfileCompleted());
+        return ResponseEntity.ok(profile);
+    }
+
+    @PostMapping("/update-profile")
+    public ResponseEntity<?> updateProfile(Authentication authentication, @RequestBody Map<String, Object> body) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        String email = authentication.getName();
+        User user = userRepo.findFirstByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        }
+
+        String newName = (String) body.get("name");
+        String newEmail = (String) body.get("email");
+        String newPhone = (String) body.get("phoneNumber");
+
+        if (newName != null && !newName.isEmpty()) {
+            user.setName(newName);
+        }
+        if (newPhone != null && !newPhone.isEmpty()) {
+            user.setPhoneNumber(newPhone);
+        }
+        if (newEmail != null && !newEmail.isEmpty() && !newEmail.equals(user.getEmail())) {
+            if (userRepo.findFirstByEmail(newEmail).isPresent()) {
+                return ResponseEntity.status(400).body(Map.of("error", "Email already in use"));
+            }
+            user.setEmail(newEmail);
+        }
+
+        userRepo.save(user);
+        return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
+    }
+
+    @PostMapping("/update-password")
+    public ResponseEntity<?> updatePassword(Authentication authentication, @RequestBody Map<String, String> body) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        String email = authentication.getName();
+        User user = userRepo.findFirstByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        }
+
+        String currentPassword = body.get("currentPassword");
+        String newPassword = body.get("newPassword");
+        if (currentPassword == null || newPassword == null) {
+            return ResponseEntity.status(400).body(Map.of("error", "Missing password fields"));
+        }
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            return ResponseEntity.status(400).body(Map.of("error", "Incorrect current password"));
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepo.save(user);
+        return ResponseEntity.ok(Map.of("message", "Password updated successfully"));
     }
 }

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>ExamHub Exam Authentication System</title>
@@ -10,19 +11,28 @@
     body {
       background-color: #f0f5ff;
     }
+
     /* LOGO icon style (SVG) */
     .cg-logo {
-      width: 48px; height: 48px; display:inline-block;
+      width: 48px;
+      height: 48px;
+      display: inline-block;
     }
+
     /* Blobby Animated Background */
     .blobby-bg {
       pointer-events: none;
       z-index: 0;
       position: absolute;
-      width: 100vw; height: 100vh;
-      left:0; top:0; right:0; bottom:0;
+      width: 100vw;
+      height: 100vh;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
       overflow: hidden;
     }
+
     .blobby {
       position: absolute;
       border-radius: 9999px;
@@ -33,36 +43,135 @@
       animation-timing-function: ease-in-out;
       will-change: transform;
     }
-    .b1 { background: #a5b4fc; width: 340px; height: 280px; left: 7vw; top: 4vh; animation-name: float1;}
-    .b2 { background: #99f6e4; width: 240px; height: 170px; left: 60vw; top: 8vh; animation-name: float2;}
-    .b3 { background: #818cf8; width: 180px; height: 220px; left: 75vw; top: 44vh; animation-name: float3;}
-    .b4 { background: #7dd3fc; width: 180px; height: 150px; left: 25vw; top: 60vh; animation-name: float4;}
-    @keyframes float1 { 
-      0% { transform: translateY(0px) scale(1);}
-      48% { transform: translateY(45px) scale(1.11);}
-      100% { transform: translateY(0px) scale(1);}
+
+    .b1 {
+      background: #a5b4fc;
+      width: 340px;
+      height: 280px;
+      left: 7vw;
+      top: 4vh;
+      animation-name: float1;
     }
-    @keyframes float2 { 
-      0% { transform: scale(1) translateY(0);}
-      39% { transform: scale(1.08) translateY(-24px);}
-      100% { transform: scale(1) translateY(0);}
+
+    .b2 {
+      background: #99f6e4;
+      width: 240px;
+      height: 170px;
+      left: 60vw;
+      top: 8vh;
+      animation-name: float2;
     }
+
+    .b3 {
+      background: #818cf8;
+      width: 180px;
+      height: 220px;
+      left: 75vw;
+      top: 44vh;
+      animation-name: float3;
+    }
+
+    .b4 {
+      background: #7dd3fc;
+      width: 180px;
+      height: 150px;
+      left: 25vw;
+      top: 60vh;
+      animation-name: float4;
+    }
+
+    @keyframes float1 {
+      0% {
+        transform: translateY(0px) scale(1);
+      }
+
+      48% {
+        transform: translateY(45px) scale(1.11);
+      }
+
+      100% {
+        transform: translateY(0px) scale(1);
+      }
+    }
+
+    @keyframes float2 {
+      0% {
+        transform: scale(1) translateY(0);
+      }
+
+      39% {
+        transform: scale(1.08) translateY(-24px);
+      }
+
+      100% {
+        transform: scale(1) translateY(0);
+      }
+    }
+
     @keyframes float3 {
-      0% { transform:translateY(0) scale(1); }
-      60% { transform:translateY(-32px) scale(0.94);}
-      100% { transform:translateY(0) scale(1);}
+      0% {
+        transform: translateY(0) scale(1);
+      }
+
+      60% {
+        transform: translateY(-32px) scale(0.94);
+      }
+
+      100% {
+        transform: translateY(0) scale(1);
+      }
     }
+
     @keyframes float4 {
-      0% { transform:translateY(0);}
-      65% { transform:translateY(32px);}
-      100% { transform:translateY(0);}
+      0% {
+        transform: translateY(0);
+      }
+
+      65% {
+        transform: translateY(32px);
+      }
+
+      100% {
+        transform: translateY(0);
+      }
     }
+
+    /* Custom Animations */
+    @keyframes fadeInUp {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in-up {
+      animation: fadeInUp 0.8s ease-out forwards;
+    }
+
     /* Scroll reveal animations */
-    .reveal {opacity: 0;transform: translateY(48px) scale(0.98);transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);}
-    .reveal.visible {opacity: 1;transform: translateY(0px) scale(1);}
-    .reveal.out {opacity: 0;transform: translateY(48px) scale(0.98);}
+    .reveal {
+      opacity: 0;
+      transform: translateY(48px) scale(0.98);
+      transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0px) scale(1);
+    }
+
+    .reveal.out {
+      opacity: 0;
+      transform: translateY(48px) scale(0.98);
+    }
   </style>
 </head>
+
 <body class="relative min-h-screen text-gray-800">
 
   <!-- Animated Blobby Background (behind everything!) -->
@@ -74,46 +183,74 @@
   </div>
 
   <!-- Header Navigation -->
-  <header class="w-full bg-white border-b border-gray-100 sticky top-0 z-30">
+  <header
+    class="w-full bg-white/70 backdrop-blur-md border-b border-white/40 sticky top-0 z-50 shadow-sm transition-all duration-300">
     <div class="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
       <!-- LOGO (SVG, education/exam themed) -->
-      <div class="flex items-center space-x-3">
-        <span>
-          <svg class="cg-logo" viewBox="0 0 54 54" fill="none">
-            <rect x="8" y="8" width="38" height="32" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
-            <rect x="12.5" y="13.5" width="29" height="5" rx="2.5" fill="#4f46e5" opacity="0.13"/>
-            <rect x="12.5" y="21.5" width="13" height="2" rx="1" fill="#4f46e5" opacity="0.16"/>
-            <rect x="12.5" y="27.5" width="10" height="2" rx="1" fill="#4f46e5" opacity="0.18"/>
+      <a href="#" class="flex items-center space-x-3 group">
+        <span class="transform transition-transform group-hover:scale-110 duration-300">
+          <svg class="cg-logo drop-shadow-md" viewBox="0 0 54 54" fill="none">
+            <rect x="8" y="8" width="38" height="32" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2" />
+            <rect x="12.5" y="13.5" width="29" height="5" rx="2.5" fill="#4f46e5" opacity="0.13" />
+            <rect x="12.5" y="21.5" width="13" height="2" rx="1" fill="#4f46e5" opacity="0.16" />
+            <rect x="12.5" y="27.5" width="10" height="2" rx="1" fill="#4f46e5" opacity="0.18" />
             <!-- Graduation Cap -->
-            <path d="M27 7L42 14L27 21L12 14L27 7Z" fill="#14b8a6" stroke="#14b8a6" stroke-width="1"/>
-            <rect x="25.3" y="21" width="3.4" height="4.5" rx="1.5" fill="#4f46e5" opacity="0.12"/>
+            <path d="M27 7L42 14L27 21L12 14L27 7Z" fill="#14b8a6" stroke="#14b8a6" stroke-width="1" />
+            <rect x="25.3" y="21" width="3.4" height="4.5" rx="1.5" fill="#4f46e5" opacity="0.12" />
             <!-- Checkmark for 'verified' -->
-            <path d="M34.5 30.6l3.2 2.7 5.6-8.4" stroke="#14b8a6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M34.5 30.6l3.2 2.7 5.6-8.4" stroke="#14b8a6" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round" />
           </svg>
         </span>
-        <span class="text-2xl font-semibold text-indigo-600">ExamHub</span>
-      </div>
-      <nav class="flex items-center space-x-8">
-        <a href="#benefits" class="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Benefits</a>
-        <a href="#process" class="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Process</a>
-        <a href="#technology" class="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Technology</a>
-        <a href="institution_onboarding.html" class="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700 transition-colors ml-4">Partner/Help</a>
+        <span
+          class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-teal-500 drop-shadow-sm">ExamHub</span>
+      </a>
+      <nav class="hidden md:flex items-center space-x-8">
+        <a href="#benefits"
+          class="text-gray-700 hover:text-indigo-600 font-medium transition-colors hover:underline decoration-2 decoration-teal-400 underline-offset-4">Benefits</a>
+        <a href="#process"
+          class="text-gray-700 hover:text-indigo-600 font-medium transition-colors hover:underline decoration-2 decoration-teal-400 underline-offset-4">Process</a>
+        <a href="#technology"
+          class="text-gray-700 hover:text-indigo-600 font-medium transition-colors hover:underline decoration-2 decoration-teal-400 underline-offset-4">Technology</a>
+        <a href="institution_onboarding.html"
+          class="px-6 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:-translate-y-0.5 ml-4 border border-indigo-500/20">Partner/Help</a>
       </nav>
+      <!-- Mobile menu button hidden for simplicity based on original code, can be added if requested -->
     </div>
   </header>
 
   <!-- Hero Section -->
-  <section class="relative flex items-center justify-center min-h-[520px] bg-transparent">
-    <div class="relative z-10 flex flex-col items-center justify-center w-full max-w-3xl mx-auto py-16 text-center">
-      <h1 class="text-5xl font-extrabold leading-tight text-indigo-700 mb-6">
-        The <span class="text-teal-500">Verified</span> Future of Exams.
+  <section class="relative flex items-center justify-center min-h-[600px] bg-transparent overflow-hidden">
+    <div
+      class="relative z-10 flex flex-col items-center justify-center w-full max-w-4xl mx-auto py-20 text-center px-4">
+      <div class="mb-6 animate-fade-in-up">
+        <span
+          class="bg-indigo-100 text-indigo-800 text-sm font-bold px-4 py-1.5 rounded-full shadow-sm border border-indigo-200 uppercase tracking-wider">Trusted
+          by 500+ Institutions</span>
+      </div>
+      <h1 class="text-5xl md:text-7xl font-extrabold leading-tight text-indigo-900 mb-6 drop-shadow-sm tracking-tight">
+        The <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-500">Verified</span><br
+          class="hidden md:block" /> Future of Exams.
       </h1>
-      <p class="text-lg text-gray-700 mb-8 max-w-xl">
-        Multi-layered authentication platform securing high-stakes assessments with Biometrics, QR Codes, and Multi-Role Control.
+      <p
+        class="text-xl text-gray-700 mb-10 max-w-2xl leading-relaxed font-light backdrop-blur-sm bg-white/30 p-4 rounded-xl shadow-sm border border-white/40">
+        Multi-layered authentication platform securing high-stakes assessments with <span
+          class="font-semibold text-indigo-700">Biometrics</span>, <span class="font-semibold text-indigo-700">QR
+          Codes</span>, and <span class="font-semibold text-indigo-700">Multi-Role Control</span>.
       </p>
-      <div class="flex flex-row space-x-4">
-        <a href="auth_portal.html" class="px-8 py-3 rounded-lg bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700 transition-colors text-lg">Access Portal Now &rarr;</a>
-        <a href="#process" class="px-8 py-3 rounded-lg border border-teal-400 text-teal-600 font-semibold hover:border-teal-600 hover:text-teal-800 transition-colors bg-white text-lg">Learn How It Works</a>
+      <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 w-full justify-center">
+        <a href="auth_portal.html"
+          class="px-8 py-4 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold shadow-lg hover:shadow-indigo-500/30 hover:scale-105 transition-all transform text-lg flex items-center justify-center group border border-indigo-400/20">
+          Access Portal Now
+          <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+          </svg>
+        </a>
+        <a href="#process"
+          class="px-8 py-4 rounded-full bg-white/80 backdrop-blur-md text-teal-700 font-bold shadow-md hover:shadow-xl hover:bg-white hover:-translate-y-1 transition-all border border-teal-200 text-lg flex items-center justify-center">
+          Learn How It Works
+        </a>
       </div>
     </div>
   </section>
@@ -121,87 +258,230 @@
   <!-- Main Content Sections Below Hero -->
   <main class="w-full bg-transparent">
 
-    <!-- WHY CERTIGUARD -->
-    <section id="benefits" class="reveal max-w-6xl mx-auto px-6 py-16">
-      <h2 class="text-3xl font-bold text-center text-indigo-800 mb-10">Why ExamHub?</h2>
+    <!-- WHY CERTIGUARD - CARDS SECTION -->
+    <section id="benefits" class="reveal max-w-7xl mx-auto px-6 py-20">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold text-indigo-900 mb-4 tracking-tight">Why Choose ExamHub?</h2>
+        <div class="h-1.5 w-24 bg-gradient-to-r from-indigo-500 to-teal-400 mx-auto rounded-full"></div>
+      </div>
       <div class="grid md:grid-cols-3 gap-8">
-        <div class="bg-white rounded-lg shadow-md p-8 border-t-4 border-teal-400">
-          <h3 class="text-xl font-bold text-gray-900 mb-4">Impersonation Defense</h3>
-          <p class="text-gray-700">Facial and biometric checks thwart impersonators before test entry, guaranteeing identity integrity.</p>
+        <!-- Card 1 -->
+        <div
+          class="group relative bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-8 border-t-4 border-teal-400 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 overflow-hidden">
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <svg class="w-24 h-24 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div
+            class="w-14 h-14 bg-teal-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+              </path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-teal-600 transition-colors">Impersonation
+            Defense</h3>
+          <p class="text-gray-600 leading-relaxed relative z-10">Facial and biometric checks thwart impersonators before
+            test entry, guaranteeing identity integrity.</p>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-8 border-t-4 border-cyan-400">
-          <h3 class="text-xl font-bold text-gray-900 mb-4">AI Document Validation</h3>
-          <p class="text-gray-700">Advanced AI scans, verifies, and matches all exam and ID documents, eliminating manual validation risks.</p>
+
+        <!-- Card 2 -->
+        <div
+          class="group relative bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-8 border-t-4 border-cyan-400 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 overflow-hidden">
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <svg class="w-24 h-24 text-cyan-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div
+            class="w-14 h-14 bg-cyan-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-8 h-8 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+              </path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-cyan-600 transition-colors">AI Document
+            Validation</h3>
+          <p class="text-gray-600 leading-relaxed relative z-10">Advanced AI scans, verifies, and matches all exam and
+            ID documents, eliminating manual validation risks.</p>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-8 border-t-4 border-indigo-400">
-          <h3 class="text-xl font-bold text-gray-900 mb-4">Audit Trails</h3>
-          <p class="text-gray-700">All exam actions are timestamped, logged, and encrypted for regulatory and forensic review at any moment.</p>
+
+        <!-- Card 3 -->
+        <div
+          class="group relative bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-8 border-t-4 border-indigo-400 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 overflow-hidden">
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <svg class="w-24 h-24 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div
+            class="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">Audit Trails
+          </h3>
+          <p class="text-gray-600 leading-relaxed relative z-10">All exam actions are timestamped, logged, and encrypted
+            for regulatory and forensic review at any moment.</p>
         </div>
       </div>
     </section>
 
     <!-- TECHNOLOGY STACK & BENEFITS -->
     <section id="technology" class="reveal max-w-7xl mx-auto px-6 py-16">
-      <h2 class="text-3xl font-bold text-center text-indigo-800 mb-10">Technology Stack & Benefits</h2>
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold text-indigo-900 mb-4 tracking-tight">Technology Stack & Benefits</h2>
+        <p class="text-gray-600 max-w-2xl mx-auto">Built on a foundation of modern, secure, and scalable technologies.
+        </p>
+      </div>
       <div class="grid md:grid-cols-4 gap-8">
-        <div class="bg-white rounded-lg shadow-lg p-7 flex flex-col items-center">
-          <span class="text-indigo-600 text-2xl font-extrabold mb-2">Java Core</span>
-          <p class="text-gray-700 text-center">Robust backend security powered by high-performance Java modules.</p>
+        <!-- Tech Stack 1 -->
+        <div
+          class="group bg-white/60 backdrop-blur-lg rounded-xl shadow-lg p-8 flex flex-col items-center hover:scale-105 transition-all duration-300 border border-white/40 hover:bg-white hover:shadow-xl">
+          <div class="p-4 bg-indigo-50 rounded-full mb-4 group-hover:bg-indigo-100 transition-colors">
+            <!-- Java Icon Placeholder (simple code icon) -->
+            <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+            </svg>
+          </div>
+          <span class="text-indigo-700 text-xl font-extrabold mb-3 text-center">Secure Spring Boot Backend</span>
+          <p class="text-gray-600 text-center text-sm leading-relaxed">Java-based backend manages authentication,
+            role-based access control, and secure REST APIs.</p>
         </div>
-        <div class="bg-white rounded-lg shadow-lg p-7 flex flex-col items-center">
-          <span class="text-teal-500 text-2xl font-extrabold mb-2">Python Microservice</span>
-          <p class="text-gray-700 text-center">Scalable, containerized Python microservices enhance biometric validation.</p>
+
+        <!-- Tech Stack 2 -->
+        <div
+          class="group bg-white/60 backdrop-blur-lg rounded-xl shadow-lg p-8 flex flex-col items-center hover:scale-105 transition-all duration-300 border border-white/40 hover:bg-white hover:shadow-xl">
+          <div class="p-4 bg-teal-50 rounded-full mb-4 group-hover:bg-teal-100 transition-colors">
+            <svg class="w-10 h-10 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+              </path>
+            </svg>
+          </div>
+          <span class="text-teal-600 text-xl font-extrabold mb-3 text-center">AI Verification Microservice</span>
+          <p class="text-gray-600 text-center text-sm leading-relaxed">Python microservice handles face authentication
+            and document validation independently for scalability.</p>
         </div>
-        <div class="bg-white rounded-lg shadow-lg p-7 flex flex-col items-center">
-          <span class="text-indigo-500 text-2xl font-extrabold mb-2">Responsive UI</span>
-          <p class="text-gray-700 text-center">Tailwind-powered UI adapts seamlessly to all desktop display environments.</p>
+
+        <!-- Tech Stack 3 -->
+        <div
+          class="group bg-white/60 backdrop-blur-lg rounded-xl shadow-lg p-8 flex flex-col items-center hover:scale-105 transition-all duration-300 border border-white/40 hover:bg-white hover:shadow-xl">
+          <div class="p-4 bg-indigo-50 rounded-full mb-4 group-hover:bg-indigo-100 transition-colors">
+            <svg class="w-10 h-10 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+              </path>
+            </svg>
+          </div>
+          <span class="text-indigo-600 text-xl font-extrabold mb-3 text-center">Role-Based Responsive Interface</span>
+          <p class="text-gray-600 text-center text-sm leading-relaxed">Tailwind CSS-powered dashboards for Admin,
+            Supervisor, and Students ensure seamless access across devices.</p>
         </div>
-        <div class="bg-white rounded-lg shadow-lg p-7 flex flex-col items-center">
-          <span class="text-cyan-500 text-2xl font-extrabold mb-2">Gemini LLM Intelligence</span>
-          <p class="text-gray-700 text-center">LLM-driven RFP analysis shortens onboarding and customizes assessment modules.</p>
+
+        <!-- Tech Stack 4 -->
+        <div
+          class="group bg-white/60 backdrop-blur-lg rounded-xl shadow-lg p-8 flex flex-col items-center hover:scale-105 transition-all duration-300 border border-white/40 hover:bg-white hover:shadow-xl">
+          <div class="p-4 bg-cyan-50 rounded-full mb-4 group-hover:bg-cyan-100 transition-colors">
+            <svg class="w-10 h-10 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z">
+              </path>
+            </svg>
+          </div>
+          <span class="text-cyan-600 text-xl font-extrabold mb-3 text-center">AI-Powered Risk Monitoring</span>
+          <p class="text-gray-600 text-center text-sm leading-relaxed">Intelligent analytics detect suspicious activity
+            patterns during exams for enhanced security.</p>
         </div>
       </div>
     </section>
 
     <!-- 3-STEP VERIFICATION PROCESS -->
-    <section id="process" class="reveal max-w-4xl mx-auto px-6 py-16">
-      <h2 class="text-3xl font-bold text-center text-indigo-800 mb-10">Our 3-Step Verification Process</h2>
-      <div class="flex flex-col md:flex-row items-center justify-center md:space-x-10">
-        <div class="flex flex-col items-center flex-1">
-          <div class="relative flex flex-col items-center">
-            <span class="w-20 h-20 rounded-full bg-indigo-600 text-white flex items-center justify-center text-2xl font-bold mb-4 shadow">1</span>
-            <span class="absolute left-full top-1/2 hidden md:block w-24 h-2 bg-gradient-to-r from-indigo-400 to-teal-400"></span>
+    <section id="process"
+      class="reveal max-w-5xl mx-auto px-6 py-20 bg-white/40 backdrop-blur-sm rounded-3xl my-10 border border-white/50 shadow-sm">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold text-indigo-900 mb-4 tracking-tight">Our 3-Step Verification Process</h2>
+        <p class="text-gray-600">A seamless flow designed for security and speed.</p>
+      </div>
+      <div class="flex flex-col md:flex-row items-start justify-center md:space-x-10 relative">
+        <!-- Step 1 -->
+        <div class="flex flex-col items-center flex-1 group relative z-10">
+          <div class="relative flex flex-col items-center mb-6">
+            <span
+              class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-500 text-white flex items-center justify-center text-3xl font-bold mb-4 shadow-xl ring-4 ring-indigo-100 group-hover:scale-110 transition-transform duration-300 z-10">1</span>
+
           </div>
-          <p class="text-xl font-semibold mb-1 text-gray-900">Biometric ID Capture</p>
-          <p class="text-gray-700 text-center mb-6">Facial and document scans validate candidate identity before allowing exam entry.</p>
+          <h3 class="text-xl font-bold mb-2 text-indigo-900 group-hover:text-indigo-600 transition-colors text-center">
+            AI Biometric Verification</h3>
+          <p class="text-gray-600 text-center px-4 leading-relaxed">Real-time facial recognition and automated document
+            validation establish irrefutable candidate identity.</p>
         </div>
-        <div class="flex flex-col items-center flex-1">
-          <div class="relative flex flex-col items-center">
-            <span class="w-20 h-20 rounded-full bg-teal-500 text-white flex items-center justify-center text-2xl font-bold mb-4 shadow">2</span>
-            <span class="absolute left-full top-1/2 hidden md:block w-24 h-2 bg-gradient-to-r from-teal-400 to-cyan-400"></span>
-          </div>
-          <p class="text-xl font-semibold mb-1 text-gray-900">QR Code Entry</p>
-          <p class="text-gray-700 text-center mb-6">Each candidate receives a secure QR pass for timed exam room admission.</p>
+
+        <!-- Connector Line 1 -->
+        <div
+          class="hidden md:block absolute top-10 left-[16%] w-[33%] h-1 bg-gradient-to-r from-indigo-300 to-teal-300 z-0">
         </div>
-        <div class="flex flex-col items-center flex-1">
-          <div class="flex flex-col items-center">
-            <span class="w-20 h-20 rounded-full bg-cyan-500 text-white flex items-center justify-center text-2xl font-bold mb-4 shadow">3</span>
+
+        <!-- Step 2 -->
+        <div class="flex flex-col items-center flex-1 group relative z-10 mt-10 md:mt-0">
+          <div class="relative flex flex-col items-center mb-6">
+            <span
+              class="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500 to-teal-400 text-white flex items-center justify-center text-3xl font-bold mb-4 shadow-xl ring-4 ring-teal-100 group-hover:scale-110 transition-transform duration-300 z-10">2</span>
           </div>
-          <p class="text-xl font-semibold mb-1 text-gray-900">Multi-Role Control</p>
-          <p class="text-gray-700 text-center mb-6">Proctor, admin, and user controls enforce real-time monitoring and adaptive permissions.</p>
+          <h3 class="text-xl font-bold mb-2 text-teal-800 group-hover:text-teal-600 transition-colors text-center">
+            Time-Bound QR Access</h3>
+          <p class="text-gray-600 text-center px-4 leading-relaxed">Dynamic, time-restricted QR codes ensure secure
+            physical entry and enforce strict exam admission protocols.</p>
+        </div>
+
+        <!-- Connector Line 2 -->
+        <div
+          class="hidden md:block absolute top-10 left-[50%] w-[33%] h-1 bg-gradient-to-r from-teal-300 to-cyan-300 z-0">
+        </div>
+
+        <!-- Step 3 -->
+        <div class="flex flex-col items-center flex-1 group relative z-10 mt-10 md:mt-0">
+          <div class="flex flex-col items-center mb-6">
+            <span
+              class="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-400 text-white flex items-center justify-center text-3xl font-bold mb-4 shadow-xl ring-4 ring-cyan-100 group-hover:scale-110 transition-transform duration-300 z-10">3</span>
+          </div>
+          <h3 class="text-xl font-bold mb-2 text-cyan-800 group-hover:text-cyan-600 transition-colors text-center">
+            Supervisor Monitoring</h3>
+          <p class="text-gray-600 text-center px-4 leading-relaxed">Role-based access control (RBAC) empowers
+            supervisors with comprehensive real-time monitoring and exam oversight.</p>
         </div>
       </div>
     </section>
   </main>
 
   <!-- Footer -->
-  <footer class="w-full bg-white border-t border-gray-100 mt-10">
-    <div class="max-w-7xl mx-auto px-8 py-6 flex flex-col md:flex-row items-center justify-between text-gray-600 text-sm">
-      <div>
-        &copy; 2025 ExamHub Platform. All rights reserved.
+  <footer class="w-full bg-white/80 backdrop-blur-md border-t border-indigo-100 mt-10">
+    <div
+      class="max-w-7xl mx-auto px-8 py-8 flex flex-col md:flex-row items-center justify-between text-gray-600 text-sm">
+      <div class="flex items-center space-x-2">
+        <span class="text-indigo-600 font-bold">&copy; 2026 ExamHub Platform.</span> <span>All rights reserved.</span>
       </div>
-      <div class="mt-2 md:mt-0">
-        Security Compliance: RBAC enforced, cryptographic hashing and audit logging applied.
+      <div class="mt-4 md:mt-0 flex items-center space-x-6">
+        <span
+          class="flex items-center text-teal-600 bg-teal-50 px-3 py-1 rounded-full text-xs font-semibold border border-teal-100">
+          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-11a1 1 0 10-2 0v2H5a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+              clip-rule="evenodd" />
+          </svg>
+          RBAC Enforced
+        </span>
+        <span class="hover:text-indigo-600 transition-colors cursor-pointer">Privacy Policy</span>
+        <span class="hover:text-indigo-600 transition-colors cursor-pointer">Terms of Service</span>
       </div>
     </div>
   </footer>
@@ -210,7 +490,7 @@
   <script>
     function throttle(fn, wait) {
       let time = Date.now();
-      return function() {
+      return function () {
         if ((time + wait - Date.now()) < 0) {
           fn();
           time = Date.now();
@@ -237,4 +517,5 @@
     document.addEventListener('DOMContentLoaded', handleReveal);
   </script>
 </body>
+
 </html>

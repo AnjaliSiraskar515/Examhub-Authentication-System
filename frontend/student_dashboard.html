@@ -259,9 +259,17 @@
     </footer>
 
     <script>
+      const BACKEND_BASE = 'http://localhost:8080';
+      function authHeaders(extra) {
+        const token = localStorage.getItem('token');
+        const h = extra ? { ...extra } : {};
+        if (token) h['Authorization'] = 'Bearer ' + token;
+        return h;
+      }
+
       async function loadExams() {
         try {
-          const res = await fetch('/api/exams');
+          const res = await fetch(BACKEND_BASE + '/api/exams', { headers: authHeaders() });
           const js = await res.json();
           const container = document.getElementById('exams');
           container.innerHTML = '';
@@ -328,20 +336,31 @@
 
       async function loadProfileInfo() {
         try {
-          const res = await fetch('/api/profile/info');
+          const res = await fetch(BACKEND_BASE + '/api/student/profile', { headers: authHeaders() });
+          if (res.status === 401) {
+            console.warn('Unauthorized');
+            return;
+          }
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            console.error('Profile load failed', err.error || res.status);
+            return;
+          }
           const profile = await res.json();
-          document.getElementById('profileName').value = profile.name;
-          document.getElementById('profileEmail').value = profile.email;
-          document.getElementById('profilePhone').value = profile.phone;
+          document.getElementById('profileName').value = profile.name || '';
+          document.getElementById('profileEmail').value = profile.email || '';
+          document.getElementById('profilePhone').value = profile.phoneNumber || profile.phone || '';
 
           // Update status indicators
-          updateDocumentStatus('aadharStatus', profile.documents.aadhar);
-          updateDocumentStatus('marks10Status', profile.documents.marks10);
-          updateDocumentStatus('marks12Status', profile.documents.marks12);
-          updateDocumentStatus('ugStatus', profile.documents.ug);
-          updateDocumentStatus('pgStatus', profile.documents.pg);
-          updateDocumentStatus('biometricStatus', profile.documents.biometric);
-          updateDocumentStatus('passportStatus', profile.documents.passport);
+          if (profile.documents) {
+            updateDocumentStatus('aadharStatus', profile.documents.aadhar);
+            updateDocumentStatus('marks10Status', profile.documents.marks10);
+            updateDocumentStatus('marks12Status', profile.documents.marks12);
+            updateDocumentStatus('ugStatus', profile.documents.ug);
+            updateDocumentStatus('pgStatus', profile.documents.pg);
+            updateDocumentStatus('biometricStatus', profile.documents.biometric);
+            updateDocumentStatus('passportStatus', profile.documents.passportPhoto);
+          }
         } catch (error) {
           console.error('Failed to load profile:', error);
         }
@@ -370,8 +389,9 @@
         });
 
         try {
-          const res = await fetch('/api/profile/upload', {
+          const res = await fetch(BACKEND_BASE + '/api/profile/upload', {
             method: 'POST',
+            headers: authHeaders(),
             body: formData
           });
           const result = await res.json();
@@ -389,7 +409,10 @@
 
       async function completeProfile() {
         try {
-          const res = await fetch('/api/profile/complete', { method: 'POST' });
+          const res = await fetch(BACKEND_BASE + '/api/profile/complete', {
+            method: 'POST',
+            headers: authHeaders()
+          });
           const result = await res.json();
           if (res.ok) {
             alert(result.message);
