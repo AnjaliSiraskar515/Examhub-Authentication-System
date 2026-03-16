@@ -21,7 +21,11 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/otp/**", "/api/auth/**", "/api/test/**").permitAll()
-                        .anyRequest().permitAll())
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/student/**").hasRole("STUDENT")
+                        .requestMatchers("/api/supervisor/**", "/api/biometric/**").hasRole("SUPERVISOR")
+                        .requestMatchers("/api/admin/**").hasRole("UNIVERSITY_ADMIN")
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter,
                         org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
         return http.build();

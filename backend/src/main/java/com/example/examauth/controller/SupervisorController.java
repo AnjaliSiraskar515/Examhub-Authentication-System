@@ -63,7 +63,7 @@ public class SupervisorController {
         profile.put("designation", user.getDesignation());
         profile.put("employeeId", user.getEmployeeId());
         profile.put("avatar", user.getPhotoPath());
-        profile.put("biometricEnrolled", user.getBiometricHash() != null && !user.getBiometricHash().isEmpty());
+        profile.put("biometricEnrolled", user.isBiometricEnrolled());
 
         List<Map<String, String>> docs = new ArrayList<>();
         if (user.getAppointmentLetterPath() != null)

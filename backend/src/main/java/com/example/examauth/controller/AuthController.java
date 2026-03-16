@@ -212,8 +212,8 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(resp);
             }
 
-            // Unified identity resolution: always by email (no username, no role-specific overrides)
-            Optional<User> userOpt = userRepository.findByEmail(identifier);
+            // Unified identity resolution: email + role to avoid non-unique results
+            Optional<User> userOpt = userRepository.findFirstByEmailAndRole(identifier, role);
 
             if (userOpt.isEmpty()) {
                 Map<String, Object> resp = new HashMap<>();

@@ -5,6 +5,10 @@ public class QrVerificationResponse {
     private boolean valid;
     private String message;
 
+    // Biometric summary flags for UI flow
+    private boolean biometricEnrolled;
+    private boolean biometricRecentlyVerified;
+
     private StudentDetail student;
     private ExamDetail exam;
     private InstitutionDetail institution;
@@ -29,6 +33,22 @@ public class QrVerificationResponse {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public boolean isBiometricEnrolled() {
+        return biometricEnrolled;
+    }
+
+    public void setBiometricEnrolled(boolean biometricEnrolled) {
+        this.biometricEnrolled = biometricEnrolled;
+    }
+
+    public boolean isBiometricRecentlyVerified() {
+        return biometricRecentlyVerified;
+    }
+
+    public void setBiometricRecentlyVerified(boolean biometricRecentlyVerified) {
+        this.biometricRecentlyVerified = biometricRecentlyVerified;
     }
 
     public StudentDetail getStudent() {
@@ -57,25 +77,55 @@ public class QrVerificationResponse {
 
     // Nested DTOs
     public static class StudentDetail {
+        private Long id;
         private String name;
         private String rollNo;
+        private String prn;
         private String photoUrl;
         private String aadharMasked;
+        private String hallNo;
+        private String seatNo;
 
         public StudentDetail(String name, String rollNo, String photoUrl, String aadharMasked) {
+            this.id = null;
             this.name = name;
             this.rollNo = rollNo;
+            this.prn = null;
             this.photoUrl = photoUrl;
             this.aadharMasked = aadharMasked;
+            this.hallNo = null;
+            this.seatNo = null;
+        }
+
+        // Extended constructor with richer details (preferred for new flows)
+        public StudentDetail(Long id, String name, String rollNo, String prn,
+                             String photoUrl, String aadharMasked,
+                             String hallNo, String seatNo) {
+            this.id = id;
+            this.name = name;
+            this.rollNo = rollNo;
+            this.prn = prn;
+            this.photoUrl = photoUrl;
+            this.aadharMasked = aadharMasked;
+            this.hallNo = hallNo;
+            this.seatNo = seatNo;
         }
 
         // Getters
+        public Long getId() {
+            return id;
+        }
+
         public String getName() {
             return name;
         }
 
         public String getRollNo() {
             return rollNo;
+        }
+
+        public String getPrn() {
+            return prn;
         }
 
         public String getPhotoUrl() {
@@ -85,15 +135,25 @@ public class QrVerificationResponse {
         public String getAadharMasked() {
             return aadharMasked;
         }
+
+        public String getHallNo() {
+            return hallNo;
+        }
+
+        public String getSeatNo() {
+            return seatNo;
+        }
     }
 
     public static class ExamDetail {
+        private Long examId;
         private String examName;
         private String subject;
         private String date;
         private String time;
 
-        public ExamDetail(String examName, String subject, String date, String time) {
+        public ExamDetail(Long examId, String examName, String subject, String date, String time) {
+            this.examId = examId;
             this.examName = examName;
             this.subject = subject;
             this.date = date;
@@ -103,6 +163,10 @@ public class QrVerificationResponse {
         // Getters
         public String getExamName() {
             return examName;
+        }
+
+        public Long getExamId() {
+            return examId;
         }
 
         public String getSubject() {
