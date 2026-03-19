@@ -37,10 +37,10 @@ export const Sidebar = {
                 <!-- User Mini Profile (Bottom) -->
                 <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                     <div class="flex items-center gap-3">
-                        <img src="https://ui-avatars.com/api/?name=John+Doe&background=random" class="w-9 h-9 rounded-full border-2 border-white dark:border-gray-600 shadow-sm">
+                        <img id="sidebar-user-avatar" src="https://ui-avatars.com/api/?name=Student&background=4f46e5&color=fff" class="w-9 h-9 rounded-full border-2 border-white dark:border-gray-600 shadow-sm">
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">John Student</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Final Year - CS</p>
+                            <p id="sidebar-user-name" class="text-sm font-medium text-gray-900 dark:text-white truncate">Loading...</p>
+                            <p id="sidebar-user-course" class="text-xs text-gray-500 dark:text-gray-400 truncate">Student</p>
                         </div>
                     </div>
                 </div>

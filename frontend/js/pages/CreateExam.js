@@ -131,6 +131,13 @@ export default function CreateExam(passedExamId = null) {
                                     <option value="8">8th Semester</option>
                                 </select>
                             </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Assign Supervisor <span class="text-red-500">*</span></label>
+                                <select id="supervisorId" name="supervisorId" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5" required>
+                                    <option value="">Select Supervisor</option>
+                                    <!-- Dynamic API options -->
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -293,6 +300,7 @@ export default function CreateExam(passedExamId = null) {
         attachCoreListeners();
         addSubjectRow(); // Default row
         updateStepUI();
+        loadSupervisors(); // Fetch supervisors
     };
 
     const addSubjectRow = () => {
@@ -556,6 +564,9 @@ export default function CreateExam(passedExamId = null) {
             course: getVal('course'),
             department: getVal('department'),
             semester: getVal('semester'),
+            
+            supervisorId: getVal('supervisorId') ? getInt('supervisorId') : null,
+            supervisorName: document.getElementById('supervisorId') && document.getElementById('supervisorId').selectedIndex > 0 ? document.getElementById('supervisorId').options[document.getElementById('supervisorId').selectedIndex].text : null,
 
             subjects: subjectsArr,
 
@@ -667,6 +678,11 @@ export default function CreateExam(passedExamId = null) {
             setVal('course', data.course);
             setVal('department', data.department);
             setVal('semester', data.semester);
+            
+            if (data.supervisorId) {
+                // Ensure options are loaded or set it statically if not loaded yet
+                setTimeout(() => setVal('supervisorId', data.supervisorId), 500);
+            }
 
             if (data.registrationWindow) {
                 setVal('regStartDate', data.registrationWindow.startDate);
@@ -708,6 +724,26 @@ export default function CreateExam(passedExamId = null) {
             showToast("Failed to load existing exam data", false);
         } finally {
             showLoading(false);
+        }
+    };
+
+    const loadSupervisors = async () => {
+        try {
+            // Assume university ID 1 for now or fetch from context
+            const res = await fetch(`http://localhost:8080/api/university/1/staff`);
+            if (res.ok) {
+                const staff = await res.json();
+                const dropdown = document.getElementById('supervisorId');
+                // Assume staff contains both supervisors and others, we just list all or filter if role==SUPERVISOR
+                staff.forEach(person => {
+                    const opt = document.createElement('option');
+                    opt.value = person.staffId || person.id || person.userId; // Depending on API response
+                    opt.textContent = person.name;
+                    dropdown.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            console.error('Failed to load supervisors', e);
         }
     };
 

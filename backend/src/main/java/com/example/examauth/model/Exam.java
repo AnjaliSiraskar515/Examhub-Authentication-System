@@ -20,6 +20,9 @@ public class Exam {
     private String mode; // online, offline
     private String location;
     private String status; // upcoming, completed
+    
+    private Long supervisorId;
+    private String supervisorName;
 
     // Getters and setters
     public Long getExamId() {
@@ -92,5 +95,21 @@ public class Exam {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Long getSupervisorId() {
+        return supervisorId;
+    }
+
+    public void setSupervisorId(Long supervisorId) {
+        this.supervisorId = supervisorId;
+    }
+
+    public String getSupervisorName() {
+        return supervisorName;
+    }
+
+    public void setSupervisorName(String supervisorName) {
+        this.supervisorName = supervisorName;
     }
 }

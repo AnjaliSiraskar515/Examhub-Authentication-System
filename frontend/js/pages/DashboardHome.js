@@ -27,7 +27,7 @@ export const DashboardHome = {
             <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-up">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-white font-display">
-                        Welcome back, John! 👋
+                        Welcome back, ${(window.currentStudentName || 'Student').split(' ')[0]}! 👋
                     </h1>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         Here's what's happening with your exams today.

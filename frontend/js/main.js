@@ -67,6 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
     Sidebar.render('sidebar-container');
     Navbar.render('navbar-container');
 
+    // 3b. Load real user profile and inject into sidebar
+    loadAndInjectUserProfile();
+
     // 4. Setup Global Event Listeners
     setupGlobalEvents();
 
@@ -146,6 +149,41 @@ async function loadPage(pageId) {
                 <button onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'dashboard' } }))" class="mt-6 text-indigo-600 font-medium hover:underline">Go Back Home</button>
             </div>
         `;
+    }
+}
+
+async function loadAndInjectUserProfile() {
+    try {
+        const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
+        if (!token || token === 'mock-token-xyz') return;
+
+        const response = await fetch('http://localhost:8080/api/profile/info', {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) return;
+
+        const profile = await response.json();
+        const name = profile.name || 'Student';
+        const year = profile.year || '';
+        const dept = profile.department || profile.major || '';
+        const courseLine = [year, dept].filter(Boolean).join(' - ') || 'Student';
+        const avatarUrl = profile.passportPhotoPath
+            ? `http://localhost:8080/uploads/${profile.passportPhotoPath}`
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4f46e5&color=fff`;
+
+        // Store globally for DashboardHome welcome message
+        window.currentStudentName = name;
+
+        // Update sidebar elements
+        const nameEl = document.getElementById('sidebar-user-name');
+        const courseEl = document.getElementById('sidebar-user-course');
+        const avatarEl = document.getElementById('sidebar-user-avatar');
+        if (nameEl) nameEl.textContent = name;
+        if (courseEl) courseEl.textContent = courseLine;
+        if (avatarEl) avatarEl.src = avatarUrl;
+
+    } catch (error) {
+        console.warn('Could not load user profile for sidebar:', error);
     }
 }
 

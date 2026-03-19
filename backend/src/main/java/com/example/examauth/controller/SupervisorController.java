@@ -43,8 +43,21 @@ public class SupervisorController {
         // Fetch real counts (dashboard stats)
         java.time.LocalDateTime startOfDay = java.time.LocalDate.now().atStartOfDay();
         long totalScans = qrRepository.countByUsedAndIssuedAtAfter(true, startOfDay);
-        long fullyVerifiedCount = userRepository.countByRoleAndBiometricVerified("STUDENT", true);
-        long totalStudents = userRepository.countByRole("STUDENT");
+        
+        // Use the deterministic exam list to count proper assigned exams and students
+        List<Map<String, Object>> myExams = getExams(authentication);
+        Set<String> myExamNames = myExams.stream()
+            .map(m -> (String) m.get("title"))
+            .collect(java.util.stream.Collectors.toSet());
+
+        List<Map<String, Object>> myStudents = getStudents(null).stream()
+            .filter(s -> myExamNames.contains((String) s.get("examName")))
+            .collect(java.util.stream.Collectors.toList());
+
+        long totalStudents = myStudents.size();
+        long fullyVerifiedCount = myStudents.stream()
+            .filter(s -> Boolean.TRUE.equals(s.get("biometricVerified")))
+            .count();
         long pendingCount = Math.max(0, totalStudents - fullyVerifiedCount);
 
         Map<String, Object> profile = new HashMap<>();
@@ -52,7 +65,7 @@ public class SupervisorController {
         profile.put("pendingVerifications", pendingCount);
         profile.put("studentsCount", totalStudents);
         profile.put("verifiedStudentsCount", fullyVerifiedCount);
-        profile.put("assignedExamsCount", examRepository.count());
+        profile.put("assignedExamsCount", (long) myExams.size());
 
         // Logged-in supervisor's identity & affiliation only
         profile.put("name", user.getName() != null ? user.getName() : "");
@@ -78,19 +91,34 @@ public class SupervisorController {
     }
 
     @GetMapping("/exams")
-    public List<Map<String, Object>> getExams() {
-        return examRepository.findAll().stream().map(exam -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", exam.getExamId());
-            map.put("title", exam.getExamName()); // Corrected field name
-            map.put("date", exam.getDate().toString()); // Corrected field name
-            map.put("duration", exam.getDurationMinutes());
-            map.put("startTime", exam.getStartTime() != null ? exam.getStartTime().toString() : "TBD");
-            map.put("mode", exam.getMode());
-            map.put("status", exam.getStatus());
-            map.put("location", exam.getLocation());
-            return map;
-        }).collect(java.util.stream.Collectors.toList());
+    public List<Map<String, Object>> getExams(Authentication authentication) {
+        String supervisorName = "";
+        Long supervisorId = 0L;
+        if (authentication != null && authentication.getName() != null) {
+            String email = authentication.getName();
+            User user = userRepository.findFirstByEmail(email).orElse(null);
+            if (user != null) {
+                supervisorName = user.getName() != null ? user.getName() : "";
+                supervisorId = user.getUserId();
+            }
+        }
+        final String sName = supervisorName.toLowerCase();
+        final Long sId = supervisorId;
+
+        return examRepository.findAll().stream()
+                .filter(exam -> exam.getSupervisorId() != null && exam.getSupervisorId().equals(sId))
+                .map(exam -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", exam.getExamId());
+                    map.put("title", exam.getExamName());
+                    map.put("date", exam.getDate().toString());
+                    map.put("duration", exam.getDurationMinutes());
+                    map.put("startTime", exam.getStartTime() != null ? exam.getStartTime().toString() : "TBD");
+                    map.put("mode", exam.getMode());
+                    map.put("status", exam.getStatus());
+                    map.put("location", exam.getLocation());
+                    return map;
+                }).collect(java.util.stream.Collectors.toList());
     }
 
     @GetMapping("/students")

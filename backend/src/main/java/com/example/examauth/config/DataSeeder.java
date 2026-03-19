@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Configuration
 public class DataSeeder {
@@ -45,6 +46,7 @@ public class DataSeeder {
                 student.setName("Test Student");
                 student.setEmail("test@student.com");
                 student.setUsername("teststudent");
+                student.setPrn("TEST001");
                 student.setPassword(passwordEncoder.encode("password"));
                 student.setRole("STUDENT");
                 student.setStatus("APPROVED");
@@ -58,9 +60,24 @@ public class DataSeeder {
                 student.setYear("Final Year");
 
                 userRepository.save(student);
-                System.out.println("✅ Test Student Seeded: teststudent / password");
+                System.out.println("✅ Test Student Seeded: teststudent / password (PRN: TEST001)");
             } else {
                 System.out.println("ℹ️ Test Student already exists.");
+            }
+
+            // Seed real student: its972025@gmail.com / PRN: 72260829C
+            if (userRepository.findByEmail("its972025@gmail.com").isEmpty()) {
+                User realStudent = new User();
+                realStudent.setName("Student");
+                realStudent.setEmail("its972025@gmail.com");
+                realStudent.setPrn("72260829C");
+                realStudent.setPassword(passwordEncoder.encode("123456"));
+                realStudent.setRole("STUDENT");
+                realStudent.setStatus("active");
+                realStudent.setProfileCompleted(false);
+                realStudent.setDepartment("Computer Science");
+                userRepository.save(realStudent);
+                System.out.println("✅ Real Student Seeded: its972025@gmail.com / 72260829C / password: 123456");
             }
 
             // Seed Exam
@@ -176,6 +193,28 @@ public class DataSeeder {
                 userRepository.save(admin);
                 System.out.println("✅ Super Admin Seeded: admin@examhub.com / admin123");
             }
+
+            // Retroactively assign "toc" ("Theory of Computation") and "Java" ("Advanced Java Programming") to photosfor544@gmail.com and SPPU
+            userRepository.findByEmail("photosfor544@gmail.com").ifPresent(supervisor -> {
+                userRepository.findByEmail("starits04@gmail.com").ifPresent(university -> {
+                    List<Exam> tocExams = examRepository.findByExamName("Theory of Computation");
+                    List<Exam> javaExams = examRepository.findByExamName("Advanced Java Programming");
+                    
+                    for (Exam e : tocExams) {
+                        e.setSupervisorId(supervisor.getUserId());
+                        e.setSupervisorName(supervisor.getName());
+                        e.setInstitutionName(university.getUniversityName() != null ? university.getUniversityName() : university.getCollegeName() != null ? university.getCollegeName() : "SPPU");
+                        examRepository.save(e);
+                    }
+                    for (Exam e : javaExams) {
+                        e.setSupervisorId(supervisor.getUserId());
+                        e.setSupervisorName(supervisor.getName());
+                        e.setInstitutionName(university.getUniversityName() != null ? university.getUniversityName() : university.getCollegeName() != null ? university.getCollegeName() : "SPPU");
+                        examRepository.save(e);
+                    }
+                    System.out.println("✅ Retroactively assigned TOC and Java to " + supervisor.getEmail() + " under " + university.getEmail());
+                });
+            });
 
         };
     }
