@@ -21,6 +21,31 @@
       font-family: Inter, ui-sans-serif, system-ui;
     }
 
+    /* Dark Mode Defaults */
+    html.dark {
+      --bg: #0f172a;
+    }
+    html.dark body { 
+      color: #f8fafc; 
+    }
+    html.dark .bg-white, html.dark .card { 
+      background-color: #1e293b !important; 
+      border-color: #334155 !important; 
+    }
+    html.dark .text-gray-900, html.dark .text-gray-800, html.dark .text-gray-700 { 
+      color: #f1f5f9 !important; 
+    }
+    html.dark .text-gray-600, html.dark .text-gray-500 { 
+      color: #cbd5e1 !important; 
+    }
+    html.dark .bg-gray-50, html.dark .bg-gray-100 { 
+      background-color: #0f172a !important; 
+      border-color: #1e293b !important; 
+    }
+    html.dark .border-gray-200, html.dark .border-gray-100 { 
+      border-color: #334155 !important; 
+    }
+
     .tab-btn.active {
       background: var(--primary);
       color: white;
@@ -74,6 +99,30 @@
         </div>
       </div>
       <div class="flex items-center space-x-4">
+        
+        <!-- Theme & Notifications Section -->
+        <div class="flex items-center space-x-3 pr-4 border-r border-gray-200">
+          <button class="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors shadow-sm" title="Toggle Theme" onclick="toggleTheme()">
+            <i id="themeIcon" class="fas fa-moon text-lg"></i>
+          </button>
+          
+          <div class="relative">
+            <button id="notificationBtn" class="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors shadow-sm relative" title="Notifications" onclick="toggleNotifications()">
+              <i class="fas fa-bell text-lg"></i>
+              <span id="notificationBadge" class="hidden absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+            </button>
+            <div id="notificationPanel" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+              <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h3 class="font-semibold text-gray-700">Notifications</h3>
+                <button onclick="markAllNotificationsRead()" class="text-xs text-indigo-600 hover:text-indigo-800">Mark all read</button>
+              </div>
+              <div id="notificationList" class="max-h-80 overflow-y-auto">
+                <div class="p-4 text-center text-sm text-gray-500">No exams assigned yet</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Profile Dropdown Trigger -->
         <button onclick="openProfileModal()"
           class="flex items-center space-x-2 focus:outline-none hover:bg-gray-50 p-2 rounded-lg transition-colors">
@@ -130,7 +179,7 @@
         <div class="stat-card p-6 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-emerald-100 text-sm">Students Fully Verified</p>
+              <p class="text-emerald-100 text-sm">Total Students Assigned</p>
               <p class="text-2xl font-bold" id="statStudents">--</p>
             </div>
             <i class="fas fa-user-check text-3xl text-emerald-200 opacity-50"></i>
@@ -254,7 +303,7 @@
                 class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 shadow-md transition-all flex items-center justify-center">
                 <i class="fas fa-file-pdf mr-2"></i> Download Attendance Report
               </button>
-              <button onclick="alert('Downloading Incident Log...')"
+              <button onclick="downloadIncidentLog()"
                 class="flex-1 bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 shadow-md transition-all flex items-center justify-center">
                 <i class="fas fa-file-alt mr-2"></i> Download Incident Log
               </button>
@@ -705,6 +754,17 @@
       if (token) h['Authorization'] = 'Bearer ' + token;
       return h;
     }
+    // --- Theme Toggle Logic ---
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+      const icon = document.getElementById('themeIcon');
+      if (document.documentElement.classList.contains('dark')) {
+        icon.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        icon.classList.replace('fa-sun', 'fa-moon');
+      }
+    }
+
     // --- OTP Verification Logic ---
     let originalEmail = "";
     let originalPhone = "";
@@ -931,7 +991,7 @@
 
         // Update Main Stat Cards
         document.getElementById('statExams').innerText = p.assignedExamsCount ?? '--';
-        document.getElementById('statStudents').innerText = p.verifiedStudentsCount ?? '--'; // Fully Verified
+        document.getElementById('statStudents').innerText = p.studentsCount ?? '--'; // Total Students
         document.getElementById('statScans').innerText = p.scansToday ?? '--'; // Total Scans
         document.getElementById('statPending').innerText = p.pendingVerifications ?? '--'; // Pending
 
@@ -952,7 +1012,14 @@
       try {
         const res = await fetch('http://localhost:8080/api/supervisor/exams', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-exams');
-        const arr = await res.json();
+        let arr = await res.json();
+        
+        // Sort newest first
+        arr.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // Process Notifications before rendering body
+        processNotifications(arr);
+
         container.innerHTML = '';
         if (arr.length === 0) container.innerHTML = '<div class="muted">No assigned exams.</div>';
 
@@ -1045,6 +1112,176 @@
         });
         container.dataset.loaded = '1';
       } catch (e) { console.error(e); container.innerHTML = '<div class="message error">Failed to load exams</div>'; }
+    }
+
+    // --- Notifications Logic ---
+    let unreadCount = 0;
+    
+    function toggleNotifications() {
+      const panel = document.getElementById('notificationPanel');
+      panel.classList.toggle('hidden');
+    }
+
+    function processNotifications(exams) {
+      const list = document.getElementById('notificationList');
+      const badge = document.getElementById('notificationBadge');
+      list.innerHTML = '';
+      unreadCount = 0;
+
+      const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+      
+      const now = new Date();
+      let notifications = [];
+
+      exams.forEach(ex => {
+        const examDateObj = new Date(ex.date);
+        let startDateTime = examDateObj;
+        
+        if (ex.startTime) {
+           const [h, m] = ex.startTime.split(':').map(Number);
+           startDateTime = new Date(examDateObj);
+           startDateTime.setHours(h, m, 0, 0);
+        }
+
+        const diffTime = startDateTime - now;
+        const diffHours = diffTime / (1000 * 60 * 60);
+        const diffMins = diffTime / (1000 * 60);
+        
+        const isLive = ex.status === 'LIVE' || ex.status === 'ONGOING';
+        const isUpcoming = diffHours >= 0;
+        const isRecentlyPassed = diffHours < 0 && diffHours > -24; // Started within last 24h
+
+        // 1. Live Exam or Starting Soon Reminder
+        if (isLive || (isUpcoming && diffHours <= 1)) {
+            const isStartingSoon = !isLive && diffMins > 0;
+            notifications.push({
+               type: isLive ? 'LIVE_EXAM' : 'REMINDER',
+               id: ex.id,
+               notifId: `exam-${ex.id}-reminder`,
+               exam: ex,
+               title: isLive ? 'Exam is Live Now!' : (diffMins <= 30 ? `Your exam starts in ${Math.round(diffMins)} minutes` : `Starting in ${Math.round(diffMins)} mins!`),
+               message: isLive ? `Click to supervise ${ex.title}` : `Your exam ${ex.title} is about to begin.`,
+               iconClass: isLive ? 'fa-video' : 'fa-clock',
+               colorClass: isLive ? 'text-red-600 bg-red-100' : 'text-blue-600 bg-blue-100',
+               timestamp: now.getTime()
+            });
+        } 
+        
+        // 2. New Assignment Context
+        if (isUpcoming || isLive || isRecentlyPassed) {
+           let timeContextStr = "";
+           if (diffHours > 24) {
+               timeContextStr = `Starts in ${Math.floor(diffHours/24)} days`;
+           } else if (diffHours > 0) {
+               if (diffHours >= 1) {
+                   timeContextStr = `Starts in ${Math.floor(diffHours)} hours`;
+               } else {
+                   timeContextStr = `Starts in ${Math.round(diffMins)} minutes`;
+               }
+           } else {
+               timeContextStr = `Started ${Math.abs(Math.floor(diffHours))} hours ago`;
+           }
+
+           // We assume assigned recently if it's in the future
+           notifications.push({
+               type: 'NEW_ASSIGNMENT',
+               id: ex.id,
+               notifId: `exam-${ex.id}-assigned`,
+               exam: ex,
+               title: 'New Exam Assignment',
+               message: `You have been assigned: ${ex.title} on ${examDateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} at ${ex.startTime || 'TBD'}`,
+               timeContext: timeContextStr,
+               iconClass: 'fa-clipboard-check',
+               colorClass: 'text-green-600 bg-green-100',
+               timestamp: examDateObj.getTime()
+            });
+        }
+      });
+
+      // Sort notifications - Reminders/Live first, then by date 
+      notifications.sort((a, b) => {
+         if (a.type !== b.type) {
+            if (a.type === 'LIVE_EXAM') return -1;
+            if (b.type === 'LIVE_EXAM') return 1;
+            if (a.type === 'REMINDER') return -1;
+            if (b.type === 'REMINDER') return 1;
+         }
+         return b.timestamp - a.timestamp;
+      });
+
+      if (notifications.length === 0) {
+        list.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">No new notifications</div>';
+        badge.classList.add('hidden');
+        return;
+      }
+
+      notifications.forEach(n => {
+        const isRead = readNotifications.includes(n.notifId);
+        if (!isRead) unreadCount++;
+
+        const item = document.createElement('div');
+        item.className = `p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 flex gap-3 transition-colors ${!isRead ? 'bg-indigo-50/30' : ''}`;
+        item.onclick = () => {
+          markNotificationRead(n.notifId);
+          toggleNotifications();
+          showTab('exams');
+          if(typeof openExamDetail === 'function') {
+              openExamDetail(n.exam.id, n.exam.title.replace(/'/g, "\\'"), n.exam.date, n.exam.startTime, n.exam.mode || 'OFFLINE', n.exam.location || '', n.exam.status, n.exam.duration || 0);
+          }
+        };
+        
+        item.innerHTML = `
+          <div class="mt-1 flex-shrink-0 relative">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center ${n.colorClass}">
+                <i class="fas ${n.iconClass} text-sm"></i>
+            </div>
+            ${!isRead ? '<span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-600 rounded-full border-2 border-white"></span>' : ''}
+          </div>
+          <div class="flex-1">
+            <div class="flex justify-between items-start">
+               <p class="text-sm font-bold text-gray-800 leading-tight">${n.title}</p>
+            </div>
+            <p class="text-xs text-gray-600 mt-1">${n.message}</p>
+            ${n.timeContext ? `<p class="text-[10px] text-gray-400 mt-1.5 font-medium"><i class="far fa-clock mr-1"></i>${n.timeContext}</p>` : ''}
+          </div>
+        `;
+        list.appendChild(item);
+      });
+
+      if (unreadCount > 0) {
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function markNotificationRead(notifId) {
+      let read = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+      if (!read.includes(notifId)) {
+        read.push(notifId);
+        localStorage.setItem('readNotifications', JSON.stringify(read));
+        // Soft refresh without API call
+        loadExams();
+      }
+    }
+
+    function markAllNotificationsRead() {
+      const list = document.getElementById('notificationList');
+      if (list.innerText.includes('No exams assigned') || list.innerText.includes('No new notifications')) return;
+      
+      const res = fetch('http://localhost:8080/api/supervisor/exams', { headers: authHeaders() })
+      .then(r => r.json())
+      .then(arr => {
+         let read = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+         arr.forEach(ex => {
+            const assignedId = `exam-${ex.id}-assigned`;
+            const reminderId = `exam-${ex.id}-reminder`;
+            if(!read.includes(assignedId)) read.push(assignedId);
+            if(!read.includes(reminderId)) read.push(reminderId);
+         });
+         localStorage.setItem('readNotifications', JSON.stringify(read));
+         loadExams();
+      });
     }
 
     // Master-Detail Navigation
@@ -2337,7 +2574,7 @@
 
       // Fetch latest student data
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/students?examId=${currentExamId}`);
+        const res = await fetch(`http://localhost:8080/api/supervisor/students?examId=${currentExamId}`, { headers: authHeaders() });
         const students = await res.json();
 
         let y = 60;
@@ -2357,14 +2594,11 @@
 
           let status = s.status;
           if (currentExamStatus === 'ENDED') {
-            // Backend now sends "SUBMITTED" or "ABSENT" directly
-            // Just clean it up for the report
-            if (s.status.includes('SUBMITTED')) status = 'SUBMITTED';
+            if (s.status && s.status.includes('SUBMITTED')) status = 'SUBMITTED';
             else if (s.status === 'ABSENT') status = 'ABSENT';
             else if (s.status === 'SUSPICIOUS') status = 'UNDER REVIEW';
-            // Else keep as is
           }
-          doc.text(status, 150, y);
+          doc.text(status || "--", 150, y);
           y += 8;
 
           if (y > 270) {
@@ -2379,6 +2613,62 @@
       } catch (e) {
         console.error(e);
         showToast("Failed to generate report", "error");
+      }
+    }
+
+    // Download Incident Log
+    window.downloadIncidentLog = async function () {
+      if (!currentExamId) return showToast("No exam selected", "error");
+      
+      showToast("Generating incident log...", "info");
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text("ExamHub - Official Incident Log", 14, 22);
+
+      doc.setFontSize(12);
+      doc.text(`Exam: ${document.getElementById('detailExamTitle').innerText}`, 14, 32);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 38);
+      doc.text(`Supervisor: ${document.getElementById('headerProfileName').innerText}`, 14, 44);
+
+      try {
+        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/alerts`, { headers: authHeaders() });
+        const alerts = await res.json();
+        
+        let y = 60;
+        doc.setFontSize(10);
+        doc.text("Time", 14, y);
+        doc.text("Student Name", 40, y);
+        doc.text("Type", 100, y);
+        doc.text("Description", 130, y);
+
+        doc.line(14, y + 2, 190, y + 2);
+        y += 10;
+
+        if (alerts.length === 0) {
+          doc.text("No suspicious incidents recorded during this exam.", 14, y);
+        } else {
+          alerts.forEach(a => {
+            const timeStr = a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : "--:--";
+            doc.text(timeStr, 14, y);
+            doc.text(a.studentName || "--", 40, y);
+            doc.text(a.type || "SUSPICIOUS", 100, y);
+            doc.text(a.message || "--", 130, y);
+            y += 8;
+
+            if (y > 270) {
+              doc.addPage();
+              y = 20;
+            }
+          });
+        }
+
+        doc.save("incident_log.pdf");
+        showToast("Incident Log Downloaded", "success");
+      } catch (e) {
+        console.error(e);
+        showToast("Failed to generate incident log", "error");
       }
     }
 

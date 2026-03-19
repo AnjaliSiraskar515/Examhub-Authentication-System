@@ -87,6 +87,13 @@ public class UniversityController {
             exam.setLocation((String) request.get("location"));
             exam.setStatus("upcoming");
 
+            if (request.containsKey("supervisorId") && request.get("supervisorId") != null) {
+                exam.setSupervisorId(Long.valueOf(request.get("supervisorId").toString()));
+            }
+            if (request.containsKey("supervisorName") && request.get("supervisorName") != null) {
+                exam.setSupervisorName((String) request.get("supervisorName"));
+            }
+
             Exam savedExam = examService.createExam(exam);
             return ResponseEntity.ok(Map.of("message", "Exam created successfully", "examId", savedExam.getExamId()));
         } catch (Exception e) {
