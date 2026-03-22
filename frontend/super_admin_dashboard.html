@@ -2050,6 +2050,15 @@
   </div>
 
   <script>
+    // ─── Auth helper: automatically includes JWT token in every request ───────
+    function authFetch(url, options = {}) {
+      const token = localStorage.getItem('token');
+      const headers = Object.assign({}, options.headers || {});
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+      return fetch(url, Object.assign({}, options, { headers }));
+    }
+
     // Navigation
     function showSection(sectionName) {
       console.log('Switching to section:', sectionName);
@@ -2119,7 +2128,7 @@
 
       try {
         // Fetch only once or on demand, optimization: fetch all always for now
-        const response = await fetch('http://localhost:8080/api/institution/all');
+        const response = await authFetch('http://localhost:8080/api/institution/all');
         if (!response.ok) throw new Error("Failed to fetch");
 
         allInstitutions = await response.json();
@@ -2296,7 +2305,7 @@
       if (!confirm("Are you sure you want to approve this institution?")) return;
 
       try {
-        const response = await fetch(`http://localhost:8080/api/institution/approve/${id}`, {
+        const response = await authFetch(`http://localhost:8080/api/institution/approve/${id}`, {
           method: 'POST'
         });
         if (response.ok) {
@@ -2314,7 +2323,7 @@
     async function rejectInstitution(id) {
       if (!confirm("Are you sure you want to REJECT this institution?")) return;
       try {
-        const response = await fetch(`http://localhost:8080/api/institution/reject/${id}`, { method: 'POST' });
+        const response = await authFetch(`http://localhost:8080/api/institution/reject/${id}`, { method: 'POST' });
         if (response.ok) {
           alert("Institution rejected.");
           fetchInstitutionRequests();
@@ -2330,7 +2339,7 @@
     async function removeInstitution(id) {
       if (!confirm("Are you sure you want to REMOVE this institution request permanently?")) return;
       try {
-        const response = await fetch(`http://localhost:8080/api/institution/remove/${id}`, { method: 'DELETE' });
+        const response = await authFetch(`http://localhost:8080/api/institution/remove/${id}`, { method: 'DELETE' });
         if (response.ok) {
           alert("Institution removed.");
           fetchInstitutionRequests();
@@ -2377,7 +2386,7 @@
 
         // 1. Fetch Admin Summary (Existing Endpoint)
         try {
-          const sumResp = await fetch('http://localhost:8080/api/admin/summary');
+          const sumResp = await authFetch('http://localhost:8080/api/admin/summary');
           if (sumResp.ok) {
             const data = await sumResp.json();
             document.getElementById('total-exams-count').innerText = data.exams || 0;
@@ -2410,7 +2419,7 @@
       if (typeof Chart === 'undefined') return;
 
       try {
-        const response = await fetch('http://localhost:8080/api/admin/analytics');
+        const response = await authFetch('http://localhost:8080/api/admin/analytics');
         if (!response.ok) throw new Error("Failed to fetch analytics");
         const data = await response.json();
 
@@ -2531,7 +2540,7 @@
       tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><i class="fas fa-spinner fa-spin text-indigo-600"></i> Loading activities...</td></tr>';
 
       try {
-        const response = await fetch(`http://localhost:8080/api/admin/activity-log?page=${page}&size=5`);
+        const response = await authFetch(`http://localhost:8080/api/admin/activity-log?page=${page}&size=5`);
         if (!response.ok) throw new Error("Failed to fetch activity log");
         const data = await response.json();
         const activities = data.content;
@@ -2572,7 +2581,7 @@
 
         // 1. Fetch Admin Summary (Existing Endpoint)
         try {
-          const sumResp = await fetch('http://localhost:8080/api/admin/summary');
+          const sumResp = await authFetch('http://localhost:8080/api/admin/summary');
           if (sumResp.ok) {
             const data = await sumResp.json();
             document.getElementById('total-exams-count').innerText = data.exams || "1,205";
@@ -2882,23 +2891,47 @@
       btn.disabled = true;
 
       try {
-        const response = await fetch('http://localhost:8080/api/admin/reports/pdf');
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = "ExamHub_System_Report.pdf";
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-        } else {
-          alert('Failed to generate PDF report. Please try again.');
+        // Fetch live summary data to include in report
+        let summaryData = {};
+        try {
+          const sumResp = await authFetch('http://localhost:8080/api/admin/summary');
+          if (sumResp.ok) summaryData = await sumResp.json();
+        } catch(e) { /* use defaults */ }
+
+        let institutionsData = [];
+        try {
+          const instResp = await authFetch('http://localhost:8080/api/institution/all');
+          if (instResp.ok) institutionsData = await instResp.json();
+        } catch(e) { /* ignore */ }
+
+        const now = new Date().toLocaleString();
+        let csv = `ExamHub System Report\nGenerated: ${now}\n\n`;
+        csv += `SYSTEM SUMMARY\n`;
+        csv += `Total Students,${summaryData.users || 0}\n`;
+        csv += `Total Exams,${summaryData.exams || 0}\n`;
+        csv += `Total Institutions,${summaryData.institutions || 0}\n`;
+        csv += `Total QR Codes,${summaryData.qrs || 0}\n`;
+        csv += `Fraud Cases,${summaryData.frauds || 0}\n\n`;
+
+        if (institutionsData.length > 0) {
+          csv += `INSTITUTIONS\nName,Code,Email,Phone,Admin,Status\n`;
+          institutionsData.forEach(inst => {
+            csv += `"${inst.name || ''}","${inst.institutionCode || ''}","${inst.contactEmail || ''}","${inst.contactPhone || ''}","${inst.adminName || ''}","${inst.status || ''}"\n`;
+          });
         }
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ExamHub_System_Report_${new Date().toISOString().slice(0,10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
       } catch (error) {
         console.error('Download error:', error);
-        alert('Error connecting to server.');
+        alert('Error generating report. Please try again.');
       } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -3169,14 +3202,15 @@
 
           // Update Profile Photo
           const profilePhotoContainer = document.querySelector('#profile-name').previousElementSibling;
-          if (data.photoPath) {
-            // Assuming static serving of uploads or a specific endpoint
-            // Since we save to 'uploads', we need an endpoint to serve it or use a relative path if served by static resources.
-            // For now, let's assume valid URL or handle it. 
-            // Ideally: <img src="..." ...>
-            const imgHtml = `<img src="http://localhost:8080/uploads/${data.photoPath}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
+          const fallbackInitials = (data.name || 'SA').trim().split(' ').map(p => p[0] ? p[0] : '').slice(0,2).join('').toUpperCase();
+          
+          if (data.photoPath && data.photoPath !== 'null') {
+            const errorHandler = `this.parentElement.style.background='linear-gradient(135deg,#4f46e5,#7c3aed)'; this.parentElement.style.border='none'; this.outerHTML='<span style=\\'font-size:inherit;font-weight:700;color:#fff;line-height:1\\'>${fallbackInitials}</span>';`;
+            const imgHtml = `<img src="http://localhost:8080/uploads/${data.photoPath}" alt="Profile" class="w-full h-full object-cover rounded-full" onerror="${errorHandler}">`;
+            
             profilePhotoContainer.innerHTML = imgHtml;
-            profilePhotoContainer.classList.remove('bg-indigo-600', 'text-4xl', 'text-white', 'font-bold');
+            profilePhotoContainer.classList.remove('bg-indigo-600', 'bg-gray-200', 'text-4xl', 'text-white', 'font-bold');
+            profilePhotoContainer.style.background = 'transparent';
 
             if (sidebarInitials) {
               sidebarInitials.innerHTML = imgHtml;
@@ -3184,6 +3218,11 @@
               sidebarInitials.style.background = 'transparent';
               sidebarInitials.style.border = '1px solid #e2e8f0';
             }
+          } else {
+            // No photo — show initials avatar
+            profilePhotoContainer.innerHTML = `<span style="font-size:2.5rem;font-weight:700;color:#fff;line-height:1">${fallbackInitials}</span>`;
+            profilePhotoContainer.style.cssText = 'background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;';
+            if (sidebarInitials) sidebarInitials.textContent = fallbackInitials;
           }
 
           if (emailInput) {

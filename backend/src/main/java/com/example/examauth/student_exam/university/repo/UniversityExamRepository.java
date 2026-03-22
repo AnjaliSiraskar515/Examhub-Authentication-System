@@ -12,4 +12,6 @@ public interface UniversityExamRepository extends JpaRepository<UniversityExam, 
     List<UniversityExam> findByStatus(String status);
 
     List<UniversityExam> findBySessionName(String sessionName);
+
+    List<UniversityExam> findBySupervisorId(Long supervisorId);
 }

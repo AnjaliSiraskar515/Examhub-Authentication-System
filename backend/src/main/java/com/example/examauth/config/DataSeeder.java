@@ -1,24 +1,22 @@
 package com.example.examauth.config;
 
-import com.example.examauth.model.Exam;
 import com.example.examauth.model.User;
-import com.example.examauth.repo.ExamRepository;
 import com.example.examauth.repo.UserRepository;
+import com.example.examauth.repo.ExamRepository;
+import com.example.examauth.model.Exam;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 @Configuration
 public class DataSeeder {
 
     @Bean
-    public CommandLineRunner initData(UserRepository userRepository, ExamRepository examRepository,
-            PasswordEncoder passwordEncoder) {
+    public CommandLineRunner initData(UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            ExamRepository examRepository) {
         return args -> {
             // Cleanup specific colliding email if it exists (Fix for user request)
             // COMMENTED OUT TO PREVENT DELETING THE ACTIVE USER
@@ -80,41 +78,15 @@ public class DataSeeder {
                 System.out.println("✅ Real Student Seeded: its972025@gmail.com / 72260829C / password: 123456");
             }
 
-            // Seed Exam
-            if (examRepository.count() == 0) {
-                Exam exam = new Exam();
-                exam.setExamName("Advanced Java Programming");
-                exam.setInstitutionName("ExamHub University");
-                exam.setDate(LocalDate.now());
-                exam.setStartTime(LocalTime.of(10, 0));
-                exam.setDurationMinutes(180);
-                exam.setMode("OFFLINE");
-                exam.setLocation("Hall A");
-                exam.setStatus("UPCOMING");
+            // ── OLD DEMO EXAM SEEDS REMOVED ──────────────────────────────────────────
+            // Advanced Java Programming, Theory of Computation, and Operating System were
+            // test/demo exams only. The real exam module (university wizard) is now in use.
+            // To delete old records from DB:
+            //   DELETE FROM exams WHERE exam_name IN ('Advanced Java Programming','Theory of Computation','Operating System');
+            // ─────────────────────────────────────────────────────────────────────────
 
-                examRepository.save(exam);
-                System.out.println("✅ Test Exam Seeded: Advanced Java Programming");
-            } else {
-                System.out.println("ℹ️ Exams already exist.");
-            }
-
-            // Seed Second Exam (TOC)
-            if (examRepository.findByExamName("Theory of Computation").isEmpty()) {
-                Exam exam2 = new Exam();
-                exam2.setExamName("Theory of Computation");
-                exam2.setInstitutionName("ExamHub University");
-                exam2.setDate(LocalDate.now());
-                exam2.setStartTime(LocalTime.of(14, 0));
-                exam2.setDurationMinutes(120);
-                exam2.setMode("ONLINE");
-                exam2.setLocation("Virtual Lab 1");
-                exam2.setStatus("LIVE");
-                examRepository.save(exam2);
-                System.out.println("✅ Exam Seeded: Theory of Computation");
-            }
-
-            // Seed 5 Random Students
-            if (userRepository.count() < 10) { // arbitrary check to avoid over-seeding
+            // Seed 5 Random Students (kept for student registration / testing flows)
+            if (userRepository.count() < 10) {
                 for (int i = 1; i <= 5; i++) {
                     String username = "student" + i;
                     if (userRepository.findByUsername(username).isEmpty()) {
@@ -128,29 +100,13 @@ public class DataSeeder {
                         s.setProfileCompleted(true);
                         s.setDepartment("Computer Science");
                         s.setYear("Third Year");
-                        // Random photos
                         s.setPhotoPath("https://ui-avatars.com/api/?name=Student+" + i + "&background=random");
                         userRepository.save(s);
                     }
                 }
             }
 
-            // Seed Operating System Exam (Live, Online)
-            if (examRepository.findByExamName("Operating System").isEmpty()) {
-                Exam exam3 = new Exam();
-                exam3.setExamName("Operating System");
-                exam3.setInstitutionName("ExamHub University");
-                exam3.setDate(LocalDate.now());
-                exam3.setStartTime(LocalTime.of(10, 0));
-                exam3.setDurationMinutes(180);
-                exam3.setMode("ONLINE");
-                exam3.setLocation("Remote / Virtual");
-                exam3.setStatus("LIVE");
-                examRepository.save(exam3);
-                System.out.println("✅ Exam Seeded: Operating System");
-            }
-
-            // Seed 3 OS Students
+            // Seed 3 OS Students (kept for testing)
             for (int i = 1; i <= 3; i++) {
                 String username = "os_student" + i;
                 if (userRepository.findByUsername(username).isEmpty()) {
@@ -170,7 +126,7 @@ public class DataSeeder {
                     userRepository.save(s);
                 }
             }
-            System.out.println("✅ 5 Random Students Seeded");
+            System.out.println("✅ Test students seeded");
 
             // Seed Super Admin
             if (userRepository.findByUsername("super_admin").isEmpty()

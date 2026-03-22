@@ -6,6 +6,7 @@ import MyRegistrations from './pages/MyRegistrations.js';
 import { Profile } from './pages/Profile.js';
 import { Notifications } from './pages/Notifications.js';
 import { StudentFaceVerification } from './pages/StudentFaceVerification.js';
+import { StudentBiometricVerification } from './pages/StudentBiometricVerification.js';
 import CreateExam from './pages/CreateExam.js';
 import ExamRegistration from './pages/ExamRegistration.js';
 
@@ -97,7 +98,8 @@ async function loadPage(pageId) {
         'registered': MyRegistrations,
         'profile': Profile,
         'notifications': Notifications,
-        'face-verification': StudentFaceVerification
+        'face-verification': StudentFaceVerification,
+        'biometric-verification': StudentBiometricVerification
     };
 
     const component = routes[pageId];

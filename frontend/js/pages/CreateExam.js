@@ -8,9 +8,26 @@ export default function CreateExam(passedExamId = null) {
     let examId = passedExamId;
     let subjectsCount = 0;
 
+    // Auth-aware fetch helper
+    const authFetch = (url, options = {}) => {
+        const token = localStorage.getItem('token');
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        };
+        return fetch(url, { ...options, headers });
+    };
+
     const render = () => {
         app.innerHTML = `
             <div class="p-6 max-w-5xl mx-auto animate-fade-in-up">
+                <!-- Back Button -->
+                <div class="mb-4">
+                    <button id="backToExamsBtn" type="button" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 transition-colors bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-800/50 px-4 py-2 rounded-lg border border-indigo-200 dark:border-indigo-700 shadow-sm">
+                        <i class="fas fa-arrow-left"></i> Back to Exams
+                    </button>
+                </div>
                 <div class="mb-8 text-center">
                     <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">University Exam Creation Wizard</h1>
                     <p class="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Follow this multi-step process to configure academic details, schedules, and registration rules for a new examination cycle.</p>
@@ -345,6 +362,26 @@ export default function CreateExam(passedExamId = null) {
     };
 
     const attachCoreListeners = () => {
+        // Back to Exams
+        const backBtn = document.getElementById('backToExamsBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                // Navigate back to the exams section in the dashboard
+                const examsNavLink = document.querySelector('.nav-link[data-target="exams-section"]');
+                if (examsNavLink) {
+                    examsNavLink.click();
+                } else {
+                    // Fallback: reload the exams section manually
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    const examsSection = document.getElementById('exams-section');
+                    if (examsSection) {
+                        examsSection.classList.remove('hidden');
+                        if (typeof loadExams === 'function') loadExams();
+                    }
+                }
+            });
+        }
+
         // Step Navigation
         const nextBtn = document.getElementById('nextBtn');
         const prevBtn = document.getElementById('prevBtn');
@@ -610,9 +647,8 @@ export default function CreateExam(passedExamId = null) {
                 // Update specific REST requirement
                 if (statusOverride === 'OPEN') {
                     // Update exact details first
-                    await fetch(`${url}/${examId}`, {
+                    await authFetch(`${url}/${examId}`, {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
 
@@ -625,9 +661,8 @@ export default function CreateExam(passedExamId = null) {
                 }
             }
 
-            const response = await fetch(url, {
+            const response = await authFetch(url, {
                 method: method,
-                headers: { 'Content-Type': 'application/json' },
                 body: method !== 'PATCH' ? JSON.stringify(payload) : null
             });
 
@@ -664,7 +699,7 @@ export default function CreateExam(passedExamId = null) {
         if (!examId) return;
         showLoading(true);
         try {
-            const res = await fetch(`http://localhost:8080/api/university/exams/${examId}`);
+            const res = await authFetch(`http://localhost:8080/api/university/exams/${examId}`);
             if (!res.ok) throw new Error("Failed to fetch exam");
             const data = await res.json();
 
@@ -715,8 +750,10 @@ export default function CreateExam(passedExamId = null) {
                     const group = document.querySelector('.subject-row:last-child');
                     group.querySelector('.sub-name').value = sub.subjectName || '';
                     group.querySelector('.sub-code').value = sub.subjectCode || '';
-                    group.querySelector('.sub-marks').value = sub.totalMarks || '';
-                    group.querySelector('.sub-passing').value = sub.passingMarks || '';
+                    group.querySelector('.sub-paper').value = sub.paperCode || '';
+                    group.querySelector('.sub-total').value = sub.totalMarks || '';
+                    group.querySelector('.sub-pass').value = sub.passingMarks || '';
+                    group.querySelector('.sub-dur').value = sub.duration || '';
                 });
             }
         } catch (e) {
@@ -730,7 +767,7 @@ export default function CreateExam(passedExamId = null) {
     const loadSupervisors = async () => {
         try {
             // Assume university ID 1 for now or fetch from context
-            const res = await fetch(`http://localhost:8080/api/university/1/staff`);
+            const res = await authFetch(`http://localhost:8080/api/university/1/staff`);
             if (res.ok) {
                 const staff = await res.json();
                 const dropdown = document.getElementById('supervisorId');

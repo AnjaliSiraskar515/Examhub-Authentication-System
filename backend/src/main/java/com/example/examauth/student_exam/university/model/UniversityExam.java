@@ -25,6 +25,9 @@ public class UniversityExam {
     private String semester;
     private String status;
 
+    private Long supervisorId;
+    private String supervisorName;
+
     @OneToMany(mappedBy = "universityExam", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UniversityExamSubject> subjects;
 

@@ -1,16 +1,20 @@
 package com.example.examauth.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.multipart.MultipartFile;
 import com.example.examauth.repo.UserRepository;
 import com.example.examauth.model.User;
 import com.example.examauth.repo.QRCodeRepository;
 import com.example.examauth.model.QRCodeEntry;
 import com.example.examauth.repo.FraudLogRepository;
 import com.example.examauth.model.FraudLog;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +47,9 @@ public class AdminController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Value("${file.upload-dir:uploads/profile}")
+    private String baseUploadDir;
 
     @GetMapping("/analytics")
     public ResponseEntity<?> getAnalytics() {
@@ -283,6 +290,42 @@ public class AdminController {
         profile.put("lastLogin", user.getLastLogin());
         profile.put("photoPath", user.getPhotoPath());
         profile.put("profileCompleted", user.getProfileCompleted());
+        // University identity fields
+        String uniName = user.getUniversityName();
+        String instCode = user.getInstitutionCode();
+
+        if ((uniName == null || uniName.trim().isEmpty()) && "UNIVERSITY_ADMIN".equalsIgnoreCase(user.getRole())) {
+            // 1. Primary Fallback: Use unique institutionCode if available
+            if (instCode != null && !instCode.isEmpty()) {
+                institutionRepo.findFirstByInstitutionCode(instCode).ifPresent(inst -> {
+                    user.setUniversityName(inst.getName());
+                    userRepo.save(user);
+                });
+            }
+            
+            // 2. Secondary Fallback: Check institutions table by email (existing logic)
+            if (user.getUniversityName() == null || user.getUniversityName().isEmpty()) {
+                institutionRepo.findFirstByContactEmail(user.getEmail()).ifPresent(inst -> {
+                    user.setUniversityName(inst.getName());
+                    user.setInstitutionCode(inst.getInstitutionCode());
+                    userRepo.save(user);
+                });
+            }
+            if (user.getUniversityName() == null || user.getUniversityName().isEmpty()) {
+                institutionRepo.findFirstByAdminEmail(user.getEmail()).ifPresent(inst -> {
+                    user.setUniversityName(inst.getName());
+                    user.setInstitutionCode(inst.getInstitutionCode());
+                    userRepo.save(user);
+                });
+            }
+            uniName = user.getUniversityName();
+            instCode = user.getInstitutionCode();
+        }
+
+        profile.put("universityName", uniName);
+        profile.put("collegeName", user.getCollegeName());
+        profile.put("institutionCode", instCode);
+        profile.put("universityLogoPath", user.getUniversityLogoPath());
         return ResponseEntity.ok(profile);
     }
 
@@ -300,6 +343,7 @@ public class AdminController {
         String newName = (String) body.get("name");
         String newEmail = (String) body.get("email");
         String newPhone = (String) body.get("phoneNumber");
+        String newUniversityName = (String) body.get("universityName");
 
         if (newName != null && !newName.isEmpty()) {
             user.setName(newName);
@@ -313,10 +357,61 @@ public class AdminController {
             }
             user.setEmail(newEmail);
         }
+        if (newUniversityName != null && !newUniversityName.trim().isEmpty()) {
+            user.setUniversityName(newUniversityName.trim());
+        }
 
         userRepo.save(user);
         return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
     }
+
+    // ─── University Logo Upload ────────────────────────────────────────────────
+    @PostMapping("/upload-logo")
+    public ResponseEntity<?> uploadUniversityLogo(
+            Authentication authentication,
+            @RequestParam("logo") MultipartFile logo) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        if (logo == null || logo.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No file provided"));
+        }
+        String contentType = logo.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Only image files are allowed"));
+        }
+        try {
+            User user = userRepo.findFirstByEmail(authentication.getName()).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+
+            // Resolve uploads/logo directory relative to project working dir
+            File logoDir = new File("uploads/logo");
+            if (!logoDir.isAbsolute()) {
+                logoDir = new File(System.getProperty("user.dir"), "uploads/logo");
+            }
+            if (!logoDir.exists()) {
+                logoDir.mkdirs();
+            }
+
+            String filename = System.currentTimeMillis() + "_" + logo.getOriginalFilename();
+            logo.transferTo(new File(logoDir, filename));
+
+            user.setUniversityLogoPath(filename);
+            userRepo.save(user);
+
+            return ResponseEntity.ok(Map.of(
+                "message", "Logo uploaded successfully",
+                "logoPath", filename,
+                "logoUrl",  "/uploads/logo/" + filename
+            ));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Upload failed: " + e.getMessage()));
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     @PostMapping("/update-password")
     public ResponseEntity<?> updatePassword(Authentication authentication, @RequestBody Map<String, String> body) {
