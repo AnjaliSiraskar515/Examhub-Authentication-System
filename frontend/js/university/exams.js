@@ -5,7 +5,7 @@ async function loadExams() {
     tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">Loading...</td></tr>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/exams/`); // New API endpoint
+        const response = await authFetch(`${API_BASE_URL}/exams/`);
         const exams = await response.json();
         DashboardState.exams = exams; // Store exams in state
         renderExamsTable(exams);
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/exams/${window.examToDelete}`, {
+            const response = await authFetch(`${API_BASE_URL}/exams/${window.examToDelete}`, {
                 method: 'DELETE'
             });
 

@@ -43,6 +43,9 @@ public class UniversityExamService {
         exam.setControls(request.getControls());
         exam.setStatus(request.getStatus() != null ? request.getStatus() : exam.getStatus());
 
+        exam.setSupervisorId(request.getSupervisorId());
+        exam.setSupervisorName(request.getSupervisorName());
+
         exam.setCenterName(request.getCenterName());
         exam.setCenterCode(request.getCenterCode());
         exam.setCenterCapacity(request.getCenterCapacity());

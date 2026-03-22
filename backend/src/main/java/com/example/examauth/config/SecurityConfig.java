@@ -31,9 +31,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/otp/**", "/api/auth/**", "/api/test/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/api/student/**").hasRole("STUDENT")
-                        .requestMatchers("/api/supervisor/**", "/api/biometric/**").hasRole("SUPERVISOR")
-                        .requestMatchers("/api/admin/**").hasRole("UNIVERSITY_ADMIN")
+                        .requestMatchers("/api/student/**").hasAnyRole("STUDENT", "SUPERADMIN")
+                        .requestMatchers("/api/supervisor/**", "/api/biometric/**").hasAnyRole("SUPERVISOR", "SUPERADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("UNIVERSITY_ADMIN", "SUPERADMIN")
+                        .requestMatchers("/api/institution/**").hasAnyRole("UNIVERSITY_ADMIN", "SUPERADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);
@@ -44,7 +45,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5500", "http://127.0.0.1:5500"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
 

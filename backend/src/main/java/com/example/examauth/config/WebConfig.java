@@ -12,9 +12,15 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve files from the configured upload directory
+        // Serve profile/document uploads
+        String baseUploadDir = new java.io.File(System.getProperty("user.dir"), uploadDir).getAbsolutePath();
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadDir + "/");
+                .addResourceLocations("file:" + baseUploadDir + "/");
+
+        // Serve university logo uploads (stored in uploads/logo/ under working dir)
+        String logoDir = new java.io.File(System.getProperty("user.dir"), "uploads/logo").getAbsolutePath();
+        registry.addResourceHandler("/uploads/logo/**")
+                .addResourceLocations("file:" + logoDir + "/");
     }
 
     @Override

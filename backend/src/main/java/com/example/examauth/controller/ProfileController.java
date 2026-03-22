@@ -149,7 +149,8 @@ public class ProfileController {
             @RequestParam(value = "sem6Marksheet", required = false) MultipartFile sem6Marksheet,
             @RequestParam(value = "sem7Marksheet", required = false) MultipartFile sem7Marksheet,
             @RequestParam(value = "sem8Marksheet", required = false) MultipartFile sem8Marksheet,
-            @RequestParam(value = "passportPhoto", required = false) MultipartFile passportPhoto) {
+            @RequestParam(value = "passportPhoto", required = false) MultipartFile passportPhoto,
+            @RequestParam(value = "photo", required = false) MultipartFile photo) {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
                 return ResponseEntity.status(401).body(Map.of("error", "Missing or invalid Authorization header"));
@@ -237,6 +238,11 @@ public class ProfileController {
                 String path = timestamp + "_" + passportPhoto.getOriginalFilename();
                 passportPhoto.transferTo(new File(dir, path));
                 user.setPassportPhotoPath(path);
+            }
+            if (photo != null) {
+                String path = timestamp + "_" + photo.getOriginalFilename();
+                photo.transferTo(new File(dir, path));
+                user.setPhotoPath(path);
             }
 
             userRepository.save(user);

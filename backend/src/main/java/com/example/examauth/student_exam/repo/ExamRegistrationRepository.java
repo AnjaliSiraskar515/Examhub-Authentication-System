@@ -10,6 +10,8 @@ import java.util.List;
 public interface ExamRegistrationRepository extends JpaRepository<ExamRegistration, Long> {
     List<ExamRegistration> findByStudentId(Long studentId);
 
+    List<ExamRegistration> findByExamId(Long examId);
+
     boolean existsByPrnAndExamId(String prn, Long examId);
 
     // Primary duplicate check — uses authenticated studentId (avoids PRN collision

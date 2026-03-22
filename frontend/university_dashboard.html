@@ -63,7 +63,7 @@
                     </div>
                     <div>
                         <h1 class="font-bold text-lg">ExamHub</h1>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">University Admin</p>
+                        <p id="university-admin-label" class="text-xs text-gray-500 dark:text-gray-400">University Admin</p>
                     </div>
                 </div>
             </div>
@@ -83,6 +83,11 @@
                     class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     data-target="staff-section">
                     <i class="fas fa-users w-5"></i> Manage Staff
+                </a>
+                <a href="#"
+                    class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    data-target="profile-section">
+                    <i class="fas fa-user-circle w-5"></i> Profile & Security
                 </a>
             </nav>
 
@@ -104,7 +109,9 @@
             <!-- Top Header (Mobile) -->
             <header
                 class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 md:hidden flex justify-between items-center">
-                <div class="font-bold">ExamHub University</div>
+                <div class="font-bold">
+                    ExamHub <span id="mobile-university-admin">University Admin</span>
+                </div>
                 <button class="text-gray-500"><i class="fas fa-bars"></i></button>
             </header>
 
@@ -435,6 +442,141 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 4. PROFILE & SECURITY -->
+                <div id="profile-section" class="tab-content hidden space-y-6">
+                    <h2 class="text-2xl font-bold">Profile & Security</h2>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Profile Card -->
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Your Profile</h3>
+                                <span class="inline-flex items-center gap-2 text-sm px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+                                    <i class="fas fa-id-badge"></i> Admin
+                                </span>
+                            </div>
+
+                            <form id="profile-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="profile-name">Admin Name</label>
+                                    <input type="text" id="profile-name" required
+                                        class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Enter your name">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="profile-email">Email</label>
+                                    <input type="email" id="profile-email" readOnly
+                                        class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 outline-none"
+                                        placeholder="Email">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="profile-phone">Phone Number</label>
+                                    <input type="text" id="profile-phone" required
+                                        class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Enter phone number">
+                                </div>
+
+                                <div id="profile-update-message" class="hidden p-3 rounded-xl text-sm"></div>
+
+                                <button type="submit" id="save-profile-btn"
+                                    class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">
+                                    <i class="fas fa-save"></i> Save Profile
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- University Identity Card -->
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center justify-between mb-5">
+                                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">University Identity</h3>
+                                <span class="inline-flex items-center gap-2 text-sm px-3 py-1 rounded-full bg-indigo-100 text-indigo-700">
+                                    <i class="fas fa-university"></i> Branding
+                                </span>
+                            </div>
+
+                            <!-- Logo Preview + Upload -->
+                            <div class="flex flex-col items-center gap-4 mb-6">
+                                <div class="relative group">
+                                    <div id="uni-logo-wrapper"
+                                        class="w-28 h-28 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50 dark:bg-gray-700 flex items-center justify-center overflow-hidden shadow-sm">
+                                        <!-- Placeholder shown when no logo uploaded -->
+                                        <span id="uni-logo-placeholder" class="flex flex-col items-center gap-1 text-blue-400">
+                                            <i class="fas fa-university text-4xl"></i>
+                                            <span class="text-xs font-medium">No Logo</span>
+                                        </span>
+                                        <img id="uni-logo-preview" src="" alt="University Logo"
+                                            class="hidden w-full h-full object-contain">
+                                    </div>
+                                    <!-- Hover overlay -->
+                                    <label for="uni-logo-input"
+                                        class="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                                        <span class="text-white text-xs font-semibold flex flex-col items-center gap-1">
+                                            <i class="fas fa-camera text-lg"></i> Change Logo
+                                        </span>
+                                    </label>
+                                </div>
+                                <input type="file" id="uni-logo-input" accept="image/*" class="hidden">
+                                <p class="text-xs text-gray-400">PNG, JPG or SVG · Max 10 MB</p>
+                                
+                                <!-- Read-only Institution Code below logo -->
+                                <div class="mt-2 text-[10px] font-mono uppercase bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+                                    Code: <span id="uni-code-text" class="font-bold text-gray-700 dark:text-gray-200">Loading...</span>
+                                </div>
+                            </div>
+
+                            <!-- University Name (read-only by default, editable via Edit button) -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                                    University Name
+                                </label>
+                                <!-- Read-only display -->
+                                <div id="uni-name-display"
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 font-bold text-gray-900 dark:text-white text-lg min-h-[46px] flex items-center gap-2">
+                                    <i class="fas fa-university text-blue-500 text-base shrink-0"></i>
+                                    <span id="uni-name-text" class="flex-1 truncate text-gray-500 italic">Loading...</span>
+                                </div>
+                                <!-- Editable input (hidden by default) -->
+                                <input type="text" id="uni-name"
+                                    class="hidden w-full px-4 py-2 rounded-xl border border-blue-400 dark:border-blue-500 bg-white dark:bg-gray-900 outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 dark:text-white text-lg mt-1"
+                                    placeholder="e.g. Savitribai Phule Pune University">
+                                <p class="text-xs text-gray-400 mt-1">
+                                    <i class="fas fa-info-circle mr-1"></i>This name is registered with the institution. Edit carefully.
+                                </p>
+                            </div>
+
+                            <!-- Action buttons -->
+                            <div class="flex gap-2">
+                                <!-- Edit button (visible in read mode) -->
+                                <button type="button" id="edit-uni-name-btn"
+                                    onclick="enableUniversityNameEdit()"
+                                    class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors text-sm">
+                                    <i class="fas fa-pencil-alt"></i> Edit Name
+                                </button>
+                                <!-- Save button (hidden in read mode) -->
+                                <button type="button" id="save-uni-name-btn"
+                                    onclick="saveUniversityIdentity()"
+                                    class="hidden flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-indigo-500/30 text-sm">
+                                    <i class="fas fa-save"></i> Save to DB
+                                </button>
+                                <!-- Cancel button (hidden in read mode) -->
+                                <button type="button" id="cancel-uni-name-btn"
+                                    onclick="cancelUniversityNameEdit()"
+                                    class="hidden py-2.5 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-colors text-sm">
+                                    Cancel
+                                </button>
+                            </div>
+
+                            <div id="uni-identity-message" class="hidden mt-3 p-3 rounded-xl text-sm"></div>
+                        </div>
+
+                        <!-- Hidden change-password-form (keeps existing JS handler from erroring) -->
+                        <form id="change-password-form" class="hidden"></form>
+                    </div>
+                </div>
+
 
                 <!-- OLD SECTIONS REMOVED -->
                 <div id="registrations-section" class="tab-content hidden space-y-6" style="display: none;">

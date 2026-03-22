@@ -136,9 +136,20 @@ public class User {
     // ===========================================================
     private String universityName;
     private String collegeName;
+    private String institutionCode; // To uniquely link to Institution record
+    private String universityLogoPath; // filename stored in uploads/logo/
     private String designation; // e.g. Chief Supervisor, Room Invigilator
     private String employeeId;
     private String appointmentLetterPath;
+
+    public String getUniversityLogoPath() {
+        return universityLogoPath;
+    }
+
+    public void setUniversityLogoPath(String universityLogoPath) {
+        this.universityLogoPath = universityLogoPath;
+    }
+
 
     public String getUniversityName() {
         return universityName;
@@ -155,6 +166,15 @@ public class User {
     public void setCollegeName(String collegeName) {
         this.collegeName = collegeName;
     }
+
+    public String getInstitutionCode() {
+        return institutionCode;
+    }
+
+    public void setInstitutionCode(String institutionCode) {
+        this.institutionCode = institutionCode;
+    }
+
 
     public String getDesignation() {
         return designation;
