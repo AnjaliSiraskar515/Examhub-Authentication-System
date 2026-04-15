@@ -174,6 +174,8 @@ public class AuthController {
                     user.setName(institution.getAdminName());
                     user.setRole("UNIVERSITY_ADMIN");
                     user.setStatus("active");
+                    user.setUniversityName(institution.getName());
+                    user.setInstitutionCode(institutionCode);
 
                     // To satisfy the database NOT NULL constraint for PRN (which is only for
                     // students)
@@ -185,6 +187,19 @@ public class AuthController {
                     userRepository.save(user);
                 } else {
                     user = userOpt.get();
+                    // Sync university name and institution code if missing or mismatch
+                    boolean changed = false;
+                    if (user.getUniversityName() == null || user.getUniversityName().isEmpty()) {
+                        user.setUniversityName(institution.getName());
+                        changed = true;
+                    }
+                    if (user.getInstitutionCode() == null || !user.getInstitutionCode().equals(institutionCode)) {
+                        user.setInstitutionCode(institutionCode);
+                        changed = true;
+                    }
+                    if (changed) {
+                        userRepository.save(user);
+                    }
                 }
 
                 // Update Last Login
@@ -200,7 +215,7 @@ public class AuthController {
                 resp.put("role", user.getRole());
                 resp.put("userId", user.getUserId());
                 resp.put("institutionId", institution.getInstitutionId());
-                resp.put("token", jwtUtil.generateToken(user.getEmail()));
+                resp.put("token", jwtUtil.generateToken(user.getEmail(), user.getTokenVersion()));
 
                 return ResponseEntity.ok(resp);
             }
@@ -212,10 +227,22 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(resp);
             }
 
-            // Unified identity resolution: always by email (no username, no role-specific overrides)
-            Optional<User> userOpt = userRepository.findByEmail(identifier);
+            // Unified identity resolution: email + role to avoid non-unique results
+            Optional<User> userOpt = userRepository.findFirstByEmailAndRole(identifier, role);
+
+            // Fallback: case-insensitive search for SUPERADMIN (handles role casing mismatches in DB)
+            if (userOpt.isEmpty() && (role.equalsIgnoreCase("SUPERADMIN") || role.equalsIgnoreCase("SUPER_ADMIN"))) {
+                userOpt = userRepository.findByEmail(identifier).filter(u ->
+                    u.getRole() != null && (
+                        u.getRole().equalsIgnoreCase("SUPERADMIN") ||
+                        u.getRole().equalsIgnoreCase("SUPER_ADMIN") ||
+                        u.getRole().equalsIgnoreCase("super admin")
+                    )
+                );
+            }
 
             if (userOpt.isEmpty()) {
+
                 Map<String, Object> resp = new HashMap<>();
                 resp.put("error", "User not found");
                 return ResponseEntity.status(401).body(resp);
@@ -268,7 +295,7 @@ public class AuthController {
             resp.put("message", "Login successful");
             resp.put("role", user.getRole());
             resp.put("userId", user.getUserId());
-            resp.put("token", jwtUtil.generateToken(user.getEmail()));
+            resp.put("token", jwtUtil.generateToken(user.getEmail(), user.getTokenVersion()));
 
             return ResponseEntity.ok(resp);
 

@@ -10,5 +10,5 @@ import java.util.List;
 public interface ExamRepository extends JpaRepository<Exam, Long> {
     List<Exam> findByInstitutionName(String institutionName);
 
-    java.util.Optional<Exam> findByExamName(String examName);
+    List<Exam> findByExamName(String examName);
 }

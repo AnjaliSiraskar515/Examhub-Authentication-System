@@ -130,6 +130,14 @@
   <script>
     document.getElementById("genDate").innerText = new Date().toLocaleString();
 
+    // Minimal JWT helper (reuses token from main auth flow)
+    function authHeaders(extra) {
+      const token = localStorage.getItem('token');
+      const h = extra ? { ...extra } : {};
+      if (token) h['Authorization'] = 'Bearer ' + token;
+      return h;
+    }
+
     // Mock data - In real flow, get this from localStorage or URL params
     const studentData = {
       name: "Test Student",
@@ -148,9 +156,9 @@
     // GENERATE SECURE QR CODE
     async function generateSecureQR() {
       try {
-        const res = await fetch('http://localhost:8080/api/qr/generate', {
+        const res = await fetch('http://localhost:8081/api/qr/generate', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
             studentId: studentData.studentId,
             examId: studentData.examId

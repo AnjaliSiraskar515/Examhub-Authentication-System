@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.password.PasswordEncoder; // Added import
+import com.example.examauth.service.SettingsService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +22,9 @@ public class InstitutionController {
     @Autowired
     private PasswordEncoder passwordEncoder; // Added PasswordEncoder autowiring
 
+    @Autowired
+    private SettingsService settingsService;
+
     @PostMapping("/register")
     public ResponseEntity<?> registerInstitution(@RequestBody Map<String, String> request) {
         try {
@@ -32,8 +36,18 @@ public class InstitutionController {
             institution.setContactPhone(request.get("contactPhone"));
             institution.setAdminName(request.get("adminName"));
             institution.setAdminEmail(request.get("adminEmail"));
-            institution.setStatus("pending");
+            boolean requireApproval = settingsService.getBooleanSetting(
+                    SettingsService.KEY_REQUIRE_INSTITUTION_APPROVAL,
+                    true);
+            institution.setStatus(requireApproval ? "pending" : "approved");
             institution.setCreatedOn(LocalDateTime.now());
+
+            if (!requireApproval) {
+                String rawLoginKey = "INST-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                institution.setLoginKey(passwordEncoder.encode(rawLoginKey));
+                sendApprovalEmail(institution, rawLoginKey);
+            }
+
             Institution saved = institutionRepository.save(institution);
             return ResponseEntity.ok(Map.of("message", "Institution registered successfully", "institutionId",
                     saved.getInstitutionId()));

@@ -14,15 +14,18 @@ public class SupervisorController {
     private final com.example.examauth.repo.UserRepository userRepository;
     private final com.example.examauth.repo.QrRepository qrRepository;
     private final com.example.examauth.repo.ExamRepository examRepository;
+    private final com.example.examauth.student_exam.university.repo.UniversityExamRepository universityExamRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public SupervisorController(com.example.examauth.repo.UserRepository userRepository,
             com.example.examauth.repo.QrRepository qrRepository,
             com.example.examauth.repo.ExamRepository examRepository,
+            com.example.examauth.student_exam.university.repo.UniversityExamRepository universityExamRepository,
             org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.qrRepository = qrRepository;
         this.examRepository = examRepository;
+        this.universityExamRepository = universityExamRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -43,8 +46,21 @@ public class SupervisorController {
         // Fetch real counts (dashboard stats)
         java.time.LocalDateTime startOfDay = java.time.LocalDate.now().atStartOfDay();
         long totalScans = qrRepository.countByUsedAndIssuedAtAfter(true, startOfDay);
-        long fullyVerifiedCount = userRepository.countByRoleAndBiometricVerified("STUDENT", true);
-        long totalStudents = userRepository.countByRole("STUDENT");
+        
+        // Use the deterministic exam list to count proper assigned exams and students
+        List<Map<String, Object>> myExams = getExams(authentication);
+        Set<String> myExamNames = myExams.stream()
+            .map(m -> (String) m.get("title"))
+            .collect(java.util.stream.Collectors.toSet());
+
+        List<Map<String, Object>> myStudents = getStudents(null).stream()
+            .filter(s -> myExamNames.contains((String) s.get("examName")))
+            .collect(java.util.stream.Collectors.toList());
+
+        long totalStudents = myStudents.size();
+        long fullyVerifiedCount = myStudents.stream()
+            .filter(s -> Boolean.TRUE.equals(s.get("biometricVerified")))
+            .count();
         long pendingCount = Math.max(0, totalStudents - fullyVerifiedCount);
 
         Map<String, Object> profile = new HashMap<>();
@@ -52,7 +68,7 @@ public class SupervisorController {
         profile.put("pendingVerifications", pendingCount);
         profile.put("studentsCount", totalStudents);
         profile.put("verifiedStudentsCount", fullyVerifiedCount);
-        profile.put("assignedExamsCount", examRepository.count());
+        profile.put("assignedExamsCount", (long) myExams.size());
 
         // Logged-in supervisor's identity & affiliation only
         profile.put("name", user.getName() != null ? user.getName() : "");
@@ -63,7 +79,7 @@ public class SupervisorController {
         profile.put("designation", user.getDesignation());
         profile.put("employeeId", user.getEmployeeId());
         profile.put("avatar", user.getPhotoPath());
-        profile.put("biometricEnrolled", user.getBiometricHash() != null && !user.getBiometricHash().isEmpty());
+        profile.put("biometricEnrolled", user.isBiometricEnrolled());
 
         List<Map<String, String>> docs = new ArrayList<>();
         if (user.getAppointmentLetterPath() != null)
@@ -78,100 +94,106 @@ public class SupervisorController {
     }
 
     @GetMapping("/exams")
-    public List<Map<String, Object>> getExams() {
-        return examRepository.findAll().stream().map(exam -> {
+    public List<Map<String, Object>> getExams(Authentication authentication) {
+        String supervisorName = "";
+        Long supervisorId = 0L;
+        if (authentication != null && authentication.getName() != null) {
+            String email = authentication.getName();
+            User user = userRepository.findFirstByEmail(email).orElse(null);
+            if (user != null) {
+                supervisorName = user.getName() != null ? user.getName() : "";
+                supervisorId = user.getUserId();
+            }
+        }
+        final Long sId = supervisorId;
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        // 1. Old Exam table (existing behaviour)
+        examRepository.findAll().stream()
+                .filter(exam -> exam.getSupervisorId() != null && exam.getSupervisorId().equals(sId))
+                .forEach(exam -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", exam.getExamId());
+                    map.put("title", exam.getExamName());
+                    map.put("date", exam.getDate().toString());
+                    map.put("duration", exam.getDurationMinutes());
+                    map.put("startTime", exam.getStartTime() != null ? exam.getStartTime().toString() : "TBD");
+                    map.put("mode", exam.getMode());
+                    map.put("status", exam.getStatus());
+                    map.put("location", exam.getLocation());
+                    result.add(map);
+                });
+
+        // 2. New UniversityExam table (wizard-created exams)
+        universityExamRepository.findBySupervisorId(sId).forEach(uExam -> {
             Map<String, Object> map = new HashMap<>();
-            map.put("id", exam.getExamId());
-            map.put("title", exam.getExamName()); // Corrected field name
-            map.put("date", exam.getDate().toString()); // Corrected field name
-            map.put("duration", exam.getDurationMinutes());
-            map.put("startTime", exam.getStartTime() != null ? exam.getStartTime().toString() : "TBD");
-            map.put("mode", exam.getMode());
-            map.put("status", exam.getStatus());
-            map.put("location", exam.getLocation());
-            return map;
-        }).collect(java.util.stream.Collectors.toList());
+            map.put("id", uExam.getId());
+            map.put("title", uExam.getSessionName());
+            map.put("date", uExam.getExamDate() != null ? uExam.getExamDate().toString() : "TBD");
+            map.put("duration",
+                    uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null &&
+                    uExam.getSchedule().getEndTime() != null
+                        ? java.time.Duration.between(
+                            uExam.getSchedule().getStartTime(),
+                            uExam.getSchedule().getEndTime()).toMinutes()
+                        : 0);
+            map.put("startTime",
+                    uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null
+                        ? uExam.getSchedule().getStartTime().toString()
+                        : "TBD");
+            map.put("mode", uExam.getMode());
+            map.put("status", uExam.getStatus());
+            map.put("location", uExam.getCenterName() != null ? uExam.getCenterName() : "");
+            result.add(map);
+        });
+
+        return result;
     }
 
     @GetMapping("/students")
     public List<Map<String, Object>> getStudents(@RequestParam(value = "examId", required = false) Long examId) {
-        // Determine target exam name for filtering
-        String targetExamName = null;
-        String examStatus = "UPCOMING";
+
+        // If examId is provided, return ONLY students actually registered for that exam
         if (examId != null) {
-            com.example.examauth.model.Exam exam = examRepository.findById(examId).orElse(null);
-            if (exam != null) {
-                targetExamName = exam.getExamName();
-                examStatus = exam.getStatus();
-            }
-        }
-        final String filterExamName = targetExamName;
-        final boolean isExamEnded = "ENDED".equals(examStatus);
+            List<com.example.examauth.student_exam.model.ExamRegistration> registrations =
+                    examRegistrationRepository.findByExamId(examId);
 
-        return userRepository.findByRole("STUDENT").stream().map(user -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", user.getUserId());
-            map.put("name", user.getName());
-            map.put("email", user.getEmail());
-            map.put("regno", "EXH-2025-" + user.getUserId());
+            return registrations.stream().map(reg -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", reg.getStudentId());
+                map.put("regno", reg.getPrn() != null ? reg.getPrn() : "EXH-2025-" + reg.getStudentId());
+                map.put("course", reg.getCourse());
+                map.put("examName", reg.getExamSession());
+                map.put("status", reg.getRegistrationStatus().name());
 
-            // Mock Exam Assignment for Demo
-            String assignedExam = "Advanced Java Programming";
-            if (user.getUsername() != null) {
-                String lowerUser = user.getUsername().trim().toLowerCase();
-                if (lowerUser.startsWith("student")) {
-                    assignedExam = "Theory of Computation";
-                } else if (lowerUser.startsWith("os_student") || lowerUser.startsWith("os")) {
-                    assignedExam = "Operating System";
-                }
-            }
-            map.put("examName", assignedExam);
-
-            // Add verification status
-            map.put("qrVerified", user.getQrVerified());
-            map.put("biometricVerified", user.getBiometricVerified());
-
-            if (isExamEnded) {
-                // STABLE STATUS FOR ENDED EXAMS
-                map.put("warningCount", 0);
-                map.put("lastActivityTime", "Finalized");
-
-                // Logic to match exam summary
-                if (Boolean.TRUE.equals(user.getBiometricVerified())) {
-                    map.put("status", "SUBMITTED");
+                // Enrich with live user data (name, email, verification)
+                User student = userRepository.findById(reg.getStudentId()).orElse(null);
+                if (student != null) {
+                    map.put("name", student.getName() != null ? student.getName() : reg.getFullName());
+                    map.put("email", student.getEmail());
+                    map.put("qrVerified", student.getQrVerified());
+                    map.put("biometricVerified", student.getBiometricVerified());
                 } else {
-                    // Deterministic fallback for unverified but submitted
-                    int hash = (user.getUsername() != null) ? user.getUsername().hashCode() : 0;
-                    if (Math.abs(hash) % 10 < 8) {
-                        map.put("status", "SUBMITTED");
-                    } else {
-                        map.put("status", "ABSENT");
-                    }
+                    map.put("name", reg.getFullName() != null ? reg.getFullName() : "Student " + reg.getStudentId());
+                    map.put("email", "");
+                    map.put("qrVerified", false);
+                    map.put("biometricVerified", false);
                 }
-            } else {
-                // LIVE RANDOM SIMULATION
-                map.put("warningCount", (int) (Math.random() * 3)); // Random 0-2 warnings
+
+                // Live monitoring simulation for non-ended exams
+                map.put("warningCount", (int) (Math.random() * 3));
                 map.put("lastActivityTime",
                         java.time.LocalTime.now().minusSeconds((long) (Math.random() * 300)).toString());
-
-                // Simulate Status
                 String[] statuses = { "ACTIVE", "IDLE", "DISCONNECTED", "SUSPICIOUS" };
-                String status = statuses[(int) (Math.random() * statuses.length)];
-                // Override if verified
-                if (Boolean.TRUE.equals(user.getBiometricVerified())) {
-                    status = "ACTIVE";
-                }
-                map.put("status", status);
-            }
+                map.put("liveStatus", statuses[(int) (Math.random() * statuses.length)]);
 
-            return map;
-        })
-                .filter(map -> {
-                    if (filterExamName == null)
-                        return true; // No filter applied
-                    return filterExamName.equals(map.get("examName"));
-                })
-                .collect(java.util.stream.Collectors.toList());
+                return map;
+            }).collect(java.util.stream.Collectors.toList());
+        }
+
+        // No examId — return empty list (don't show all students by default)
+        return new ArrayList<>();
     }
 
     // New Repositories (Ideally inject via constructor)
@@ -463,5 +485,65 @@ public class SupervisorController {
         response.put("success", true);
         response.put("message", "Biometric scan simulation successful. Please save profile to commit.");
         return response;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.example.examauth.student_exam.repo.ExamRegistrationRepository examRegistrationRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.example.examauth.student_exam.service.NotificationService notificationService;
+
+    @GetMapping("/exam-forms")
+    public List<Map<String, Object>> getPendingExamForms() {
+        List<com.example.examauth.student_exam.model.ExamRegistration> applied = examRegistrationRepository
+                .findByRegistrationStatus(
+                        com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPLIED);
+        List<com.example.examauth.student_exam.model.ExamRegistration> pending = examRegistrationRepository
+                .findByRegistrationStatus(
+                        com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.PENDING);
+
+        List<com.example.examauth.student_exam.model.ExamRegistration> allPending = new ArrayList<>();
+        allPending.addAll(applied);
+        allPending.addAll(pending);
+
+        return allPending.stream().map(reg -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", reg.getId());
+            map.put("studentId", reg.getStudentId());
+            map.put("examId", reg.getExamId());
+            map.put("prn", reg.getPrn());
+            map.put("fullName", reg.getFullName());
+            map.put("course", reg.getCourse());
+            map.put("examSession", reg.getExamSession());
+            map.put("selectedSubjects", reg.getSelectedSubjects());
+            map.put("status", reg.getRegistrationStatus().name());
+
+            com.example.examauth.model.Exam exam = examRepository.findById(reg.getExamId()).orElse(null);
+            if (exam != null) {
+                map.put("examName", exam.getExamName());
+            } else {
+                map.put("examName", "Unknown Exam");
+            }
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
+    @PostMapping("/exam-forms/{id}/accept")
+    public Map<String, Object> acceptExamForm(@PathVariable Long id) {
+        com.example.examauth.student_exam.model.ExamRegistration reg = examRegistrationRepository.findById(id)
+                .orElseThrow();
+        reg.setRegistrationStatus(com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPROVED);
+        examRegistrationRepository.save(reg);
+
+        String examName = "Exam ID " + reg.getExamId();
+        com.example.examauth.model.Exam exam = examRepository.findById(reg.getExamId()).orElse(null);
+        if (exam != null) {
+            examName = exam.getExamName();
+        }
+
+        notificationService.createNotification(reg.getStudentId(), "Exam Registration Verified",
+                "Your exam form for " + examName + " has been verified and accepted by the supervisor.");
+
+        return Map.of("success", true, "message", "Form accepted successfully");
     }
 }
