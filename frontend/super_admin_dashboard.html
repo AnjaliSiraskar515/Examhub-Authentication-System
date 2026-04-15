@@ -1480,11 +1480,8 @@
             </div>
 
             <h4 class="font-bold text-gray-800 mb-2">Logs & Version</h4>
-            <div class="bg-gray-900 text-gray-300 p-4 rounded font-mono text-sm h-32 overflow-y-auto mb-4">
-              > [INFO] System started at 2026-02-15 08:00:00<br>
-              > [INFO] Backup completed successfully<br>
-              > [WARN] High memory usage detected at 14:00<br>
-              > [INFO] User Admin_01 updated security policy
+            <div id="recent-logs-terminal" class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm h-32 overflow-y-auto mb-4">
+              Loading recent logs...
             </div>
             <div class="flex justify-between items-center text-sm text-gray-500">
               <span>Version: v2.4.0 (Industry Standard)</span>
@@ -2810,6 +2807,7 @@
         }
         syncAdminContactEmailFallback();
         await loadCacheStatus();
+        await refreshRecentLogs();
       } catch (error) {
         console.error('Settings load error:', error);
         showToast('❌ Failed to load system settings from server.', 'error');
@@ -2997,27 +2995,71 @@
       }
     }
 
-    async function viewFullMaintenanceLogs() {
+    async function refreshRecentLogs() {
       try {
         const token = localStorage.getItem('token');
         const headers = {};
         if (token) headers['Authorization'] = 'Bearer ' + token;
         const response = await fetch('http://localhost:8081/api/admin/settings/maintenance/logs', { headers });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Failed to load logs');
+        const terminal = document.getElementById('recent-logs-terminal');
         const logs = Array.isArray(data.logs) ? data.logs : [];
+        if (!terminal) return;
+        
         if (logs.length === 0) {
-          showToast('ℹ️ No logs available.', 'success');
+          terminal.innerHTML = '<span class="text-gray-500">> No recent system activity logged.</span>';
           return;
         }
-        const content = logs.slice(0, 20).map(l =>
-          `[${new Date(l.timestamp).toLocaleString()}] ${l.action || 'ACTION'} - ${l.details || ''}`
-        ).join('\n');
-        alert(content);
+
+        const recentContent = logs.slice(0, 5).map(l => {
+          const timeStr = new Date(l.timestamp).toLocaleString();
+          return `> [${timeStr}] <span class="text-blue-400">[${l.action || 'INFO'}]</span> ${l.details || ''}`;
+        }).join('<br>');
+        terminal.innerHTML = recentContent;
+      } catch (error) {
+        console.error('Refresh logs error:', error);
+      }
+    }
+
+    async function viewFullMaintenanceLogs() {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        
+        const modal = document.getElementById('logsModal');
+        const modalContent = document.getElementById('logsModalContent');
+        if (!modal || !modalContent) return;
+        
+        modal.classList.remove('hidden');
+        modalContent.innerHTML = 'Loading complete logs...';
+
+        const response = await fetch('http://localhost:8081/api/admin/settings/maintenance/logs', { headers });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to load logs');
+        
+        const logs = Array.isArray(data.logs) ? data.logs : [];
+        if (logs.length === 0) {
+          modalContent.innerHTML = '<span class="text-gray-500">> No logs found.</span>';
+          return;
+        }
+        
+        const content = logs.map(l => {
+          const time = new Date(l.timestamp).toLocaleString();
+          return `> [${time}] <span class="text-blue-400">[${l.action || 'ACTION'}]</span> ${l.details || ''} <span class="text-gray-500">(Actor: ${l.actorId || 'System'})</span>`;
+        }).join('<br>');
+        
+        modalContent.innerHTML = content;
       } catch (error) {
         console.error('View logs error:', error);
-        showToast('❌ ' + (error.message || 'Failed to load logs'), 'error');
+        const modalContent = document.getElementById('logsModalContent');
+        if (modalContent) modalContent.innerHTML = `<span class="text-red-400">> Failed to load logs: ${error.message}</span>`;
       }
+    }
+
+    function closeLogsModal() {
+      const modal = document.getElementById('logsModal');
+      if (modal) modal.classList.add('hidden');
     }
 
     function getExamStatusBadge(status) {
@@ -3213,6 +3255,26 @@
       </div>
     </div>
   </div>
+  <!-- Logs Modal -->
+  <div id="logsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-5 border shadow-lg rounded-md bg-gray-900 w-11/12 max-w-4xl border-gray-700">
+      <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+        <h3 class="text-lg font-bold text-gray-100 flex items-center shadow-none text-left">
+          <i class="fas fa-terminal text-blue-500 mr-2"></i> System Logs
+        </h3>
+        <button onclick="closeLogsModal()" class="text-gray-400 hover:text-white transition">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <div id="logsModalContent" class="bg-black text-green-400 p-4 rounded font-mono text-sm h-96 overflow-y-auto w-full break-normal whitespace-pre-wrap leading-relaxed shadow-inner">
+        Loading...
+      </div>
+      <div class="mt-4 flex justify-end">
+        <button onclick="closeLogsModal()" class="px-5 py-2 bg-blue-600 font-semibold text-white rounded hover:bg-blue-700 focus:outline-none transition shadow">Close Terminal</button>
+      </div>
+    </div>
+  </div>
+
   <!-- OTP Verification Modal -->
   <div id="otpModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog"
     aria-modal="true">

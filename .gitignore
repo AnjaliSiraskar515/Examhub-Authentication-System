@@ -1,3 +1,7 @@
+# Maven / Java build files
+backend/target/
+target/
+
 # ===== Java / Spring Boot =====
 *.class
 *.jar
@@ -29,3 +33,10 @@ ai_verification/uploads/
 backend/uploaded_documents/
 *.json
 *.ps1
+
+# ===== Node / Frontend deps =====
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log**.zip
