@@ -190,6 +190,7 @@ public class ExamRegistrationService {
         dto.setRegistrationStatus(
                 registration.getRegistrationStatus() != null ? registration.getRegistrationStatus().name() : "APPLIED");
         dto.setAppliedDate(registration.getAppliedDate() != null ? registration.getAppliedDate().toString() : null);
+        dto.setHallTicketReleased(registration.getHallTicketReleased());
         return dto;
     }
 

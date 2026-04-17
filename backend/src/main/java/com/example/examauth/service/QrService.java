@@ -1,3 +1,4 @@
+
 package com.example.examauth.service;
 
 import com.example.examauth.model.QrCode;
@@ -58,7 +59,7 @@ public class QrService {
             return new com.example.examauth.dto.QrVerificationResponse(false, "Token expired");
         }
 
-        // ✅ Mark as used (single-use QR)
+        // ✅ Mark as used
         qr.setUsed(true);
         qrRepository.save(qr);
 
@@ -76,31 +77,17 @@ public class QrService {
                                                                                                    // demo)
                 : "XXXX-XXXX-1234";
 
-        // --- Biometric status snapshot for UI (no gating here) ---
-        java.time.LocalDateTime lastVerified = user.getBiometricLastVerified();
-        boolean biometricEnrolled = user.isBiometricEnrolled();
-        boolean biometricRecentlyVerified = biometricEnrolled
-                && lastVerified != null
-                && !lastVerified.isBefore(LocalDateTime.now().minusMinutes(5));
-
-        // Derive hall / seat numbers deterministically for display
-        String hallNo = "Hall " + (char) ('A' + (int) (qr.getExamId() % 5));
-        String seatNo = "Seat " + String.format("%02d", (user.getUserId() % 60) + 1);
-
         com.example.examauth.dto.QrVerificationResponse response = new com.example.examauth.dto.QrVerificationResponse(
-                true, "QR verified");
+                true, "Verified");
 
         response.setStudent(new com.example.examauth.dto.QrVerificationResponse.StudentDetail(
-                user.getUserId(),
                 user.getName(),
-                user.getPrn() != null ? user.getPrn() : "ROLL-" + user.getUserId(),
-                user.getPrn(),
+                user.getUsername() != null ? user.getUsername() : "ROLL-" + user.getUserId(), // Fallback if no username
                 user.getPhotoPath() != null ? user.getPhotoPath() : "/placeholder-avatar.png",
-                maskedAadhar,
-                hallNo,
-                seatNo));
+                maskedAadhar));
 
-        // ✅ Mock Exam Data (Since we are focusing on Auth, and Exam entity might be minimal)
+        // ✅ Mock Exam Data (Since we are focusing on Auth, and Exam entity might be
+        // minimal)
         // In a real scenario, you would do: examRepository.findById(qr.getExamId())
         response.setExam(new com.example.examauth.dto.QrVerificationResponse.ExamDetail(
                 qr.getExamId(),
@@ -108,9 +95,6 @@ public class QrService {
                 "Advanced Java Programming",
                 java.time.LocalDate.now().toString(),
                 "10:00 AM - 01:00 PM"));
-
-        response.setBiometricEnrolled(biometricEnrolled);
-        response.setBiometricRecentlyVerified(biometricRecentlyVerified);
 
         response.setInstitution(new com.example.examauth.dto.QrVerificationResponse.InstitutionDetail(
                 "ExamHub University",
