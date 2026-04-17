@@ -37,6 +37,7 @@ function renderExamsTable(exams) {
                 </span>
             </td>
             <td class="px-6 py-4 text-right">
+                <button onclick="releaseHallTicket(${exam.id})" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors" title="Release Hall Ticket"><i class="fas fa-paper-plane"></i></button>
                 <button onclick="editExam(${exam.id})" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors" title="Edit Exam"><i class="fas fa-edit"></i></button>
                 <button onclick="confirmDeleteExam(${exam.id})" class="text-red-600 hover:text-red-900 transition-colors" title="Delete Exam"><i class="fas fa-trash"></i></button>
             </td>
@@ -61,6 +62,26 @@ window.editExam = function (id) {
         window.loadExamIntoWizard(id);
     } else {
         alert("Edit functionality is connected to the Create Wizard.");
+    }
+}
+
+window.releaseHallTicket = async function (examId) {
+    if (!confirm('Are you sure you want to release hall tickets for this exam?')) return;
+    try {
+        const response = await fetch(`http://localhost:8080/api/university/release-hallticket/${examId}`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || data.error || "Failed to release hall tickets");
+        }
+        
+        alert(data.message || "Hall Ticket released successfully");
+    } catch (error) {
+        console.error("Release error:", error);
+        alert(error.message || "Failed to release hall tickets");
     }
 }
 
