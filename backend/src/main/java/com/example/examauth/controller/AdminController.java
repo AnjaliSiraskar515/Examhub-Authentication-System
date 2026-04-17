@@ -46,6 +46,9 @@ public class AdminController {
     private com.example.examauth.service.PdfService pdfService;
 
     @Autowired
+    private com.example.examauth.repo.CollegeRepository collegeRepo;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Value("${file.upload-dir:uploads/profile}")
@@ -79,9 +82,30 @@ public class AdminController {
     }
 
     @GetMapping("/supervisors")
-    public ResponseEntity<?> getSupervisors() {
+    public ResponseEntity<?> getSupervisors(
+            @RequestParam(required = false) Long collegeId,
+            @RequestParam(required = false) String department) {
+        // Resolve college name for legacy fallback matching
+        final String resolvedCollegeName = (collegeId != null)
+                ? collegeRepo.findById(collegeId).map(c -> c.getName()).orElse(null)
+                : null;
+
         List<Map<String, Object>> s = userRepo.findAll().stream()
                 .filter(u -> "SUPERVISOR".equalsIgnoreCase(u.getRole()))
+                .filter(u -> {
+                    // If collegeId filter provided, restrict to that college only
+                    if (collegeId != null) {
+                        // Primary: College entity FK
+                        if (u.getCollege() != null && !collegeId.equals(u.getCollege().getId())) return false;
+                        // Fallback: legacy collegeName string match
+                        if (u.getCollege() == null && (resolvedCollegeName == null || !resolvedCollegeName.equalsIgnoreCase(u.getCollegeName()))) return false;
+                    }
+                    // If department filter provided
+                    if (department != null && !department.trim().isEmpty() && !department.equals("All Departments")) {
+                        if (u.getDepartment() == null || !u.getDepartment().equalsIgnoreCase(department)) return false;
+                    }
+                    return true;
+                })
                 .map(u -> {
                     Map<String, Object> map = new java.util.HashMap<>();
                     map.put("userId", u.getUserId());
@@ -89,6 +113,11 @@ public class AdminController {
                     map.put("email", u.getEmail());
                     map.put("status", u.getStatus());
                     map.put("role", u.getRole());
+                    map.put("department", u.getDepartment()); // Expose department
+                    map.put("designation", u.getDesignation());
+                    map.put("collegeName", (u.getCollege() != null && u.getCollege().getName() != null) ? u.getCollege().getName() : u.getCollegeName());
+                    map.put("collegeId", u.getCollege() != null ? u.getCollege().getId() : null);
+                    map.put("photoPath", u.getPhotoPath()); // Profile photo
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -120,6 +149,16 @@ public class AdminController {
         u.setStatus(status);
         userRepo.save(u);
         return ResponseEntity.ok(Map.of("message", "status updated"));
+    }
+
+    @PatchMapping("/supervisors/{id}/department")
+    public ResponseEntity<?> updateSupervisorDepartment(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String department = body.get("department");
+        User u = userRepo.findById(id).orElse(null);
+        if (u == null) return ResponseEntity.notFound().build();
+        u.setDepartment(department);
+        userRepo.save(u);
+        return ResponseEntity.ok(Map.of("message", "Department updated", "department", department));
     }
 
     @GetMapping("/users/{role}")

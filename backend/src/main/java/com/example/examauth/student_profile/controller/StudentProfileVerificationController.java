@@ -33,8 +33,7 @@ public class StudentProfileVerificationController {
         return Map.of(
                 "success", success,
                 "message", message,
-                "timestamp", OffsetDateTime.now().toString()
-        );
+                "timestamp", OffsetDateTime.now().toString());
     }
 
     /**
@@ -64,11 +63,12 @@ public class StudentProfileVerificationController {
         if (authentication == null || authentication.getName() == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(createResponse(false, "Unauthorized"));
         }
-        
+
         boolean isStudent = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT") || a.getAuthority().equals("STUDENT"));
         if (!isStudent) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createResponse(false, "Access Denied: Only students can perform this action."));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(createResponse(false, "Access Denied: Only students can perform this action."));
         }
 
         Optional<User> userOpt = userRepository.findFirstByEmail(authentication.getName());
@@ -77,10 +77,9 @@ public class StudentProfileVerificationController {
         }
         User user = userOpt.get();
         return ResponseEntity.ok(Map.of(
-            "success", true,
-            "enrolled", user.isBiometricEnrolled(),
-            "timestamp", OffsetDateTime.now().toString()
-        ));
+                "success", true,
+                "enrolled", user.isBiometricEnrolled(),
+                "timestamp", OffsetDateTime.now().toString()));
     }
 
     @PostMapping("/biometric/enroll")
@@ -94,9 +93,10 @@ public class StudentProfileVerificationController {
         boolean isStudent = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT") || a.getAuthority().equals("STUDENT"));
         if (!isStudent) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createResponse(false, "Access Denied: Only students can perform this action."));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(createResponse(false, "Access Denied: Only students can perform this action."));
         }
-        
+
         String fingerprint = request.get("fingerprint");
         if (fingerprint == null || fingerprint.isEmpty()) {
             return ResponseEntity.badRequest().body(createResponse(false, "Fingerprint data missing"));
@@ -117,7 +117,6 @@ public class StudentProfileVerificationController {
         return ResponseEntity.ok(createResponse(true, "Biometric enrolled successfully."));
     }
 
-
     @PostMapping("/biometric/verify")
     public ResponseEntity<Map<String, Object>> verifyBiometric(
             Authentication authentication,
@@ -129,7 +128,8 @@ public class StudentProfileVerificationController {
         boolean isStudent = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT") || a.getAuthority().equals("STUDENT"));
         if (!isStudent) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createResponse(false, "Access Denied: Only students can perform this action."));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(createResponse(false, "Access Denied: Only students can perform this action."));
         }
 
         String fingerprint = request.get("fingerprint");
@@ -144,7 +144,8 @@ public class StudentProfileVerificationController {
 
         User user = userOpt.get();
         if (!user.isBiometricEnrolled() || user.getBiometricTemplateHash() == null) {
-            return ResponseEntity.badRequest().body(createResponse(false, "Biometric not enrolled. Please enroll first."));
+            return ResponseEntity.badRequest()
+                    .body(createResponse(false, "Biometric not enrolled. Please enroll first."));
         }
 
         String hash = HashUtil.sha256(fingerprint + "_SECURE_SALT");
@@ -154,6 +155,7 @@ public class StudentProfileVerificationController {
             return ResponseEntity.ok(createResponse(true, "Biometric verified successfully."));
         }
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(createResponse(false, "Biometric verification failed: Fingerprint mismatch."));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(createResponse(false, "Biometric verification failed: Fingerprint mismatch."));
     }
 }

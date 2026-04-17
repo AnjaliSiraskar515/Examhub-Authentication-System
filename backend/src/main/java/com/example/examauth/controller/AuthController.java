@@ -230,15 +230,13 @@ public class AuthController {
             // Unified identity resolution: email + role to avoid non-unique results
             Optional<User> userOpt = userRepository.findFirstByEmailAndRole(identifier, role);
 
-            // Fallback: case-insensitive search for SUPERADMIN (handles role casing mismatches in DB)
+            // Fallback: case-insensitive search for SUPERADMIN (handles role casing
+            // mismatches in DB)
             if (userOpt.isEmpty() && (role.equalsIgnoreCase("SUPERADMIN") || role.equalsIgnoreCase("SUPER_ADMIN"))) {
-                userOpt = userRepository.findByEmail(identifier).filter(u ->
-                    u.getRole() != null && (
-                        u.getRole().equalsIgnoreCase("SUPERADMIN") ||
-                        u.getRole().equalsIgnoreCase("SUPER_ADMIN") ||
-                        u.getRole().equalsIgnoreCase("super admin")
-                    )
-                );
+                userOpt = userRepository.findByEmail(identifier)
+                        .filter(u -> u.getRole() != null && (u.getRole().equalsIgnoreCase("SUPERADMIN") ||
+                                u.getRole().equalsIgnoreCase("SUPER_ADMIN") ||
+                                u.getRole().equalsIgnoreCase("super admin")));
             }
 
             if (userOpt.isEmpty()) {

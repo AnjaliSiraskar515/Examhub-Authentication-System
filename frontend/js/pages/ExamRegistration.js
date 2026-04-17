@@ -29,6 +29,44 @@ export default function ExamRegistration() {
                 console.warn('Could not fetch student profile for registration:', profErr);
             }
 
+            // ── 1.5 Check Eligibility Gate
+            try {
+                const eligRes = await fetch('http://localhost:8080/api/student/exams/eligible', {
+                    headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+                });
+
+                if (eligRes.status === 403) {
+                    const errData = await eligRes.json();
+                    if (errData.status === 'BLOCKED') {
+                        app.innerHTML = `
+                            <div class="p-6 max-w-3xl mx-auto mt-12 animate-fade-in-up">
+                                <div class="bg-red-50/90 backdrop-blur border border-red-200 p-10 rounded-3xl shadow-xl shadow-red-500/10 text-center relative overflow-hidden">
+                                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-red-400/20 rounded-full blur-3xl"></div>
+                                    <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-red-400/20 rounded-full blur-3xl"></div>
+                                    
+                                    <div class="w-24 h-24 bg-red-100 rounded-full flex justify-center items-center mx-auto mb-6 shadow-inner relative z-10">
+                                        <i class="fas fa-user-lock text-red-500 text-5xl"></i>
+                                    </div>
+                                    <h3 class="text-3xl font-extrabold text-red-800 mb-4 font-display relative z-10">Access Blocked</h3>
+                                    <p class="text-red-700 text-xl mb-8 font-medium relative z-10">${errData.reason}</p>
+                                    
+                                    <div class="p-5 bg-white/70 rounded-2xl border border-red-100 mb-8 text-sm text-red-700 font-medium max-w-lg mx-auto relative z-10">
+                                        <i class="fas fa-info-circle text-red-500 mr-2 text-lg"></i> Please resolve this issue with the administration to unlock your exam registrations.
+                                    </div>
+                                    
+                                    <button onclick="window.location.reload()" class="px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/30 transition-all flex items-center justify-center mx-auto gap-2 relative z-10 active:scale-95">
+                                        <i class="fas fa-sync-alt"></i> Refresh Status
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        return; // Halt execution and prevent loading exams
+                    }
+                }
+            } catch (eligErr) {
+                console.warn('Eligibility check failed or skipped', eligErr);
+            }
+
             // ── 2. Fetch open exams
             const response = await fetch('http://localhost:8080/api/university/exams', {
                 headers: { 'Authorization': token ? `Bearer ${token}` : '' }
@@ -536,7 +574,7 @@ export default function ExamRegistration() {
         const startScan = async () => {
             if (isScanning || verifyFingerprintBtn.disabled) return;
             isScanning = true;
-            
+
             verifyFingerprintBtn.classList.add('hidden');
             verifyFingerprintBtn.disabled = true;
             verifyFingerprintResult.classList.add('hidden');
@@ -583,10 +621,10 @@ export default function ExamRegistration() {
 
                     const fingerprintData = "PHYSICAL_MINUTIAE_" + userId;
                     const token = localStorage.getItem('token');
-                    
+
                     const response = await fetch('http://localhost:8080/api/student-profile/biometric/verify', {
                         method: 'POST',
-                        headers: { 
+                        headers: {
                             'Content-Type': 'application/json',
                             'Authorization': token ? `Bearer ${token}` : ''
                         },
@@ -623,10 +661,10 @@ export default function ExamRegistration() {
                     examScanText.className = "text-sm text-green-600 font-bold";
                     examScanText.textContent = message;
                 }
-                
+
                 verifyFingerprintBtn.innerHTML = '<i class="fas fa-check"></i> Verified';
                 verifyFingerprintBtn.disabled = true;
-                
+
                 setTimeout(() => {
                     isBiometricVerified = true;
                     verifyFingerprintLoading.classList.add('hidden');
@@ -643,11 +681,11 @@ export default function ExamRegistration() {
                     examScanText.className = "text-sm text-red-600 font-bold";
                     examScanText.textContent = "Failed";
                 }
-                
+
                 verifyFingerprintBtn.classList.remove('hidden');
                 verifyFingerprintBtn.disabled = false;
                 verifyFingerprintBtn.innerHTML = '<i class="fas fa-redo"></i> Try Again';
-                
+
                 setTimeout(() => {
                     verifyFingerprintLoading.classList.add('hidden');
                     verifyFingerprintResult.classList.remove('hidden');

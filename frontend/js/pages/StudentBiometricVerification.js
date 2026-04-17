@@ -55,11 +55,11 @@ export const StudentBiometricVerification = {
             scanResult.classList.toggle('text-green-700', success);
             scanResult.classList.toggle('border', success);
             scanResult.classList.toggle('border-green-200', success);
-            
+
             scanResult.classList.toggle('bg-red-50', !success);
             scanResult.classList.toggle('text-red-700', !success);
             scanResult.classList.toggle('border-red-200', !success);
-            
+
             scanResult.textContent = message;
         };
 
@@ -80,16 +80,16 @@ export const StudentBiometricVerification = {
                 }
 
                 const data = await response.json();
-                
+
                 if (data.success && data.enrolled) {
                     fpIcon.classList.remove('text-gray-300', 'dark:text-gray-600');
                     fpIcon.classList.add('text-green-500');
                     showResult(true, "Your biometric fingerprint is currently enrolled.");
-                    
+
                     // Lock enrollment
                     scanBtn.disabled = true;
                     scanBtn.classList.add('hidden');
-                    
+
                     statusBadge.className = 'inline-flex items-center px-4 py-2 mb-2 rounded-full text-sm font-semibold shadow-sm bg-green-100 text-green-800';
                     statusBadge.innerHTML = '✅ Enrolled';
                 } else {
@@ -105,11 +105,11 @@ export const StudentBiometricVerification = {
                 statusBadge.innerHTML = '❌ Status Error';
             }
         };
-        
+
         checkStatus();
 
         // Seamless Session Transfer for localhost WebAuthn requirements
-        (function() {
+        (function () {
             const params = new URLSearchParams(window.location.search);
             const sessionData = params.get('sessionTransfer');
             if (sessionData) {
@@ -120,7 +120,7 @@ export const StudentBiometricVerification = {
                     if (session.userId) localStorage.setItem('userId', session.userId);
                     window.history.replaceState({}, document.title, window.location.pathname);
                     window.location.reload(); // Hard reload to apply token immediately
-                } catch(e) {
+                } catch (e) {
                     console.error("Failed to parse session transfer data:", e);
                 }
             }
@@ -132,14 +132,14 @@ export const StudentBiometricVerification = {
             const startScan = async () => {
                 if (isScanning || scanBtn.disabled) return;
                 isScanning = true;
-                
+
                 scanBtn.classList.add('hidden');
                 scanBtn.disabled = true;
                 scanResult.classList.add('hidden');
-                
+
                 fpIcon.classList.remove('text-gray-300', 'dark:text-gray-600', 'text-red-500', 'text-green-500');
                 fpIcon.classList.add('text-indigo-500');
-                
+
                 scanLine.classList.remove('hidden');
                 scanLine.style.animation = 'scan 2s infinite ease-in-out alternate';
                 if (!document.getElementById('scan-keyframes')) {
@@ -148,7 +148,7 @@ export const StudentBiometricVerification = {
                     style.innerHTML = `@keyframes scan { 0% { top: 0; } 100% { top: 100%; } }`;
                     document.head.appendChild(style);
                 }
-                
+
                 scanLoading.classList.remove('hidden');
                 scanLoading.innerHTML = '<i class="fas fa-fingerprint animate-pulse mr-2"></i> Scanning...';
 
@@ -174,10 +174,10 @@ export const StudentBiometricVerification = {
 
                         const fingerprintData = "PHYSICAL_MINUTIAE_" + userId;
                         const token = localStorage.getItem('token');
-                        
+
                         const response = await fetch('http://localhost:8080/api/student-profile/biometric/enroll', {
                             method: 'POST',
-                            headers: { 
+                            headers: {
                                 'Content-Type': 'application/json',
                                 'Authorization': token ? `Bearer ${token}` : ''
                             },
@@ -211,14 +211,14 @@ export const StudentBiometricVerification = {
                 scanLine.classList.add('hidden');
                 scanLoading.classList.add('hidden');
                 scanBtn.classList.remove('hidden');
-                
+
                 if (success) {
                     fpIcon.classList.remove('text-indigo-500', 'text-red-500');
                     fpIcon.classList.add('text-green-500');
                     showResult(true, message);
                     scanBtn.innerHTML = '<i class="fas fa-fingerprint"></i> Update Fingerprint';
                     scanBtn.disabled = true;
-                    scanBtn.classList.add('hidden'); 
+                    scanBtn.classList.add('hidden');
                 } else {
                     fpIcon.classList.remove('text-indigo-500', 'text-green-500');
                     fpIcon.classList.add('text-red-500');
