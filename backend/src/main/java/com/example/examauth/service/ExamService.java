@@ -29,4 +29,8 @@ public class ExamService {
     public Optional<Exam> getExamById(Long id) {
         return examRepository.findById(id);
     }
+
+    public void deleteExam(Long id) {
+        examRepository.deleteById(id);
+    }
 }

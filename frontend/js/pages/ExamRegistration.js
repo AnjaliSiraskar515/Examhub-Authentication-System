@@ -29,6 +29,44 @@ export default function ExamRegistration() {
                 console.warn('Could not fetch student profile for registration:', profErr);
             }
 
+            // ── 1.5 Check Eligibility Gate
+            try {
+                const eligRes = await fetch('http://localhost:8080/api/student/exams/eligible', {
+                    headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+                });
+
+                if (eligRes.status === 403) {
+                    const errData = await eligRes.json();
+                    if (errData.status === 'BLOCKED') {
+                        app.innerHTML = `
+                            <div class="p-6 max-w-3xl mx-auto mt-12 animate-fade-in-up">
+                                <div class="bg-red-50/90 backdrop-blur border border-red-200 p-10 rounded-3xl shadow-xl shadow-red-500/10 text-center relative overflow-hidden">
+                                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-red-400/20 rounded-full blur-3xl"></div>
+                                    <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-red-400/20 rounded-full blur-3xl"></div>
+                                    
+                                    <div class="w-24 h-24 bg-red-100 rounded-full flex justify-center items-center mx-auto mb-6 shadow-inner relative z-10">
+                                        <i class="fas fa-user-lock text-red-500 text-5xl"></i>
+                                    </div>
+                                    <h3 class="text-3xl font-extrabold text-red-800 mb-4 font-display relative z-10">Access Blocked</h3>
+                                    <p class="text-red-700 text-xl mb-8 font-medium relative z-10">${errData.reason}</p>
+                                    
+                                    <div class="p-5 bg-white/70 rounded-2xl border border-red-100 mb-8 text-sm text-red-700 font-medium max-w-lg mx-auto relative z-10">
+                                        <i class="fas fa-info-circle text-red-500 mr-2 text-lg"></i> Please resolve this issue with the administration to unlock your exam registrations.
+                                    </div>
+                                    
+                                    <button onclick="window.location.reload()" class="px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/30 transition-all flex items-center justify-center mx-auto gap-2 relative z-10 active:scale-95">
+                                        <i class="fas fa-sync-alt"></i> Refresh Status
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        return; // Halt execution and prevent loading exams
+                    }
+                }
+            } catch (eligErr) {
+                console.warn('Eligibility check failed or skipped', eligErr);
+            }
+
             // ── 2. Fetch open exams
             const response = await fetch('http://localhost:8080/api/university/exams');
             if (!response.ok) throw new Error("Failed to fetch exams");
@@ -490,6 +528,135 @@ export default function ExamRegistration() {
         checkboxes.forEach(cb => cb.addEventListener('change', calculateFee));
         declaration.addEventListener('change', calculateFee);
         calculateFee();
+
+        let isScanning = false;
+
+        const startScan = async () => {
+            if (isScanning || verifyFingerprintBtn.disabled) return;
+            isScanning = true;
+
+            verifyFingerprintBtn.classList.add('hidden');
+            verifyFingerprintBtn.disabled = true;
+            verifyFingerprintResult.classList.add('hidden');
+
+            if (!document.getElementById('sweep-laser-keyframes')) {
+                const style = document.createElement('style');
+                style.id = 'sweep-laser-keyframes';
+                style.innerHTML = `@keyframes sweepLaser { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }`;
+                document.head.appendChild(style);
+            }
+
+            verifyFingerprintLoading.classList.remove('hidden');
+            verifyFingerprintLoading.innerHTML = `
+                <div class="relative inline-block overflow-hidden py-2 px-6">
+                    <i id="examScanIcon" class="fas fa-fingerprint text-indigo-500 text-5xl mb-2 transition-colors duration-300"></i>
+                    <div id="examScanLaser" class="absolute left-0 w-full h-1 bg-green-400 shadow-[0_0_15px_3px_rgba(74,222,128,0.8)] z-10" style="animation: sweepLaser 1.5s infinite ease-in-out alternate"></div>
+                </div>
+                <p id="examScanText" class="text-sm text-indigo-600 font-semibold animate-pulse">Acquiring biometric data...</p>
+            `;
+
+            setTimeout(async () => {
+                const examScanText = document.getElementById('examScanText');
+                if (examScanText) {
+                    examScanText.textContent = "Matching templates...";
+                    examScanText.classList.remove('animate-pulse');
+                }
+
+                if (Math.random() < 0.15) {
+                    finishScan(false, "Scanner Error: Poor scan quality. Try again.");
+                    return;
+                }
+
+                try {
+                    let userId = localStorage.getItem('userId');
+                    if (!userId) {
+                        const token = localStorage.getItem('token');
+                        if (token) {
+                            const payload = JSON.parse(atob(token.split('.')[1]));
+                            userId = payload.sub;
+                        } else {
+                            userId = "UNKNOWN";
+                        }
+                    }
+
+                    const fingerprintData = "PHYSICAL_MINUTIAE_" + userId;
+                    const token = localStorage.getItem('token');
+
+                    const response = await fetch('http://localhost:8080/api/student-profile/biometric/verify', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': token ? `Bearer ${token}` : ''
+                        },
+                        body: JSON.stringify({ fingerprint: fingerprintData })
+                    });
+
+                    if (response.status === 401 || response.status === 403) {
+                        throw new Error("Session expired or unauthorized. Please re-login.");
+                    }
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        finishScan(true, "Biometric Verified!");
+                    } else {
+                        throw new Error(data.message || "Fingerprint verification failed.");
+                    }
+                } catch (err) {
+                    finishScan(false, err.message);
+                }
+            }, 2000); // 2.0s simulated scan wait
+        };
+
+        const finishScan = (success, message) => {
+            isScanning = false;
+            const examScanIcon = document.getElementById('examScanIcon');
+            const examScanLaser = document.getElementById('examScanLaser');
+            const examScanText = document.getElementById('examScanText');
+
+            if (success) {
+                if (examScanIcon) examScanIcon.className = "fas fa-check-circle text-green-500 text-5xl mb-2 transition-all scale-110";
+                if (examScanLaser) examScanLaser.classList.add('hidden');
+                if (examScanText) {
+                    examScanText.className = "text-sm text-green-600 font-bold";
+                    examScanText.textContent = message;
+                }
+
+                verifyFingerprintBtn.innerHTML = '<i class="fas fa-check"></i> Verified';
+                verifyFingerprintBtn.disabled = true;
+
+                setTimeout(() => {
+                    isBiometricVerified = true;
+                    verifyFingerprintLoading.classList.add('hidden');
+                    verifyFingerprintResult.classList.remove('hidden');
+                    verifyFingerprintResult.classList.remove('text-red-500');
+                    verifyFingerprintResult.classList.add('text-green-600');
+                    verifyFingerprintResult.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+                    calculateFee();
+                }, 1000);
+            } else {
+                if (examScanIcon) examScanIcon.className = "fas fa-times-circle text-red-500 text-5xl mb-2 transition-all scale-110";
+                if (examScanLaser) examScanLaser.classList.add('hidden');
+                if (examScanText) {
+                    examScanText.className = "text-sm text-red-600 font-bold";
+                    examScanText.textContent = "Failed";
+                }
+
+                verifyFingerprintBtn.classList.remove('hidden');
+                verifyFingerprintBtn.disabled = false;
+                verifyFingerprintBtn.innerHTML = '<i class="fas fa-redo"></i> Try Again';
+
+                setTimeout(() => {
+                    verifyFingerprintLoading.classList.add('hidden');
+                    verifyFingerprintResult.classList.remove('hidden');
+                    verifyFingerprintResult.classList.remove('text-green-600');
+                    verifyFingerprintResult.classList.add('text-red-500');
+                    verifyFingerprintResult.innerHTML = `<i class="fas fa-times-circle"></i> ${message}`;
+                }, 1500);
+            }
+        };
+
+        verifyFingerprintBtn.addEventListener('click', startScan);
 
         // WIZARD CONTROLS LOGIC
         const nextBtn = document.getElementById('regNextBtn');

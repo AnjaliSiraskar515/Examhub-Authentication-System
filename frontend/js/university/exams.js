@@ -5,44 +5,105 @@ async function loadExams() {
     tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">Loading...</td></tr>';
 
     try {
-        const response = await authFetch(`${API_BASE_URL}/exams/`);
+        const response = await authFetch(`${API_BASE_URL}/${UNIVERSITY_ID}/exam`);
+        if (!response.ok) throw new Error('Failed to load exams: ' + response.status);
         const exams = await response.json();
         DashboardState.exams = exams; // Store exams in state
         renderExamsTable(exams);
         updateExamStats(); // Update stats after loading exams
+
+        // Add filter listeners
+        document.querySelectorAll('.exam-filter-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const statusStr = this.innerText.toUpperCase();
+                let filtered = exams;
+                if (statusStr !== 'ALL STATUSES') {
+                    filtered = exams.filter(e => (e.status || '').toUpperCase() === statusStr);
+                }
+                renderExamsTable(filtered);
+            });
+        });
     } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-red-500">Error loading exams</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-500">Error loading exams</td></tr>';
         console.error(e);
     }
 }
 
 function renderExamsTable(exams) {
     const tbody = document.getElementById('exams-table-body');
+    if (!exams || exams.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">No exams found.</td></tr>';
+        return;
+    }
+
     tbody.innerHTML = exams.map(exam => {
         const isDraft = exam.status === 'DRAFT';
         const draftWarning = isDraft ? `<div class="text-[11px] text-red-500 font-bold mt-1"><i class="fas fa-exclamation-circle mr-1"></i> Not published yet, complete exam creation!</div>` : '';
         const examNameDisplay = exam.examName || exam.sessionName || 'Unnamed Exam';
 
+        let timeDisplay = exam.startTime || '--:--';
+        if (exam.startTime && exam.durationMinutes) {
+            try {
+                const [h, m] = exam.startTime.split(':').map(Number);
+                const start = new Date();
+                start.setHours(h, m, 0);
+                const end = new Date(start.getTime() + exam.durationMinutes * 60000);
+                const endStr = end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                timeDisplay = `${exam.startTime} - ${endStr}`;
+            } catch (e) { }
+        }
+
+        const currentStatus = (exam.status || 'UNKNOWN').toUpperCase();
+        const sourceLabel = exam.source === 'LEGACY' ? 'Legacy' : 'University';
+        const sourceColor = exam.source === 'LEGACY' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700';
+
         return `
         <tr class="hover:bg-gray-50 border-b border-gray-100">
             <td class="px-6 py-4 font-medium text-gray-900 border-l-4 ${isDraft ? 'border-red-500' : 'border-transparent'}">
-                ${examNameDisplay}
+                <div class="flex items-center gap-2">
+                    ${examNameDisplay}
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase transition-all ${sourceColor}">${sourceLabel}</span>
+                </div>
                 ${draftWarning}
             </td>
-            <td class="px-6 py-4">${formatDate(exam.examDate)}</td>
-            <td class="px-6 py-4 capitalize">${(exam.examType || '').toLowerCase()}</td>
+            <td class="px-6 py-4">${formatDate(exam.examDate || exam.date)}</td>
+            <td class="px-6 py-4">${timeDisplay}</td>
+            <td class="px-6 py-4 capitalize">${(exam.examType || exam.mode || 'Regular').toLowerCase()}</td>
+            <td class="px-6 py-4 capitalize">${exam.location || 'N/A'}</td>
             <td class="px-6 py-4">
-                <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(exam.status)}">
-                    ${exam.status || 'UNKNOWN'}
-                </span>
+                <select onchange="updateExamStatus('${exam.sourceId}', this.value)" class="text-xs font-semibold rounded-lg px-2 py-1 outline-none cursor-pointer border ${getStatusColor(currentStatus)}">
+                    <option value="UPCOMING" ${currentStatus === 'UPCOMING' ? 'selected' : ''}>UPCOMING</option>
+                    <option value="DRAFT" ${currentStatus === 'DRAFT' ? 'selected' : ''}>DRAFT</option>
+                    <option value="OPEN" ${currentStatus === 'OPEN' ? 'selected' : ''}>OPEN</option>
+                    <option value="LIVE" ${currentStatus === 'LIVE' ? 'selected' : ''}>LIVE</option>
+                    <option value="COMPLETED" ${currentStatus === 'COMPLETED' ? 'selected' : ''}>COMPLETED</option>
+                    <option value="CANCELLED" ${currentStatus === 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
+                </select>
             </td>
             <td class="px-6 py-4 text-right">
                 <button onclick="releaseHallTicket(${exam.id})" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors" title="Release Hall Ticket"><i class="fas fa-paper-plane"></i></button>
-                <button onclick="editExam(${exam.id})" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors" title="Edit Exam"><i class="fas fa-edit"></i></button>
-                <button onclick="confirmDeleteExam(${exam.id})" class="text-red-600 hover:text-red-900 transition-colors" title="Delete Exam"><i class="fas fa-trash"></i></button>
+                <button onclick="editExam('${exam.sourceId}')" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors" title="Edit Exam"><i class="fas fa-edit"></i> Edit</button>
+                <button onclick="confirmDeleteExam('${exam.sourceId}')" class="text-red-600 hover:text-red-900 transition-colors" title="Delete Exam"><i class="fas fa-trash"></i></button>
             </td>
         </tr>
     `}).join('');
+}
+
+window.updateExamStatus = async function (id, status) {
+    try {
+        const response = await authFetch('http://localhost:8080/api/exam/' + id + '/status', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: status })
+        });
+        if (response.ok) {
+            console.log("Exam status updated");
+        } else {
+            alert('Failed to update status.');
+        }
+    } catch (e) {
+        console.error("Status update error", e);
+    }
 }
 
 function getStatusColor(status) {
@@ -128,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            const response = await authFetch(`${API_BASE_URL}/exams/${window.examToDelete}`, {
+            const response = await authFetch(`${API_BASE_URL}/${UNIVERSITY_ID}/exam/${window.examToDelete}`, {
                 method: 'DELETE'
             });
 
