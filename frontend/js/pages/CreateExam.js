@@ -19,6 +19,34 @@ export default function CreateExam(passedExamId = null) {
         return fetch(url, { ...options, headers });
     };
 
+    /**
+     * Helper to parse source-prefixed IDs (e.g. UNIV_1003, LEGACY_4)
+     * and route to the correct API endpoint.
+     */
+    const resolveExamApi = (id) => {
+        if (!id) return null;
+        const idStr = String(id);
+        if (idStr.startsWith('LEGACY_')) {
+            return {
+                source: 'LEGACY',
+                numericId: idStr.substring(7),
+                url: `http://localhost:8080/api/exam/${idStr.substring(7)}`
+            };
+        } else if (idStr.startsWith('UNIV_')) {
+            return {
+                source: 'UNIVERSITY',
+                numericId: idStr.substring(5),
+                url: `http://localhost:8080/api/university/exams/${idStr.substring(5)}`
+            };
+        }
+        // Fallback for plain IDs (assumed University context in this wizard)
+        return {
+            source: 'UNIVERSITY',
+            numericId: idStr,
+            url: `http://localhost:8080/api/university/exams/${idStr}`
+        };
+    };
+
     const render = () => {
         app.innerHTML = `
             <div class="p-6 max-w-5xl mx-auto animate-fade-in-up">
@@ -601,7 +629,7 @@ export default function CreateExam(passedExamId = null) {
             course: getVal('course'),
             department: getVal('department'),
             semester: getVal('semester'),
-            
+
             supervisorId: getVal('supervisorId') ? getInt('supervisorId') : null,
             supervisorName: document.getElementById('supervisorId') && document.getElementById('supervisorId').selectedIndex > 0 ? document.getElementById('supervisorId').options[document.getElementById('supervisorId').selectedIndex].text : null,
 
@@ -644,19 +672,20 @@ export default function CreateExam(passedExamId = null) {
             let method = 'POST';
 
             if (examId) {
+                const api = resolveExamApi(examId);
                 // Update specific REST requirement
                 if (statusOverride === 'OPEN') {
                     // Update exact details first
-                    await authFetch(`${url}/${examId}`, {
+                    await authFetch(api.url, {
                         method: 'PUT',
                         body: JSON.stringify(payload)
                     });
 
                     // Then Patch Publish
-                    url = `${url}/${examId}/publish`;
+                    url = `${api.url}/publish`;
                     method = 'PATCH';
                 } else {
-                    url = `${url}/${examId}`;
+                    url = api.url;
                     method = 'PUT';
                 }
             }
@@ -713,7 +742,7 @@ export default function CreateExam(passedExamId = null) {
             setVal('course', data.course);
             setVal('department', data.department);
             setVal('semester', data.semester);
-            
+
             if (data.supervisorId) {
                 // Ensure options are loaded or set it statically if not loaded yet
                 setTimeout(() => setVal('supervisorId', data.supervisorId), 500);

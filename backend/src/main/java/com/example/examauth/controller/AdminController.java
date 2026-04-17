@@ -50,6 +50,9 @@ public class AdminController {
     private com.example.examauth.service.PdfService pdfService;
 
     @Autowired
+    private com.example.examauth.repo.CollegeRepository collegeRepo;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Value("${file.upload-dir:uploads/profile}")
@@ -202,16 +205,67 @@ public class AdminController {
     }
 
     @GetMapping("/supervisors")
-    public ResponseEntity<?> getSupervisors() {
+    public ResponseEntity<?> getSupervisors(
+            @RequestParam(required = false) Long collegeId,
+            @RequestParam(required = false) String department) {
+        // Resolve college name for legacy fallback matching
+        final String resolvedCollegeName = (collegeId != null)
+                ? collegeRepo.findById(collegeId).map(c -> c.getName()).orElse(null)
+                : null;
+
         List<Map<String, Object>> s = userRepo.findAll().stream()
-                .filter(u -> "SUPERVISOR".equalsIgnoreCase(u.getRole()))
+                .filter(u -> {
+                    String r = u.getRole() != null ? u.getRole().trim().toLowerCase() : "";
+                    // Support legacy or custom roles like "supervisor A" or "chief supervisor"
+                    return r.contains("supervisor") || r.contains("staff") || r.contains("faculty") || u.getDesignation() != null;
+                })
+                .filter(u -> {
+                    // If collegeId filter provided, restrict to that college only
+                    if (collegeId != null) {
+                        boolean match = false;
+                        if (u.getCollege() != null && collegeId.equals(u.getCollege().getId())) {
+                            match = true;
+                        }
+                        if (u.getInstitutionCode() != null && u.getInstitutionCode().trim().equals(collegeId.toString())) {
+                            match = true;
+                        }
+                        if (!match && resolvedCollegeName != null) {
+                            String cName = u.getCollegeName() != null ? u.getCollegeName().trim().toLowerCase() : "";
+                            String uName = u.getUniversityName() != null ? u.getUniversityName().trim().toLowerCase() : "";
+                            String resName = resolvedCollegeName.trim().toLowerCase();
+                            
+                            if (!cName.isEmpty() && (cName.contains(resName) || resName.contains(cName))) match = true;
+                            if (!uName.isEmpty() && (uName.contains(resName) || resName.contains(uName))) match = true;
+                        }
+                        if (!match) return false;
+                    }
+                    // If department filter provided
+                    String userDept = u.getDepartmentEntity() != null ? u.getDepartmentEntity().getName() : u.getDepartment();
+                    if ("Computer Engineering".equalsIgnoreCase(userDept)) {
+                        userDept = "Computer Science";
+                    }
+
+                    if (department != null && !department.trim().isEmpty() && !department.equals("All Departments")) {
+                        if (userDept == null || !userDept.trim().equalsIgnoreCase(department.trim())) return false;
+                    }
+                    return true;
+                })
                 .map(u -> {
                     Map<String, Object> map = new java.util.HashMap<>();
+                    
+                    String displayDept = u.getDepartmentEntity() != null ? u.getDepartmentEntity().getName() : u.getDepartment();
+                    if ("Computer Engineering".equalsIgnoreCase(displayDept)) displayDept = "Computer Science";
+
                     map.put("userId", u.getUserId());
                     map.put("name", u.getName());
                     map.put("email", u.getEmail());
                     map.put("status", u.getStatus());
                     map.put("role", u.getRole());
+                    map.put("department", displayDept); // Expose mapped department
+                    map.put("designation", u.getDesignation());
+                    map.put("collegeName", (u.getCollege() != null && u.getCollege().getName() != null) ? u.getCollege().getName() : u.getCollegeName());
+                    map.put("collegeId", u.getCollege() != null ? u.getCollege().getId() : null);
+                    map.put("photoPath", u.getPhotoPath()); // Profile photo
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -243,6 +297,16 @@ public class AdminController {
         u.setStatus(status);
         userRepo.save(u);
         return ResponseEntity.ok(Map.of("message", "status updated"));
+    }
+
+    @PatchMapping("/supervisors/{id}/department")
+    public ResponseEntity<?> updateSupervisorDepartment(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String department = body.get("department");
+        User u = userRepo.findById(id).orElse(null);
+        if (u == null) return ResponseEntity.notFound().build();
+        u.setDepartment(department);
+        userRepo.save(u);
+        return ResponseEntity.ok(Map.of("message", "Department updated", "department", department));
     }
 
     @GetMapping("/users/{role}")

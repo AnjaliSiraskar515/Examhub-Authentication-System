@@ -196,7 +196,8 @@ public class ExamRegistrationService {
         dto.setPaymentStatus(
                 registration.getPaymentStatus() != null ? registration.getPaymentStatus().name() : "PENDING");
         dto.setExamType(registration.getExamType());
-        dto.setRegistrationStatus(registration.getRegistrationStatus().name());
+        dto.setRegistrationStatus(
+                registration.getRegistrationStatus() != null ? registration.getRegistrationStatus().name() : "APPLIED");
         dto.setAppliedDate(registration.getAppliedDate() != null ? registration.getAppliedDate().toString() : null);
         dto.setHallTicketReleased(registration.getHallTicketReleased());
         return dto;

@@ -42,10 +42,29 @@ async function initDashboard() {
     await loadStats();
     await updateExamStats(); // Load exam stats on init
 
-    // Default load
+    // ── College Context (must come before loadStudents/loadStaff) ────────────
+    if (typeof window.initCollegeContext === 'function') {
+        await window.initCollegeContext();
+    }
+
+    // Wire up context-bar dropdown
+    const globalCollegeSelect = document.getElementById('global-college-select');
+    if (globalCollegeSelect) {
+        globalCollegeSelect.addEventListener('change', (e) => {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const id = e.target.value;
+            const name = id ? selectedOption.text.replace(/\s*\(.*?\)\s*$/, '').trim() : null;
+            window.setSelectedCollege(id || null, name);
+        });
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+    // Default load (will show placeholder if no college selected)
     loadExams();
     await loadCommunicationInbox();
     startCommunicationPolling();
+    if (typeof window.loadStudents === 'function') window.loadStudents();
+    if (typeof window.loadStaff === 'function') window.loadStaff();
 
     // Admin profile + security (should not block existing dashboard features)
     loadAdminProfile();
@@ -67,10 +86,26 @@ function setupNavigation() {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             document.getElementById(targetId).classList.remove('hidden');
 
+            // Toggle Global College Context Bar visibility
+            const contextBar = document.getElementById('global-college-context-bar');
+            if (contextBar) {
+                if (targetId === 'students-section' || targetId === 'staff-section') {
+                    contextBar.classList.remove('hidden');
+                } else {
+                    contextBar.classList.add('hidden');
+                }
+            }
+
             // Data Load based on tab
             if (targetId === 'exams-section') {
                 loadExams();
                 updateExamStats(); // Update stats when switching to exams tab
+            }
+            if (targetId === 'students-section' && typeof window.loadStudents === 'function') {
+                window.loadStudents();
+            }
+            if (targetId === 'staff-section' && typeof window.loadStaff === 'function') {
+                window.loadStaff();
             }
             if (targetId === 'registrations-section') loadRegistrations();
             if (targetId === 'analytics-section') loadAnalytics();
@@ -128,7 +163,7 @@ function renderStats() {
 // New function to update exam-specific stats
 async function updateExamStats() {
     try {
-        const response = await authFetch(`${API_BASE_URL}/exams/`);
+        const response = await authFetch(`${API_BASE_URL}/${UNIVERSITY_ID}/exam`);
         const exams = await response.json();
 
         if (exams && exams.length > 0) {

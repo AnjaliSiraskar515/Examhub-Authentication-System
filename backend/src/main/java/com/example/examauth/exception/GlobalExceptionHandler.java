@@ -6,10 +6,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.util.Map;
-
+import java.util.HashMap;
+import org.springframework.http.HttpStatus;
 @ControllerAdvice
 public class GlobalExceptionHandler {
-
     /**
      * Spring Security's @PreAuthorize throws AccessDeniedException when the
      * authenticated principal does not have the required role.
@@ -33,9 +33,15 @@ public class GlobalExceptionHandler {
                 "exception_class", ex.getClass().getName()));
     }
 
-    /**
-     * Catch-all for any other unexpected exceptions — unchanged behaviour.
-     */
+    @ExceptionHandler(EligibilityException.class)
+    public ResponseEntity<Map<String, String>> handleEligibilityException(EligibilityException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "BLOCKED");
+        response.put("reason", ex.getReason());
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<?> handleAll(Throwable t) {
         t.printStackTrace();

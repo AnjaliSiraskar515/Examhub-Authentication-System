@@ -75,8 +75,12 @@ public class SupervisorController {
         profile.put("email", user.getEmail() != null ? user.getEmail() : "");
         profile.put("phone", user.getPhoneNumber());
         profile.put("university", user.getUniversityName());
-        profile.put("college", user.getCollegeName());
+        profile.put("college", (user.getCollege() != null && user.getCollege().getName() != null)
+                ? user.getCollege().getName()
+                : user.getCollegeName());
+        profile.put("collegeId", user.getCollege() != null ? user.getCollege().getId() : null);
         profile.put("designation", user.getDesignation());
+        profile.put("department", user.getDepartment());
         profile.put("employeeId", user.getEmployeeId());
         profile.put("avatar", user.getPhotoPath());
         profile.put("biometricEnrolled", user.isBiometricEnrolled());
@@ -494,7 +498,18 @@ public class SupervisorController {
     private com.example.examauth.student_exam.service.NotificationService notificationService;
 
     @GetMapping("/exam-forms")
-    public List<Map<String, Object>> getPendingExamForms() {
+    public List<Map<String, Object>> getPendingExamForms(Authentication authentication) {
+
+        // Resolve the logged-in supervisor's college
+        Long supervisorCollegeId = null;
+        if (authentication != null && authentication.getName() != null) {
+            User supervisor = userRepository.findFirstByEmail(authentication.getName()).orElse(null);
+            if (supervisor != null && supervisor.getCollege() != null) {
+                supervisorCollegeId = supervisor.getCollege().getId();
+            }
+        }
+        final Long collegeId = supervisorCollegeId;
+
         List<com.example.examauth.student_exam.model.ExamRegistration> applied = examRegistrationRepository
                 .findByRegistrationStatus(
                         com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPLIED);
@@ -506,7 +521,17 @@ public class SupervisorController {
         allPending.addAll(applied);
         allPending.addAll(pending);
 
-        return allPending.stream().map(reg -> {
+        return allPending.stream()
+                // ── College restriction ──────────────────────────────────────────────
+                .filter(reg -> {
+                    if (collegeId == null) return true; // supervisor not assigned to a college — show all (backward compat)
+                    User student = userRepository.findById(reg.getStudentId()).orElse(null);
+                    if (student == null) return false;
+                    if (student.getCollege() == null) return false; // student has no college mapping — exclude
+                    return collegeId.equals(student.getCollege().getId());
+                })
+                // ────────────────────────────────────────────────────────────────────
+                .map(reg -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", reg.getId());
             map.put("studentId", reg.getStudentId());
