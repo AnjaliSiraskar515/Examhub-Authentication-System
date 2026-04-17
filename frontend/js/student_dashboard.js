@@ -588,7 +588,7 @@ async function handleRegistrationSubmit(e) {
 // ========== END ELIGIBILITY CHECK & REGISTRATION ==========
 
 function downloadAdmitCard(id) {
-    alert(`Downloading Admit Card for Exam ID: ${id}`);
+    window.location.href = `student_admit_card.html?regId=${id}`;
 }
 
 function logout() {

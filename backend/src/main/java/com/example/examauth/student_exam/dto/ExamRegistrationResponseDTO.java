@@ -23,4 +23,5 @@ public class ExamRegistrationResponseDTO {
     private String examType;
     private String registrationStatus;
     private String appliedDate;
+    private Boolean hallTicketReleased;
 }
