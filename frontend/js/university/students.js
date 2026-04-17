@@ -131,7 +131,7 @@ function renderStudentsTable() {
                 else if (semNum === 5 || semNum === 6) yearDisplay = 'Third Year';
                 else if (semNum === 7 || semNum === 8) yearDisplay = 'Fourth Year';
                 else yearDisplay = `Year (${semNum})`;
-                
+
                 // Add tiny semester label underneath for clarity
                 yearDisplay += ` <br><span class="text-[10px] text-gray-400 font-normal">Sem ${semNum}</span>`;
             } else {
@@ -146,8 +146,9 @@ function renderStudentsTable() {
                 <td class="px-6 py-4">
                     <span class="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs font-medium">${collegeName}</span>
                 </td>
-                <td class="px-6 py-4 font-medium">${yearDisplay}</td>
-                <td class="px-6 py-4">${student.major || student.department || 'N/A'}</td>
+                <td class="px-6 py-4 font-medium">${student.course || 'N/A'}</td>
+                <td class="px-6 py-4">${student.departmentEntity?.name || student.department || 'N/A'}</td>
+                <td class="px-6 py-4 font-medium">${student.year || yearDisplay}</td>
                 <td class="px-6 py-4">${statusBadge}</td>
                 <td class="px-6 py-4 text-right space-x-2">
                     <button onclick="viewStudentDetails(${student.userId})" title="View Details & Backlogs" class="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded text-sm font-medium transition-colors">
@@ -212,7 +213,8 @@ window.viewStudentDetails = async function (id) {
             </div>
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg"><span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">College</span><span class="font-medium">${collegeName}</span></div>
-                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg"><span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Department</span><span class="font-medium">${student.department || 'N/A'}</span></div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg"><span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Course</span><span class="font-medium">${student.course || 'N/A'}</span></div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg"><span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Department</span><span class="font-medium">${student.departmentEntity?.name || student.department || 'N/A'}</span></div>
                 <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg"><span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Semester</span><span class="font-medium">${student.semester || 'N/A'}</span></div>
                 <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg"><span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Fees Paid</span><span class="font-medium ${student.feesPaid ? 'text-green-600' : 'text-red-500'}">${student.feesPaid ? 'Yes' : 'No'}</span></div>
             </div>
@@ -231,7 +233,7 @@ window.toggleStudentStatus = async function (id, activeStatus) {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                ...(token ? {'Authorization': 'Bearer ' + token} : {})
+                ...(token ? { 'Authorization': 'Bearer ' + token } : {})
             },
             body: JSON.stringify({ active: activeStatus })
         });
@@ -248,7 +250,7 @@ window.removeStudent = async function (id) {
         const token = localStorage.getItem('token');
         await fetch(`${ADMIN_API_BASE_URL}/students/${id}`, {
             method: 'DELETE',
-            headers: token ? {'Authorization': 'Bearer ' + token} : {}
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
         });
         window.loadStudents();
     } catch (err) {

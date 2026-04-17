@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users", indexes = {
-    @Index(name = "idx_prn", columnList = "prn"),
-    @Index(name = "idx_email", columnList = "email")
+        @Index(name = "idx_prn", columnList = "prn"),
+        @Index(name = "idx_email", columnList = "email")
 })
 public class User {
 
@@ -152,10 +152,14 @@ public class User {
     // ===========================================================
     private String universityName;
     private String collegeName;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "college_id")
     private College college;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id")
+    private Department departmentEntity;
 
     private String institutionCode; // To uniquely link to Institution record
     private String universityLogoPath; // filename stored in uploads/logo/
@@ -170,7 +174,6 @@ public class User {
     public void setUniversityLogoPath(String universityLogoPath) {
         this.universityLogoPath = universityLogoPath;
     }
-
 
     public String getUniversityName() {
         return universityName;
@@ -196,6 +199,14 @@ public class User {
         this.college = college;
     }
 
+    public Department getDepartmentEntity() {
+        return departmentEntity;
+    }
+
+    public void setDepartmentEntity(Department departmentEntity) {
+        this.departmentEntity = departmentEntity;
+    }
+
     public String getInstitutionCode() {
         return institutionCode;
     }
@@ -203,7 +214,6 @@ public class User {
     public void setInstitutionCode(String institutionCode) {
         this.institutionCode = institutionCode;
     }
-
 
     public String getDesignation() {
         return designation;
@@ -448,6 +458,15 @@ public class User {
 
     public void setMajor(String major) {
         this.major = major;
+    }
+
+    @Transient
+    public String getCourse() {
+        return major != null ? major : "N/A";
+    }
+
+    public void setCourse(String course) {
+        this.major = course;
     }
 
     public String getYear() {
