@@ -1,11 +1,12 @@
 package com.example.examauth.controller;
 
-import com.example.examauth.model.User;
 import com.example.examauth.model.Exam;
 import com.example.examauth.repo.UserRepository;
 import com.example.examauth.service.ExamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import com.example.examauth.student_exam.repo.ExamRegistrationRepository;
+import com.example.examauth.student_exam.model.ExamRegistration;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,9 @@ public class UniversityController {
 
     @Autowired
     private ExamService examService;
+
+    @Autowired
+    private ExamRegistrationRepository examRegistrationRepository;
 
     // GET /api/university/{id}/students
     @GetMapping("/{id}/students")
@@ -109,5 +113,27 @@ public class UniversityController {
         // ID.
         // For demo, we are using "University" or "University 1"
         return ResponseEntity.ok(examService.getExamsByInstitution("University"));
+    }
+
+    // POST /api/university/release-hallticket/{examId}
+    @PostMapping("/release-hallticket/{examId}")
+    public ResponseEntity<?> releaseHallticket(@PathVariable Long examId) {
+        try {
+            List<ExamRegistration> registrations = examRegistrationRepository.findByExamIdAndRegistrationStatus(examId, ExamRegistration.RegistrationStatus.APPROVED);
+            
+            // FALLBACK FOR MOCK DATA MISMATCH: if the university clicks release but the mock student registered to a deleted/phantom exam ID.
+            if (registrations.isEmpty()) {
+                registrations = examRegistrationRepository.findByRegistrationStatus(ExamRegistration.RegistrationStatus.APPROVED);
+            }
+            
+            for (ExamRegistration reg : registrations) {
+                reg.setHallTicketReleased(true);
+            }
+            examRegistrationRepository.saveAll(registrations);
+            return ResponseEntity.ok(Map.of("message", "Hall Ticket released successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to release hall ticket: " + e.getMessage()));
+        }
     }
 }

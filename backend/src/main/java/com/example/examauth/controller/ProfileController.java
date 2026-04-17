@@ -346,7 +346,6 @@ public class ProfileController {
                     throw new IOException("Failed to create profile upload directory: " + profileDir.getAbsolutePath());
                 }
             }
-
             String timestamp = String.valueOf(System.currentTimeMillis());
 
             if (photo != null && !photo.isEmpty()) {
@@ -415,6 +414,7 @@ public class ProfileController {
                 passportPhoto.transferTo(new File(dir, path));
                 user.setPassportPhotoPath(path);
             }
+
 
             userRepository.save(user);
             return ResponseEntity.ok(Map.of(

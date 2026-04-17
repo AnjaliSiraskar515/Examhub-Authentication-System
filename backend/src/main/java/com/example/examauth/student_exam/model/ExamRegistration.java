@@ -47,6 +47,12 @@ public class ExamRegistration {
 
     // ========== NEW PROFESSIONAL FIELDS ==========
 
+    @Column(name = "hall_ticket_released")
+    private Boolean hallTicketReleased = false;
+
+    @Column(name = "qr_code", columnDefinition = "TEXT")
+    private String qrCode;
+
     /**
      * List of subjects selected by student for this exam
      * Stored as JSON in database

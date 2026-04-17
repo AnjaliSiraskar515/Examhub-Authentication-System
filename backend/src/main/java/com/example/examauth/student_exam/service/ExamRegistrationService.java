@@ -94,7 +94,6 @@ public class ExamRegistrationService {
             throw new IllegalArgumentException(
                     "Registration limit reached. Max students allowed for this exam is " + maxStudents + ".");
         }
-
         // 4. Save Registration
         ExamRegistration registration = new ExamRegistration();
         registration.setStudentId(request.getStudentId());
@@ -199,6 +198,7 @@ public class ExamRegistrationService {
         dto.setExamType(registration.getExamType());
         dto.setRegistrationStatus(registration.getRegistrationStatus().name());
         dto.setAppliedDate(registration.getAppliedDate() != null ? registration.getAppliedDate().toString() : null);
+        dto.setHallTicketReleased(registration.getHallTicketReleased());
         return dto;
     }
 

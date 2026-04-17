@@ -732,7 +732,6 @@ function startCommunicationPolling() {
         loadCommunicationInbox();
     }, 10000);
 }
-
 function setupProfileAndSecurityHandlers() {
     const profileForm = document.getElementById('profile-form');
     if (profileForm) {
