@@ -58,7 +58,7 @@ async function registerExam(examId) {
     
     // 3. Call eligibility API
     const response = await fetch(
-        `http://localhost:8081/api/student/check-exam-eligibility?prnNumber=${prn}&examSession=${examSession}`,
+        `http://localhost:8080/api/student/check-exam-eligibility?prnNumber=${prn}&examSession=${examSession}`,
         {
             method: 'GET',
             headers: {
@@ -173,7 +173,7 @@ Success:    ✅Green + "Registration submitted"
 
 ## 📡 API Configuration
 
-**Base URL:** `http://localhost:8081`
+**Base URL:** `http://localhost:8080`
 
 **Endpoint:** `/api/student/check-exam-eligibility`
 

@@ -75,8 +75,12 @@ public class SupervisorController {
         profile.put("email", user.getEmail() != null ? user.getEmail() : "");
         profile.put("phone", user.getPhoneNumber());
         profile.put("university", user.getUniversityName());
-        profile.put("college", user.getCollegeName());
+        profile.put("college", (user.getCollege() != null && user.getCollege().getName() != null)
+                ? user.getCollege().getName()
+                : user.getCollegeName());
+        profile.put("collegeId", user.getCollege() != null ? user.getCollege().getId() : null);
         profile.put("designation", user.getDesignation());
+        profile.put("department", user.getDepartment());
         profile.put("employeeId", user.getEmployeeId());
         profile.put("avatar", user.getPhotoPath());
         profile.put("biometricEnrolled", user.isBiometricEnrolled());
@@ -494,7 +498,18 @@ public class SupervisorController {
     private com.example.examauth.student_exam.service.NotificationService notificationService;
 
     @GetMapping("/exam-forms")
-    public List<Map<String, Object>> getPendingExamForms() {
+    public List<Map<String, Object>> getPendingExamForms(Authentication authentication) {
+
+        // Resolve the logged-in supervisor's college
+        Long supervisorCollegeId = null;
+        if (authentication != null && authentication.getName() != null) {
+            User supervisor = userRepository.findFirstByEmail(authentication.getName()).orElse(null);
+            if (supervisor != null && supervisor.getCollege() != null) {
+                supervisorCollegeId = supervisor.getCollege().getId();
+            }
+        }
+        final Long collegeId = supervisorCollegeId;
+
         List<com.example.examauth.student_exam.model.ExamRegistration> applied = examRegistrationRepository
                 .findByRegistrationStatus(
                         com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPLIED);
@@ -506,7 +521,17 @@ public class SupervisorController {
         allPending.addAll(applied);
         allPending.addAll(pending);
 
-        return allPending.stream().map(reg -> {
+        return allPending.stream()
+                // ── College restriction ──────────────────────────────────────────────
+                .filter(reg -> {
+                    if (collegeId == null) return true; // supervisor not assigned to a college — show all (backward compat)
+                    User student = userRepository.findById(reg.getStudentId()).orElse(null);
+                    if (student == null) return false;
+                    if (student.getCollege() == null) return false; // student has no college mapping — exclude
+                    return collegeId.equals(student.getCollege().getId());
+                })
+                // ────────────────────────────────────────────────────────────────────
+                .map(reg -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", reg.getId());
             map.put("studentId", reg.getStudentId());
@@ -522,28 +547,138 @@ public class SupervisorController {
             if (exam != null) {
                 map.put("examName", exam.getExamName());
             } else {
-                map.put("examName", "Unknown Exam");
+                com.example.examauth.student_exam.university.model.UniversityExam uExam = universityExamRepository.findById(reg.getExamId()).orElse(null);
+                if (uExam != null) {
+                    map.put("examName", uExam.getExamName());
+                } else {
+                    map.put("examName", "Unknown Exam");
+                }
             }
             return map;
         }).collect(java.util.stream.Collectors.toList());
     }
 
     @PostMapping("/exam-forms/{id}/accept")
-    public Map<String, Object> acceptExamForm(@PathVariable Long id) {
+    public Map<String, Object> acceptExamForm(Authentication authentication, @PathVariable Long id) {
         com.example.examauth.student_exam.model.ExamRegistration reg = examRegistrationRepository.findById(id)
                 .orElseThrow();
         reg.setRegistrationStatus(com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPROVED);
         examRegistrationRepository.save(reg);
 
         String examName = "Exam ID " + reg.getExamId();
+        
+        Long currentUserId = null;
+        String currentUserName = null;
+        if (authentication != null && authentication.getName() != null) {
+            User user = userRepository.findFirstByEmail(authentication.getName()).orElse(null);
+            if (user != null) {
+                currentUserId = user.getUserId();
+                currentUserName = user.getName() != null ? user.getName() : "Supervisor";
+            }
+        }
+
         com.example.examauth.model.Exam exam = examRepository.findById(reg.getExamId()).orElse(null);
         if (exam != null) {
             examName = exam.getExamName();
+            if (currentUserId != null && (exam.getSupervisorId() == null || exam.getSupervisorId() == 0L)) {
+                exam.setSupervisorId(currentUserId);
+                examRepository.save(exam);
+            }
+        } else {
+            com.example.examauth.student_exam.university.model.UniversityExam uExam = universityExamRepository.findById(reg.getExamId()).orElse(null);
+            if (uExam != null) {
+                examName = uExam.getExamName();
+                if (currentUserId != null && (uExam.getSupervisorId() == null || uExam.getSupervisorId() == 0L)) {
+                    uExam.setSupervisorId(currentUserId);
+                    uExam.setSupervisorName(currentUserName);
+                    universityExamRepository.save(uExam);
+                }
+            }
         }
 
         notificationService.createNotification(reg.getStudentId(), "Exam Registration Verified",
                 "Your exam form for " + examName + " has been verified and accepted by the supervisor.");
 
         return Map.of("success", true, "message", "Form accepted successfully");
+    }
+
+    @PostMapping("/verify-student-biometric")
+    public ResponseEntity<Map<String, Object>> verifyStudentBiometric(
+            Authentication authentication,
+            @RequestBody Map<String, String> payload) {
+        
+        // 1. Role Check
+        if (authentication == null || !authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERVISOR"))) {
+            return ResponseEntity.status(403).body(Map.of(
+                "success", false,
+                "message", "Access denied"
+            ));
+        }
+
+        String studentIdStr = payload.get("studentId");
+        String frontendFingerprint = payload.get("fingerprint");
+
+        if (studentIdStr == null || frontendFingerprint == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Missing studentId or fingerprint"
+            ));
+        }
+
+        Long studentId;
+        try {
+            studentId = Long.parseLong(studentIdStr);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Invalid student ID format"
+            ));
+        }
+
+        User student = userRepository.findById(studentId).orElse(null);
+
+        if (student == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Student not found"
+            ));
+        }
+
+        // 2. Check Enrollment before verify
+        if (!student.isBiometricEnrolled()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Student not enrolled for biometric"
+            ));
+        }
+
+        // 3. Prevent Fake Match (Add Salt & Hash)
+        String localHash = com.example.examauth.util.HashUtil.sha256(frontendFingerprint + "_SECURE_SALT");
+
+        // Use same timestamp generation to ensure format consistency
+        String timestamp = java.time.LocalDateTime.now().toString();
+
+        if (localHash.equals(student.getBiometricTemplateHash())) {
+            // Optional: You could update student's last verified time here
+            // student.setBiometricLastVerified(java.time.LocalDateTime.now());
+            // userRepository.save(student);
+
+            // 4. Standard Response Format (Verified)
+            return ResponseEntity.ok(Map.of(
+              "success", true,
+              "message", "Biometric verified",
+              "attendanceStatus", "PRESENT",
+              "timestamp", timestamp
+            ));
+        } else {
+            // 4. Standard Response Format (Mismatch)
+            return ResponseEntity.ok(Map.of(
+              "success", false,
+              "message", "Biometric mismatch. Try again.",
+              "attendanceStatus", "ABSENT",
+              "timestamp", timestamp
+            ));
+        }
     }
 }

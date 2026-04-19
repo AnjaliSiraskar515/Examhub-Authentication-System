@@ -24,6 +24,7 @@ export const Sidebar = {
                     ${this.renderNavItem('registered', 'My Exams', 'fas fa-file-signature')}
                     ${this.renderNavItem('profile', 'Profile', 'fas fa-user-circle')}
                     ${this.renderNavItem('face-verification', 'Face Verification', 'fas fa-user-check')}
+                    ${this.renderNavItem('biometric-verification', 'Biometric Verification', 'fas fa-fingerprint')}
                     ${this.renderNavItem('notifications', 'Notifications', 'fas fa-bell', false, 0, true)}
                     
                     <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">

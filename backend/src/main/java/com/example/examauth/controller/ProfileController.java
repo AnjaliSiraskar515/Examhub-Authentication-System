@@ -5,9 +5,9 @@ import com.example.examauth.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -145,28 +145,19 @@ public class ProfileController {
     @Autowired
     private com.example.examauth.repo.SupervisorActionLogRepository auditLogRepository;
 
-    // ── private audit helper ─────────────────────────────────────────────────
     private void writeAuditLog(Long userId, String action, String details) {
         try {
-            com.example.examauth.model.SupervisorActionLog entry =
-                    new com.example.examauth.model.SupervisorActionLog();
-            entry.setSupervisorId(userId);  // reuse supervisorId field for actor
+            com.example.examauth.model.SupervisorActionLog entry = new com.example.examauth.model.SupervisorActionLog();
+            entry.setSupervisorId(userId);
             entry.setAction(action);
             entry.setDetails(details);
             entry.setTimestamp(java.time.LocalDateTime.now());
             auditLogRepository.save(entry);
         } catch (Exception ex) {
-            // Audit failure must never break the main operation
             System.err.println("[AUDIT] Failed to write audit log: " + ex.getMessage());
         }
     }
 
-    // =========================================================
-    // CHANGE PASSWORD — POST /api/profile/change-password
-    // Restricted to SUPER_ADMIN role via @PreAuthorize
-    // Body: { "currentPassword": "...", "newPassword": "..." }
-    // On success: increments tokenVersion → all existing JWTs rejected
-    // =========================================================
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SUPERADMIN')")
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(
@@ -176,26 +167,20 @@ public class ProfileController {
             if (token == null || !token.startsWith("Bearer ")) {
                 return ResponseEntity.status(401).body(Map.of("error", "Missing or invalid Authorization header"));
             }
-
             String jwt = token.substring(7);
             String email = jwtUtil.extractUsername(jwt);
-
             User user = userRepository.findByEmail(email).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             }
-
             String currentPassword = body.get("currentPassword");
             String newPassword = body.get("newPassword");
-
             if (currentPassword == null || currentPassword.isBlank()) {
                 return ResponseEntity.status(400).body(Map.of("error", "Current password is required"));
             }
             if (newPassword == null || newPassword.length() < 6) {
                 return ResponseEntity.status(400).body(Map.of("error", "New password must be at least 6 characters"));
             }
-
-            // Validate current password (supports both BCrypt and legacy plain-text)
             String dbPassword = user.getPassword();
             boolean valid = false;
             if (dbPassword != null && dbPassword.startsWith("$2a$")) {
@@ -203,42 +188,21 @@ public class ProfileController {
             } else if (dbPassword != null) {
                 valid = dbPassword.equals(currentPassword);
             }
-
             if (!valid) {
                 return ResponseEntity.status(401).body(Map.of("error", "Current password is incorrect"));
             }
-
-            // Encode and persist new password
             user.setPassword(passwordEncoder.encode(newPassword));
-
-            // Increment tokenVersion → all previous JWTs are now invalid
             user.setTokenVersion(user.getTokenVersion() + 1);
-
             userRepository.save(user);
-
-            // ── Audit Log ──────────────────────────────────────────────────
-            writeAuditLog(
-                user.getUserId(),
-                "SUPER_ADMIN_PASSWORD_CHANGE",
-                "Super Admin (" + email + ") changed their password successfully. IP: implicit."
-            );
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Password updated successfully. Please login again."));
-
+            writeAuditLog(user.getUserId(), "SUPER_ADMIN_PASSWORD_CHANGE",
+                    "Super Admin (" + email + ") changed their password successfully.");
+            return ResponseEntity.ok(Map.of("success", true, "message", "Password updated successfully. Please login again."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Password update failed: " + e.getMessage()));
         }
     }
 
-    // =========================================================
-    // UPDATE EMAIL — POST /api/profile/update-email
-    // Restricted to SUPER_ADMIN role via @PreAuthorize
-    // Body: { "newEmail": "..." }
-    // On success: increments tokenVersion → force re-login
-    // =========================================================
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SUPERADMIN')")
     @PostMapping("/update-email")
     public ResponseEntity<?> updateEmail(
@@ -248,49 +212,28 @@ public class ProfileController {
             if (token == null || !token.startsWith("Bearer ")) {
                 return ResponseEntity.status(401).body(Map.of("error", "Missing or invalid Authorization header"));
             }
-
             String jwt = token.substring(7);
             String currentEmail = jwtUtil.extractUsername(jwt);
-
             User user = userRepository.findByEmail(currentEmail).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             }
-
             String newEmail = body.get("newEmail");
             if (newEmail == null || newEmail.isBlank()) {
                 return ResponseEntity.status(400).body(Map.of("error", "New email is required"));
             }
-
-            // Basic email format validation
             if (!newEmail.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
                 return ResponseEntity.status(400).body(Map.of("error", "Invalid email format"));
             }
-
-            // Check uniqueness
-            if (userRepository.findByEmail(newEmail).isPresent()
-                    && !newEmail.equalsIgnoreCase(currentEmail)) {
+            if (userRepository.findByEmail(newEmail).isPresent() && !newEmail.equalsIgnoreCase(currentEmail)) {
                 return ResponseEntity.status(400).body(Map.of("error", "Email already in use by another account"));
             }
-
             user.setEmail(newEmail);
-
-            // Increment tokenVersion → all previous JWTs are now invalid
             user.setTokenVersion(user.getTokenVersion() + 1);
-
             userRepository.save(user);
-
-            // ── Audit Log ──────────────────────────────────────────────────
-            writeAuditLog(
-                user.getUserId(),
-                "SUPER_ADMIN_EMAIL_CHANGE",
-                "Super Admin changed email from [" + currentEmail + "] to [" + newEmail + "]."
-            );
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Email updated successfully. Please login again."));
-
+            writeAuditLog(user.getUserId(), "SUPER_ADMIN_EMAIL_CHANGE",
+                    "Super Admin changed email from [" + currentEmail + "] to [" + newEmail + "].");
+            return ResponseEntity.ok(Map.of("success", true, "message", "Email updated successfully. Please login again."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Email update failed: " + e.getMessage()));

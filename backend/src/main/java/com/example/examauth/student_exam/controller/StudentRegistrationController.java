@@ -81,7 +81,7 @@ public class StudentRegistrationController {
             @RequestParam(required = false) Long studentId,
             org.springframework.security.core.Authentication authentication) {
 
-        Long actualStudentId = studentId != null ? studentId : 1L;
+        Long actualStudentId = studentId != null ? studentId : 13L;
 
         if (authentication != null && authentication.isAuthenticated()) {
             com.example.examauth.model.User user = userRepository.findByEmail(authentication.getName()).orElse(null);

@@ -45,10 +45,6 @@ public class UniversityExamService {
 
         exam.setSupervisorId(request.getSupervisorId());
         exam.setSupervisorName(request.getSupervisorName());
-        // Preserve institutionCode: only update if provided in request
-        if (request.getInstitutionCode() != null && !request.getInstitutionCode().isEmpty()) {
-            exam.setInstitutionCode(request.getInstitutionCode());
-        }
 
         exam.setCenterName(request.getCenterName());
         exam.setCenterCode(request.getCenterCode());

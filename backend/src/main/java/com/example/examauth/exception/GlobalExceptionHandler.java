@@ -6,6 +6,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.util.Map;
+import java.util.HashMap;
+import org.springframework.http.HttpStatus;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -13,8 +15,6 @@ public class GlobalExceptionHandler {
     /**
      * Spring Security's @PreAuthorize throws AccessDeniedException when the
      * authenticated principal does not have the required role.
-     * Must be handled BEFORE the Throwable catch-all, otherwise it gets
-     * wrapped as HTTP 500 instead of HTTP 403.
      */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> handleAccessDenied(AccessDeniedException ex) {
@@ -23,9 +23,6 @@ public class GlobalExceptionHandler {
                 "exception_class", ex.getClass().getName()));
     }
 
-    /**
-     * Handles unauthenticated access (missing / invalid token at controller level).
-     */
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<?> handleAuthentication(AuthenticationException ex) {
         return ResponseEntity.status(401).body(Map.of(
@@ -33,9 +30,14 @@ public class GlobalExceptionHandler {
                 "exception_class", ex.getClass().getName()));
     }
 
-    /**
-     * Catch-all for any other unexpected exceptions — unchanged behaviour.
-     */
+    @ExceptionHandler(EligibilityException.class)
+    public ResponseEntity<Map<String, String>> handleEligibilityException(EligibilityException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "BLOCKED");
+        response.put("reason", ex.getReason());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<?> handleAll(Throwable t) {
         t.printStackTrace();

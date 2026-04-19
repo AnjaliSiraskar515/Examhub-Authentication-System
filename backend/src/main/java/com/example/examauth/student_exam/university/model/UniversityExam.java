@@ -27,7 +27,6 @@ public class UniversityExam {
 
     private Long supervisorId;
     private String supervisorName;
-    private String institutionCode; // set from the authenticated university admin's institution
 
     @OneToMany(mappedBy = "universityExam", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UniversityExamSubject> subjects;

@@ -1,13 +1,20 @@
 package com.example.examauth.controller;
 
-import com.example.examauth.model.User;
 import com.example.examauth.model.Exam;
 import com.example.examauth.repo.UserRepository;
 import com.example.examauth.service.ExamService;
+import com.example.examauth.dto.ExamResponseDTO;
+import com.example.examauth.student_exam.university.repo.UniversityExamRepository;
+import com.example.examauth.student_exam.university.model.UniversityExam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import com.example.examauth.student_exam.repo.ExamRegistrationRepository;
+import com.example.examauth.student_exam.model.ExamRegistration;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,6 +28,12 @@ public class UniversityController {
 
     @Autowired
     private ExamService examService;
+
+    @Autowired
+    private UniversityExamRepository universityExamRepository;
+
+    @Autowired
+    private ExamRegistrationRepository examRegistrationRepository;
 
     // GET /api/university/{id}/students
     @GetMapping("/{id}/students")
@@ -105,9 +118,89 @@ public class UniversityController {
     // GET /api/university/{id}/exam
     @GetMapping("/{id}/exam")
     public ResponseEntity<?> getExams(@PathVariable Long id) {
-        // Fetch exams by institution name. Assuming "University" or deriving name from
-        // ID.
-        // For demo, we are using "University" or "University 1"
-        return ResponseEntity.ok(examService.getExamsByInstitution("University"));
+        List<ExamResponseDTO> unifiedExams = new ArrayList<>();
+
+        // 1. Fetch Legacy Exams
+        List<Exam> legacyExams = examService.getAllExams();
+        for (Exam e : legacyExams) {
+            unifiedExams.add(ExamResponseDTO.builder()
+                    .sourceId("LEGACY_" + e.getExamId())
+                    .id(e.getExamId())
+                    .source("LEGACY")
+                    .examName(e.getExamName())
+                    .date(e.getDate())
+                    .startTime(e.getStartTime())
+                    .durationMinutes(e.getDurationMinutes() != null ? e.getDurationMinutes() : 0)
+                    .status(e.getStatus())
+                    .mode(e.getMode())
+                    .location(e.getLocation() != null ? e.getLocation() : "N/A")
+                    .build());
+        }
+
+        // 2. Fetch University Exams (New)
+        List<UniversityExam> universityExams = universityExamRepository.findAll();
+        for (UniversityExam ue : universityExams) {
+            unifiedExams.add(ExamResponseDTO.builder()
+                    .sourceId("UNIV_" + ue.getId())
+                    .id(ue.getId())
+                    .source("UNIVERSITY")
+                    .examName(ue.getSessionName())
+                    .date(ue.getSchedule() != null ? ue.getSchedule().getExamDate() : null)
+                    .startTime(ue.getSchedule() != null ? ue.getSchedule().getStartTime() : null)
+                    .durationMinutes(0) // Default as per requirement
+                    .status(ue.getStatus())
+                    .mode(ue.getMode())
+                    .location(ue.getCenterName() != null ? ue.getCenterName() : "N/A")
+                    .build());
+        }
+
+        // 3. Sort by Date + Time (Latest first)
+        unifiedExams.sort(Comparator.comparing((ExamResponseDTO e) -> {
+            if (e.getDate() == null)
+                return LocalDateTime.MIN;
+            return LocalDateTime.of(e.getDate(), e.getStartTime() != null ? e.getStartTime() : java.time.LocalTime.MIN);
+        }).reversed());
+
+        return ResponseEntity.ok(unifiedExams);
+    }
+
+    @DeleteMapping("/{univId}/exam/{id}")
+    public ResponseEntity<?> deleteExam(@PathVariable Long univId, @PathVariable String id) {
+        try {
+            if (id.startsWith("LEGACY_")) {
+                Long examId = Long.parseLong(id.substring(7));
+                examService.deleteExam(examId);
+                return ResponseEntity.ok(Map.of("message", "Legacy exam deleted"));
+            } else if (id.startsWith("UNIV_")) {
+                Long targetUnivId = Long.parseLong(id.substring(5));
+                universityExamRepository.deleteById(targetUnivId);
+                return ResponseEntity.ok(Map.of("message", "University exam deleted"));
+            }
+            return ResponseEntity.status(404).body(Map.of("error", "Exam not found"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to delete exam: " + e.getMessage()));
+        }
+    }
+
+    // POST /api/university/release-hallticket/{examId}
+    @PostMapping("/release-hallticket/{examId}")
+    public ResponseEntity<?> releaseHallticket(@PathVariable Long examId) {
+        try {
+            List<ExamRegistration> registrations = examRegistrationRepository.findByExamIdAndRegistrationStatus(examId, ExamRegistration.RegistrationStatus.APPROVED);
+            
+            // FALLBACK FOR MOCK DATA MISMATCH: if the university clicks release but the mock student registered to a deleted/phantom exam ID.
+            if (registrations.isEmpty()) {
+                registrations = examRegistrationRepository.findByRegistrationStatus(ExamRegistration.RegistrationStatus.APPROVED);
+            }
+            
+            for (ExamRegistration reg : registrations) {
+                reg.setHallTicketReleased(true);
+            }
+            examRegistrationRepository.saveAll(registrations);
+            return ResponseEntity.ok(Map.of("message", "Hall Ticket released successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to release hall ticket: " + e.getMessage()));
+        }
     }
 }

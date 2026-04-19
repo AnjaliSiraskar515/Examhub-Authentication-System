@@ -51,20 +51,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             User user = userRepository.findFirstByEmail(username).orElse(null);
 
             if (user != null && jwtUtil.validateToken(jwt, user.getEmail())) {
-                // ─── Token Version Check ──────────────────────────────────────────────────
-                // If the tokenVersion embedded in the JWT doesn't match the DB value,
-                // the token has been invalidated (e.g. after a password/email change).
                 int jwtVersion = jwtUtil.extractTokenVersion(jwt);
                 if (jwtVersion != user.getTokenVersion()) {
-                    // Token is stale — do NOT authenticate; chain continues unauthenticated
                     chain.doFilter(request, response);
                     return;
                 }
-                // ─────────────────────────────────────────────────────────────────────────
-
+                String role = user.getRole() != null ? user.getRole().toUpperCase() : "";
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         user.getEmail(), null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole())));
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)));
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }

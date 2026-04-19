@@ -14,11 +14,11 @@ public interface ExamRegistrationRepository extends JpaRepository<ExamRegistrati
 
     boolean existsByPrnAndExamId(String prn, Long examId);
 
+    List<ExamRegistration> findByExamIdAndRegistrationStatus(Long examId, ExamRegistration.RegistrationStatus status);
+
     // Primary duplicate check — uses authenticated studentId (avoids PRN collision
     // across users)
     boolean existsByStudentIdAndExamId(Long studentId, Long examId);
-
-    long countByExamId(Long examId);
 
     long countByRegistrationStatus(com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus status);
 

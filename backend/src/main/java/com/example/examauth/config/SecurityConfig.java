@@ -31,8 +31,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/otp/**", "/api/auth/**", "/api/test/**").permitAll()
+                        .requestMatchers("/api/otp/**", "/api/auth/**", "/api/test/**", "/api/debug/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/admit-card/**").permitAll()
+                        .requestMatchers("/api/university/**", "/api/stats/**").permitAll()
+                        .requestMatchers("/api/student/registrations").permitAll()
                         .requestMatchers("/api/student/**").hasAnyRole("STUDENT", "SUPERADMIN")
                         .requestMatchers("/api/supervisor/**", "/api/biometric/**").hasAnyRole("SUPERVISOR", "SUPERADMIN")
                         .requestMatchers("/api/admin/**").hasAnyRole("UNIVERSITY_ADMIN", "SUPERADMIN")

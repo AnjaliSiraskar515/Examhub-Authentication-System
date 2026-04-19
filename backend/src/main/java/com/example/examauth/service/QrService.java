@@ -1,3 +1,4 @@
+
 package com.example.examauth.service;
 
 import com.example.examauth.model.QrCode;

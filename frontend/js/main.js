@@ -6,6 +6,7 @@ import MyRegistrations from './pages/MyRegistrations.js';
 import { Profile } from './pages/Profile.js';
 import { Notifications } from './pages/Notifications.js';
 import { StudentFaceVerification } from './pages/StudentFaceVerification.js';
+import { StudentBiometricVerification } from './pages/StudentBiometricVerification.js';
 import CreateExam from './pages/CreateExam.js';
 import ExamRegistration from './pages/ExamRegistration.js';
 
@@ -97,7 +98,8 @@ async function loadPage(pageId) {
         'registered': MyRegistrations,
         'profile': Profile,
         'notifications': Notifications,
-        'face-verification': StudentFaceVerification
+        'face-verification': StudentFaceVerification,
+        'biometric-verification': StudentBiometricVerification
     };
 
     const component = routes[pageId];
@@ -157,7 +159,7 @@ async function loadAndInjectUserProfile() {
         const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
         if (!token || token === 'mock-token-xyz') return;
 
-        const response = await fetch('http://localhost:8081/api/profile/info', {
+        const response = await fetch('http://localhost:8080/api/profile/info', {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (!response.ok) return;
@@ -168,7 +170,7 @@ async function loadAndInjectUserProfile() {
         const dept = profile.department || profile.major || '';
         const courseLine = [year, dept].filter(Boolean).join(' - ') || 'Student';
         const avatarUrl = profile.passportPhotoPath
-            ? `http://localhost:8081/uploads/${profile.passportPhotoPath}`
+            ? `http://localhost:8080/uploads/${profile.passportPhotoPath}`
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4f46e5&color=fff`;
 
         // Store globally for DashboardHome welcome message
@@ -212,21 +214,38 @@ async function enforceStudentVerificationGate() {
     const role = (localStorage.getItem('role') || '').toUpperCase();
     if (role !== 'STUDENT') return;
 
-    const userId = localStorage.getItem('userId');
-    if (!userId) return;
-
     const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    if (!token || token === 'mock-token-xyz') return;
+
+    let studentProfileId = localStorage.getItem('userId');
+    try {
+        const infoRes = await fetch('http://localhost:8080/api/profile/info', {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (infoRes.ok) {
+            const info = await infoRes.json();
+            if (info.id != null) {
+                studentProfileId = String(info.id);
+                localStorage.setItem('userId', studentProfileId);
+            }
+        }
+    } catch (e) {
+        console.warn('Could not resolve student id from profile info:', e);
+    }
+
+    if (!studentProfileId) return;
 
     try {
-        const response = await fetch(`http://localhost:8081/api/student-profile/${userId}`, { headers });
+        const response = await fetch(
+            `http://localhost:8080/api/student-profile/${encodeURIComponent(studentProfileId)}`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+        );
         if (!response.ok) return;
 
         const profile = await response.json();
         const verified = !!profile.verified;
-        const locked = !!profile.profileLocked;
 
-        if (verified && locked) {
+        if (verified) {
             removeVerificationBanner();
             toggleRegisterButton(false);
             toggleMyExamsAccess(false);

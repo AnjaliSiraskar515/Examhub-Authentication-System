@@ -19,6 +19,34 @@ export default function CreateExam(passedExamId = null) {
         return fetch(url, { ...options, headers });
     };
 
+    /**
+     * Helper to parse source-prefixed IDs (e.g. UNIV_1003, LEGACY_4)
+     * and route to the correct API endpoint.
+     */
+    const resolveExamApi = (id) => {
+        if (!id) return null;
+        const idStr = String(id);
+        if (idStr.startsWith('LEGACY_')) {
+            return {
+                source: 'LEGACY',
+                numericId: idStr.substring(7),
+                url: `http://localhost:8080/api/exam/${idStr.substring(7)}`
+            };
+        } else if (idStr.startsWith('UNIV_')) {
+            return {
+                source: 'UNIVERSITY',
+                numericId: idStr.substring(5),
+                url: `http://localhost:8080/api/university/exams/${idStr.substring(5)}`
+            };
+        }
+        // Fallback for plain IDs (assumed University context in this wizard)
+        return {
+            source: 'UNIVERSITY',
+            numericId: idStr,
+            url: `http://localhost:8080/api/university/exams/${idStr}`
+        };
+    };
+
     const render = () => {
         app.innerHTML = `
             <div class="p-6 max-w-5xl mx-auto animate-fade-in-up">
@@ -601,7 +629,7 @@ export default function CreateExam(passedExamId = null) {
             course: getVal('course'),
             department: getVal('department'),
             semester: getVal('semester'),
-            
+
             supervisorId: getVal('supervisorId') ? getInt('supervisorId') : null,
             supervisorName: document.getElementById('supervisorId') && document.getElementById('supervisorId').selectedIndex > 0 ? document.getElementById('supervisorId').options[document.getElementById('supervisorId').selectedIndex].text : null,
 
@@ -640,23 +668,24 @@ export default function CreateExam(passedExamId = null) {
         showLoading(true);
 
         try {
-            let url = 'http://localhost:8081/api/university/exams';
+            let url = 'http://localhost:8080/api/university/exams';
             let method = 'POST';
 
             if (examId) {
+                const api = resolveExamApi(examId);
                 // Update specific REST requirement
                 if (statusOverride === 'OPEN') {
                     // Update exact details first
-                    await authFetch(`${url}/${examId}`, {
+                    await authFetch(api.url, {
                         method: 'PUT',
                         body: JSON.stringify(payload)
                     });
 
                     // Then Patch Publish
-                    url = `${url}/${examId}/publish`;
+                    url = `${api.url}/publish`;
                     method = 'PATCH';
                 } else {
-                    url = `${url}/${examId}`;
+                    url = api.url;
                     method = 'PUT';
                 }
             }
@@ -699,8 +728,9 @@ export default function CreateExam(passedExamId = null) {
         if (!examId) return;
         showLoading(true);
         try {
-            const res = await authFetch(`http://localhost:8081/api/university/exams/${examId}`);
-            if (!res.ok) throw new Error("Failed to fetch exam");
+            const api = resolveExamApi(examId);
+            const res = await authFetch(api.url);
+            if (!res.ok) throw new Error(`Failed to fetch exam (${res.status})`);
             const data = await res.json();
 
             const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== null) el.value = val; };
@@ -713,7 +743,7 @@ export default function CreateExam(passedExamId = null) {
             setVal('course', data.course);
             setVal('department', data.department);
             setVal('semester', data.semester);
-            
+
             if (data.supervisorId) {
                 // Ensure options are loaded or set it statically if not loaded yet
                 setTimeout(() => setVal('supervisorId', data.supervisorId), 500);
@@ -767,7 +797,7 @@ export default function CreateExam(passedExamId = null) {
     const loadSupervisors = async () => {
         try {
             // Assume university ID 1 for now or fetch from context
-            const res = await authFetch(`http://localhost:8081/api/university/1/staff`);
+            const res = await authFetch(`http://localhost:8080/api/university/1/staff`);
             if (res.ok) {
                 const staff = await res.json();
                 const dropdown = document.getElementById('supervisorId');

@@ -13,6 +13,13 @@ public class Exam {
     private Long examId;
 
     private String examName;
+    private Long subjectId;
+
+    @Enumerated(EnumType.STRING)
+    private ExamType type;
+
+    private String semester;
+
     private String institutionName;
     private LocalDate date;
     private LocalTime startTime;
@@ -111,5 +118,29 @@ public class Exam {
 
     public void setSupervisorName(String supervisorName) {
         this.supervisorName = supervisorName;
+    }
+
+    public Long getSubjectId() {
+        return subjectId;
+    }
+
+    public void setSubjectId(Long subjectId) {
+        this.subjectId = subjectId;
+    }
+
+    public ExamType getType() {
+        return type;
+    }
+
+    public void setType(ExamType type) {
+        this.type = type;
+    }
+
+    public String getSemester() {
+        return semester;
+    }
+
+    public void setSemester(String semester) {
+        this.semester = semester;
     }
 }

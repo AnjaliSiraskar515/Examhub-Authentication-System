@@ -194,7 +194,7 @@ if (typeof document !== "undefined") {
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 const PROFILE_ID = 1; // Static profile ID (test mode — no auth)
-const API_URL = "http://localhost:8081/api/student-profile/verify";
+const API_URL = "http://localhost:8080/api/student-profile/verify";
 
 const StudentFaceVerification = () => {
     // State
