@@ -63,8 +63,7 @@
                     </div>
                     <div>
                         <h1 class="font-bold text-lg">ExamHub</h1>
-                        <p id="university-admin-label" class="text-xs text-gray-500 dark:text-gray-400">University Admin
-                        </p>
+                        <p id="university-admin-label" class="text-xs text-gray-500 dark:text-gray-400">University Admin</p>
                     </div>
                 </div>
             </div>
@@ -87,13 +86,13 @@
                 </a>
                 <a href="#"
                     class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    data-target="colleges-section">
-                    <i class="fas fa-building w-5"></i> Manage Colleges
+                    data-target="profile-section">
+                    <i class="fas fa-user-circle w-5"></i> Profile & Security
                 </a>
                 <a href="#"
                     class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    data-target="profile-section">
-                    <i class="fas fa-user-circle w-5"></i> Profile & Security
+                    data-target="communication-section">
+                    <i class="fas fa-inbox w-5"></i> Communication / Inbox
                 </a>
             </nav>
 
@@ -115,564 +114,528 @@
             <!-- Top Header (Mobile) -->
             <header
                 class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 md:hidden flex justify-between items-center">
-                <div class="font-bold">ExamHub University</div>
+                <div class="font-bold">
+                    ExamHub <span id="mobile-university-admin">University Admin</span>
+                </div>
                 <button class="text-gray-500"><i class="fas fa-bars"></i></button>
             </header>
 
             <!-- Scrollable Content -->
-            <main class="flex-1 overflow-y-auto">
+            <main class="flex-1 overflow-y-auto p-4 md:p-8">
 
-                <!-- ═══════════════════════════════════════════════════════════════ -->
-                <!-- GLOBAL COLLEGE CONTEXT BAR -->
-                <!-- ═══════════════════════════════════════════════════════════════ -->
-                <div id="global-college-context-bar"
-                    class="hidden sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-                    <div class="px-4 md:px-8 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                        <!-- Label -->
+                <!-- CONTENT SECTIONS -->
+
+                <!-- 1. MANAGE EXAMS -->
+                <div id="exams-section" class="tab-content space-y-6">
+                    <h2 class="text-2xl font-bold">Manage Exams & Scheduling</h2>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div
-                            class="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                            <div class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-                                <i class="fas fa-building text-white text-xs"></i>
+                            class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
                             </div>
-                            College Context:
+                            <h3 class="text-gray-500 text-sm font-medium">Upcoming Exams</h3>
+                            <p class="text-2xl font-bold mt-1" id="upcoming-exams">0</p>
                         </div>
 
-                        <!-- Dropdown -->
-                        <select id="global-college-select"
-                            class="flex-1 max-w-sm px-4 py-2 rounded-xl border-2 border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all cursor-pointer shadow-sm">
-                            <option value="">— Select a College —</option>
-                        </select>
-
-                        <!-- Active Badge -->
-                        <div class="flex items-center gap-2">
-                            <span id="college-context-badge"
-                                class="hidden inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-full shadow-md shadow-blue-500/30">
-                                <i class="fas fa-check-circle"></i>
-                                <span id="college-context-badge-text"></span>
-                            </span>
-                            <span id="college-context-hint"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs font-semibold rounded-full border border-amber-200 dark:border-amber-700">
-                                <i class="fas fa-exclamation-triangle text-xs"></i>
-                                No college selected — data is hidden
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <!-- ═══════════════════════════════════════════════════════════════ -->
-
-                <div class="p-4 md:p-8">
-                    <!-- CONTENT SECTIONS -->
-
-                    <!-- 1. MANAGE EXAMS -->
-                    <div id="exams-section" class="tab-content space-y-6">
-                        <h2 class="text-2xl font-bold">Manage Exams & Scheduling</h2>
-
-                        <!-- Stats Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div
-                                class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div
-                                        class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </div>
-                                </div>
-                                <h3 class="text-gray-500 text-sm font-medium">Upcoming Exams</h3>
-                                <p class="text-2xl font-bold mt-1" id="upcoming-exams">0</p>
-                            </div>
-
-                            <div
-                                class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div
-                                        class="w-12 h-12 rounded-xl bg-green-100 text-green-600 flex items-center justify-center text-xl">
-                                        <i class="fas fa-clipboard-list"></i>
-                                    </div>
-                                </div>
-                                <h3 class="text-gray-500 text-sm font-medium">Evaluations Due</h3>
-                                <p class="text-2xl font-bold mt-1" id="evaluations-due">--</p>
-                            </div>
-
-                            <div
-                                class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-orange-100 dark:border-orange-700">
-                                <h3 class="text-orange-700 font-semibold mb-3">Semester Completion</h3>
-                                <div class="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-700">
-                                    <div id="semester-progress-bar" class="bg-blue-600 h-3 rounded-full"
-                                        style="width: 76%">
-                                    </div>
-                                </div>
-                                <p class="text-sm text-gray-500 mt-2 text-center"><span id="semester-percent">76%</span>
-                                    of
-                                    scheduled exams completed.</p>
-                            </div>
-                        </div>
-
-                        <!-- Filter by Status -->
                         <div
-                            class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                            <h3 class="font-semibold mb-3">Filter by Exam Status:</h3>
-                            <div class="flex flex-wrap gap-2 mb-4" id="exam-status-filters">
-                                <button
-                                    class="exam-filter-btn px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200">All
-                                    Statuses</button>
-                                <button
-                                    class="exam-filter-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Upcoming</button>
-                                <button
-                                    class="exam-filter-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Completed</button>
-                                <button
-                                    class="exam-filter-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Draft</button>
+                            class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-xl bg-green-100 text-green-600 flex items-center justify-center text-xl">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
                             </div>
-                            <div class="flex flex-col md:flex-row gap-3">
-                                <input type="text" placeholder="Search by Course, Date, or Room..."
-                                    class="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                                <button id="load-create-exam-btn"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/30 flex items-center gap-2 justify-center">
-                                    <i class="fas fa-plus"></i> Schedule New Exam
-                                </button>
-                            </div>
+                            <h3 class="text-gray-500 text-sm font-medium">Evaluations Due</h3>
+                            <p class="text-2xl font-bold mt-1" id="evaluations-due">--</p>
                         </div>
 
-                        <!-- Exam Schedule Table -->
-                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Current Semester Schedule
-                        </h3>
                         <div
-                            class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm text-left">
-                                    <thead
-                                        class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                        <tr>
-                                            <th class="px-6 py-3">Course</th>
-                                            <th class="px-6 py-3">Date</th>
-                                            <th class="px-6 py-3">Time</th>
-                                            <th class="px-6 py-3">Type</th>
-                                            <th class="px-6 py-3">Room</th>
-                                            <th class="px-6 py-3">Status</th>
-                                            <th class="px-6 py-3 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="exams-table-body">
-                                        <tr class="border-b dark:border-gray-700">
-                                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">Loading exams...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-orange-100 dark:border-orange-700">
+                            <h3 class="text-orange-700 font-semibold mb-3">Semester Completion</h3>
+                            <div class="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-700">
+                                <div id="semester-progress-bar" class="bg-blue-600 h-3 rounded-full" style="width: 76%">
+                                </div>
                             </div>
+                            <p class="text-sm text-gray-500 mt-2 text-center"><span id="semester-percent">76%</span> of
+                                scheduled exams completed.</p>
                         </div>
                     </div>
 
-                    <!-- 2. MANAGE STUDENTS -->
-                    <div id="students-section" class="tab-content hidden space-y-6">
-                        <h2 class="text-2xl font-bold">Manage Student Enrollment</h2>
-
-                        <!-- Stats Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div
-                                class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div
-                                        class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl">
-                                        <i class="fas fa-user-graduate"></i>
-                                    </div>
-                                </div>
-                                <h3 class="text-gray-500 text-sm font-medium">Total Enrollment</h3>
-                                <p class="text-2xl font-bold mt-1" id="total-enrollment">0</p>
-                            </div>
-
-                            <div
-                                class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div
-                                        class="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-xl">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </div>
-                                </div>
-                                <h3 class="text-gray-500 text-sm font-medium">Fees Overdue</h3>
-                                <p class="text-2xl font-bold mt-1" id="fees-overdue">86</p>
-                            </div>
-
-                            <div
-                                class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div
-                                        class="w-12 h-12 rounded-xl bg-green-100 text-green-600 flex items-center justify-center text-xl">
-                                        <i class="fas fa-file-invoice"></i>
-                                    </div>
-                                </div>
-                                <h3 class="text-gray-500 text-sm font-medium">New Applications (Pending)</h3>
-                                <p class="text-2xl font-bold mt-1" id="new-applications">15</p>
-                            </div>
+                    <!-- Filter by Status -->
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <h3 class="font-semibold mb-3">Filter by Exam Status:</h3>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200">All
+                                Statuses</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Upcoming</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Completed</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Draft</button>
                         </div>
-
-                        <!-- Dynamic Filters -->
-                        <div
-                            class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 space-y-4">
-                            <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-                                <h3 class="font-semibold whitespace-nowrap">Filter Students:</h3>
-                                <div class="flex flex-wrap gap-2 md:gap-4 flex-1 w-full">
-                                    <select id="filter-year"
-                                        class="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium">
-                                        <option value="All Years">All Years</option>
-                                        <option value="First Year">First Year</option>
-                                        <option value="Second Year">Second Year</option>
-                                        <option value="Third Year">Third Year</option>
-                                        <option value="Fourth Year">Fourth Year</option>
-                                    </select>
-                                    <select id="filter-department"
-                                        class="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium">
-                                        <option value="All Departments">All Departments</option>
-                                        <option value="Computer Science">Computer Science</option>
-                                        <option value="Mechanical">Mechanical</option>
-                                        <option value="Civil">Civil</option>
-                                        <option value="Electrical">Electrical</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div
-                                class="flex flex-col md:flex-row gap-3 items-center justify-end border-t border-gray-100 dark:border-gray-700 pt-4">
-                                <input type="text" placeholder="Search: ID, Name, Course, Department..."
-                                    class="w-full md:w-64 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                                <button id="btn-add-student"
-                                    class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <i class="fas fa-plus"></i> Add Student
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Student List Table -->
-                        <div
-                            class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm text-left">
-                                    <thead
-                                        class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                        <tr>
-                                            <th class="px-6 py-3">ID</th>
-                                            <th class="px-6 py-3">Name</th>
-                                            <th class="px-6 py-3">College</th>
-                                            <th class="px-6 py-3">Course</th>
-                                            <th class="px-6 py-3">Department</th>
-                                            <th class="px-6 py-3">Year</th>
-                                            <th class="px-6 py-3">Status</th>
-                                            <th class="px-6 py-3 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="students-table-body">
-                                        <tr class="border-b dark:border-gray-700">
-                                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">Showing 1 to 10
-                                                of
-                                                12 entries</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="flex justify-between items-center px-6 py-3 bg-gray-50 dark:bg-gray-700">
-                                <div class="text-sm text-gray-500">Showing 1 to 10 of 12 entries</div>
-                                <div class="flex gap-2">
-                                    <button
-                                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100">Previous</button>
-                                    <button
-                                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100">Next</button>
-                                </div>
-                            </div>
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <input type="text" placeholder="Search by Course, Date, or Room..."
+                                class="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button id="load-create-exam-btn"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/30 flex items-center gap-2 justify-center">
+                                <i class="fas fa-plus"></i> Schedule New Exam
+                            </button>
                         </div>
                     </div>
 
-                    <!-- 3. MANAGE STAFF -->
-                    <div id="staff-section" class="tab-content hidden space-y-6">
-                        <h2 class="text-2xl font-bold">Manage Staff & Faculty</h2>
-
-                        <!-- Stats Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                            <div
-                                class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div
-                                        class="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl">
-                                        <i class="fas fa-chalkboard-teacher"></i>
-                                    </div>
-                                </div>
-                                <h3 class="text-gray-500 text-sm font-medium">Full Time Faculty</h3>
-                                <p class="text-2xl font-bold mt-1" id="full-time-faculty">0</p>
-                            </div>
-
-                            <div
-                                class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div
-                                        class="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xl">
-                                        <i class="fas fa-user-tie"></i>
-                                    </div>
-                                </div>
-                                <h3 class="text-gray-500 text-sm font-medium">Admin/Support Staff</h3>
-                                <p class="text-2xl font-bold mt-1" id="support-staff">--</p>
-                            </div>
-                        </div>
-
-                        <!-- Filter by Department -->
-                        <div
-                            class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                            <h3 class="font-semibold mb-3">Filter by Department:</h3>
-                            <div class="flex flex-wrap gap-2 mb-4">
-                                <button
-                                    class="px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200">All
-                                    Departments</button>
-                                <button
-                                    class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Computer
-                                    Science</button>
-                                <button
-                                    class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Administration</button>
-                                <button
-                                    class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Finance</button>
-                                <button
-                                    class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Humanities</button>
-                            </div>
-                            <div class="flex flex-col md:flex-row gap-3 items-center justify-end">
-                                <input type="text" placeholder="Search: ID, Name, Role..."
-                                    class="flex-1 md:flex-none w-full md:w-64 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                                <button id="btn-staff-csv"
-                                    class="w-full md:w-auto bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <i class="fas fa-file-csv"></i> Upload CSV
-                                </button>
-                                <button id="btn-add-staff"
-                                    class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-green-500/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <i class="fas fa-plus"></i> Onboard New Staff
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Staff List Table -->
-                        <div
-                            class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm text-left">
-                                    <thead
-                                        class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                        <tr>
-                                            <th class="px-6 py-3">Employee ID</th>
-                                            <th class="px-6 py-3">Name</th>
-                                            <th class="px-6 py-3">Department</th>
-                                            <th class="px-6 py-3">Role</th>
-                                            <th class="px-6 py-3">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="staff-table-body">
-                                        <tr class="border-b dark:border-gray-700">
-                                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">Showing 1 to 5
-                                                of 10
-                                                entries</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="flex justify-between items-center px-6 py-3 bg-gray-50 dark:bg-gray-700">
-                                <div class="text-sm text-gray-500">Showing 1 to 5 of 10 entries</div>
-                                <div class="flex gap-2">
-                                    <button
-                                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100">Previous</button>
-                                    <button
-                                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100">Next</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 4. PROFILE & SECURITY -->
-                    <div id="profile-section" class="tab-content hidden space-y-6">
-                        <h2 class="text-2xl font-bold">Profile & Security</h2>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <!-- Profile Card -->
-                            <div
-                                class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                <div class="flex items-center justify-between mb-4">
-                                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Your Profile</h3>
-                                    <span
-                                        class="inline-flex items-center gap-2 text-sm px-3 py-1 rounded-full bg-blue-100 text-blue-700">
-                                        <i class="fas fa-id-badge"></i> Admin
-                                    </span>
-                                </div>
-
-                                <form id="profile-form" class="space-y-4">
-                                    <div>
-                                        <label class="block text-sm font-medium mb-1" for="profile-name">Admin
-                                            Name</label>
-                                        <input type="text" id="profile-name" required
-                                            class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="Enter your name">
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium mb-1" for="profile-email">Email</label>
-                                        <input type="email" id="profile-email" readOnly
-                                            class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 outline-none"
-                                            placeholder="Email">
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium mb-1" for="profile-phone">Phone
-                                            Number</label>
-                                        <input type="text" id="profile-phone" required
-                                            class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="Enter phone number">
-                                    </div>
-
-                                    <div id="profile-update-message" class="hidden p-3 rounded-xl text-sm"></div>
-
-                                    <button type="submit" id="save-profile-btn"
-                                        class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">
-                                        <i class="fas fa-save"></i> Save Profile
-                                    </button>
-                                </form>
-                            </div>
-
-                            <!-- University Identity Card -->
-                            <div
-                                class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                <div class="flex items-center justify-between mb-5">
-                                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">University
-                                        Identity</h3>
-                                    <span
-                                        class="inline-flex items-center gap-2 text-sm px-3 py-1 rounded-full bg-indigo-100 text-indigo-700">
-                                        <i class="fas fa-university"></i> Branding
-                                    </span>
-                                </div>
-
-                                <!-- Logo Preview + Upload -->
-                                <div class="flex flex-col items-center gap-4 mb-6">
-                                    <div class="relative group">
-                                        <div id="uni-logo-wrapper"
-                                            class="w-28 h-28 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50 dark:bg-gray-700 flex items-center justify-center overflow-hidden shadow-sm">
-                                            <!-- Placeholder shown when no logo uploaded -->
-                                            <span id="uni-logo-placeholder"
-                                                class="flex flex-col items-center gap-1 text-blue-400">
-                                                <i class="fas fa-university text-4xl"></i>
-                                                <span class="text-xs font-medium">No Logo</span>
-                                            </span>
-                                            <img id="uni-logo-preview" src="" alt="University Logo"
-                                                class="hidden w-full h-full object-contain">
-                                        </div>
-                                        <!-- Hover overlay -->
-                                        <label for="uni-logo-input"
-                                            class="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                                            <span
-                                                class="text-white text-xs font-semibold flex flex-col items-center gap-1">
-                                                <i class="fas fa-camera text-lg"></i> Change Logo
-                                            </span>
-                                        </label>
-                                    </div>
-                                    <input type="file" id="uni-logo-input" accept="image/*" class="hidden">
-                                    <p class="text-xs text-gray-400">PNG, JPG or SVG · Max 10 MB</p>
-
-                                    <!-- Read-only Institution Code below logo -->
-                                    <div
-                                        class="mt-2 text-[10px] font-mono uppercase bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
-                                        Code: <span id="uni-code-text"
-                                            class="font-bold text-gray-700 dark:text-gray-200">Loading...</span>
-                                    </div>
-                                </div>
-
-                                <!-- University Name (read-only by default, editable via Edit button) -->
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                                        University Name
-                                    </label>
-                                    <!-- Read-only display -->
-                                    <div id="uni-name-display"
-                                        class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 font-bold text-gray-900 dark:text-white text-lg min-h-[46px] flex items-center gap-2">
-                                        <i class="fas fa-university text-blue-500 text-base shrink-0"></i>
-                                        <span id="uni-name-text"
-                                            class="flex-1 truncate text-gray-500 italic">Loading...</span>
-                                    </div>
-                                    <!-- Editable input (hidden by default) -->
-                                    <input type="text" id="uni-name"
-                                        class="hidden w-full px-4 py-2 rounded-xl border border-blue-400 dark:border-blue-500 bg-white dark:bg-gray-900 outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 dark:text-white text-lg mt-1"
-                                        placeholder="e.g. Savitribai Phule Pune University">
-                                    <p class="text-xs text-gray-400 mt-1">
-                                        <i class="fas fa-info-circle mr-1"></i>This name is registered with the
-                                        institution. Edit carefully.
-                                    </p>
-                                </div>
-
-                                <!-- Action buttons -->
-                                <div class="flex gap-2">
-                                    <!-- Edit button (visible in read mode) -->
-                                    <button type="button" id="edit-uni-name-btn" onclick="enableUniversityNameEdit()"
-                                        class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors text-sm">
-                                        <i class="fas fa-pencil-alt"></i> Edit Name
-                                    </button>
-                                    <!-- Save button (hidden in read mode) -->
-                                    <button type="button" id="save-uni-name-btn" onclick="saveUniversityIdentity()"
-                                        class="hidden flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-indigo-500/30 text-sm">
-                                        <i class="fas fa-save"></i> Save to DB
-                                    </button>
-                                    <!-- Cancel button (hidden in read mode) -->
-                                    <button type="button" id="cancel-uni-name-btn" onclick="cancelUniversityNameEdit()"
-                                        class="hidden py-2.5 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-colors text-sm">
-                                        Cancel
-                                    </button>
-                                </div>
-
-                                <div id="uni-identity-message" class="hidden mt-3 p-3 rounded-xl text-sm"></div>
-                            </div>
-
-                            <!-- Hidden change-password-form (keeps existing JS handler from erroring) -->
-                            <form id="change-password-form" class="hidden"></form>
-                        </div>
-                    </div>
-
-
-                    <!-- 5. MANAGE COLLEGES -->
-                    <div id="colleges-section" class="tab-content hidden space-y-6">
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-                            <h2 class="text-2xl font-bold">Manage Affiliated Colleges</h2>
-                            <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                                <button id="btn-college-csv"
-                                    class="w-full md:w-auto bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 flex items-center justify-center gap-2 transition-all">
-                                    <i class="fas fa-file-csv"></i> Upload CSV
-                                </button>
-                                <button onclick="window.openCollegeModal()"
-                                    class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">
-                                    <i class="fas fa-plus"></i> Add College
-                                </button>
-                            </div>
-                        </div>
-                        <div
-                            class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <!-- Exam Schedule Table -->
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Current Semester Schedule</h3>
+                    <div
+                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
                                 <thead
                                     class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                     <tr>
-                                        <th class="px-6 py-3">ID</th>
-                                        <th class="px-6 py-3">College Name</th>
-                                        <th class="px-6 py-3">Code</th>
-                                        <th class="px-6 py-3">Stats</th>
-                                        <th class="px-6 py-3 text-right">Actions</th>
+                                        <th class="px-6 py-3">Course</th>
+                                        <th class="px-6 py-3">Date</th>
+                                        <th class="px-6 py-3">Time</th>
+                                        <th class="px-6 py-3">Room</th>
+                                        <th class="px-6 py-3">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody id="colleges-table-body">
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-4 text-center">Loading colleges...</td>
+                                <tbody id="exams-table-body">
+                                    <tr class="border-b dark:border-gray-700">
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading exams...
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
+                </div>
 
-                    <!-- OLD SECTIONS REMOVED -->
-                    <div id="registrations-section" class="tab-content hidden space-y-6" style="display: none;">
-                        <!-- This section is no longer used in the new design -->
+                <!-- 2. MANAGE STUDENTS -->
+                <div id="students-section" class="tab-content hidden space-y-6">
+                    <h2 class="text-2xl font-bold">Manage Student Enrollment</h2>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div
+                            class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl">
+                                    <i class="fas fa-user-graduate"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-gray-500 text-sm font-medium">Total Enrollment</h3>
+                            <p class="text-2xl font-bold mt-1" id="total-enrollment">0</p>
+                        </div>
+
+                        <div
+                            class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-xl">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-gray-500 text-sm font-medium">Fees Overdue</h3>
+                            <p class="text-2xl font-bold mt-1" id="fees-overdue">86</p>
+                        </div>
+
+                        <div
+                            class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-xl bg-green-100 text-green-600 flex items-center justify-center text-xl">
+                                    <i class="fas fa-file-invoice"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-gray-500 text-sm font-medium">New Applications (Pending)</h3>
+                            <p class="text-2xl font-bold mt-1" id="new-applications">15</p>
+                        </div>
                     </div>
 
-                    <div id="analytics-section" class="tab-content hidden space-y-6" style="display: none;">
-                        <!-- This section is no longer used in the new design -->
+                    <!-- Filter by Class Year -->
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <h3 class="font-semibold mb-3">Filter by Class Year:</h3>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200">All
+                                Years</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">First
+                                Year</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Second
+                                Year</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Third
+                                Year</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Fourth
+                                Year</button>
+                        </div>
+                        <div class="flex flex-col md:flex-row gap-3 items-center">
+                            <label class="text-sm font-medium">Show</label>
+                            <select
+                                class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                            </select>
+                            <label class="text-sm font-medium">entries</label>
+                            <input type="text" placeholder="Search: ID, Name, Major..."
+                                class="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/30 flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Add Student
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- SPA Container isolated for CreateExam.js -->
-                    <div id="app" class="tab-content hidden space-y-6"></div>
+                    <!-- Student List Table -->
+                    <div
+                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead
+                                    class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                    <tr>
+                                        <th class="px-6 py-3">ID</th>
+                                        <th class="px-6 py-3">Name</th>
+                                        <th class="px-6 py-3">Year</th>
+                                        <th class="px-6 py-3">Major</th>
+                                        <th class="px-6 py-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="students-table-body">
+                                    <tr class="border-b dark:border-gray-700">
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">Showing 1 to 10 of
+                                            12 entries</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex justify-between items-center px-6 py-3 bg-gray-50 dark:bg-gray-700">
+                            <div class="text-sm text-gray-500">Showing 1 to 10 of 12 entries</div>
+                            <div class="flex gap-2">
+                                <button
+                                    class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100">Previous</button>
+                                <button class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                </div><!-- /p-4 md:p-8 wrapper -->
+                <!-- 3. MANAGE STAFF -->
+                <div id="staff-section" class="tab-content hidden space-y-6">
+                    <h2 class="text-2xl font-bold">Manage Staff & Faculty</h2>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div
+                            class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl">
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-gray-500 text-sm font-medium">Full Time Faculty</h3>
+                            <p class="text-2xl font-bold mt-1" id="full-time-faculty">0</p>
+                        </div>
+
+                        <div
+                            class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xl">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-gray-500 text-sm font-medium">Admin/Support Staff</h3>
+                            <p class="text-2xl font-bold mt-1" id="support-staff">42</p>
+                        </div>
+
+                        <div
+                            class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center text-xl">
+                                    <i class="fas fa-briefcase"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-gray-500 text-sm font-medium">Open Positions</h3>
+                            <p class="text-2xl font-bold mt-1" id="open-positions">5</p>
+                        </div>
+                    </div>
+
+                    <!-- Filter by Department -->
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <h3 class="font-semibold mb-3">Filter by Department:</h3>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200">All
+                                Departments</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Computer
+                                Science</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Administration</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Finance</button>
+                            <button
+                                class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Humanities</button>
+                        </div>
+                        <div class="flex flex-col md:flex-row gap-3 items-center">
+                            <label class="text-sm font-medium">Show</label>
+                            <select
+                                class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                            </select>
+                            <label class="text-sm font-medium">entries</label>
+                            <input type="text" placeholder="Search: ID, Name, Role..."
+                                class="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-green-500/30 flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Onboard New Staff
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Staff List Table -->
+                    <div
+                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead
+                                    class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                    <tr>
+                                        <th class="px-6 py-3">Employee ID</th>
+                                        <th class="px-6 py-3">Name</th>
+                                        <th class="px-6 py-3">Department</th>
+                                        <th class="px-6 py-3">Role</th>
+                                        <th class="px-6 py-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staff-table-body">
+                                    <tr class="border-b dark:border-gray-700">
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">Showing 1 to 5 of 10
+                                            entries</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex justify-between items-center px-6 py-3 bg-gray-50 dark:bg-gray-700">
+                            <div class="text-sm text-gray-500">Showing 1 to 5 of 10 entries</div>
+                            <div class="flex gap-2">
+                                <button
+                                    class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100">Previous</button>
+                                <button class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. PROFILE & SECURITY -->
+                <div id="profile-section" class="tab-content hidden space-y-6">
+                    <h2 class="text-2xl font-bold">Profile & Security</h2>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Profile Card -->
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Your Profile</h3>
+                                <span class="inline-flex items-center gap-2 text-sm px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+                                    <i class="fas fa-id-badge"></i> Admin
+                                </span>
+                            </div>
+
+                            <form id="profile-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="profile-name">Admin Name</label>
+                                    <input type="text" id="profile-name" required
+                                        class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Enter your name">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="profile-email">Email</label>
+                                    <input type="email" id="profile-email" readOnly
+                                        class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 outline-none"
+                                        placeholder="Email">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="profile-phone">Phone Number</label>
+                                    <input type="text" id="profile-phone" required
+                                        class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Enter phone number">
+                                </div>
+
+                                <div id="profile-update-message" class="hidden p-3 rounded-xl text-sm"></div>
+
+                                <button type="submit" id="save-profile-btn"
+                                    class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">
+                                    <i class="fas fa-save"></i> Save Profile
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- University Identity Card -->
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center justify-between mb-5">
+                                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">University Identity</h3>
+                                <span class="inline-flex items-center gap-2 text-sm px-3 py-1 rounded-full bg-indigo-100 text-indigo-700">
+                                    <i class="fas fa-university"></i> Branding
+                                </span>
+                            </div>
+
+                            <!-- Logo Preview + Upload -->
+                            <div class="flex flex-col items-center gap-4 mb-6">
+                                <div class="relative group">
+                                    <div id="uni-logo-wrapper"
+                                        class="w-28 h-28 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50 dark:bg-gray-700 flex items-center justify-center overflow-hidden shadow-sm">
+                                        <!-- Placeholder shown when no logo uploaded -->
+                                        <span id="uni-logo-placeholder" class="flex flex-col items-center gap-1 text-blue-400">
+                                            <i class="fas fa-university text-4xl"></i>
+                                            <span class="text-xs font-medium">No Logo</span>
+                                        </span>
+                                        <img id="uni-logo-preview" src="" alt="University Logo"
+                                            class="hidden w-full h-full object-contain">
+                                    </div>
+                                    <!-- Hover overlay -->
+                                    <label for="uni-logo-input"
+                                        class="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                                        <span class="text-white text-xs font-semibold flex flex-col items-center gap-1">
+                                            <i class="fas fa-camera text-lg"></i> Change Logo
+                                        </span>
+                                    </label>
+                                </div>
+                                <input type="file" id="uni-logo-input" accept="image/*" class="hidden">
+                                <p class="text-xs text-gray-400">PNG, JPG or SVG · Max 10 MB</p>
+                                
+                                <!-- Read-only Institution Code below logo -->
+                                <div class="mt-2 text-[10px] font-mono uppercase bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+                                    Code: <span id="uni-code-text" class="font-bold text-gray-700 dark:text-gray-200">Loading...</span>
+                                </div>
+                            </div>
+
+                            <!-- University Name (read-only by default, editable via Edit button) -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                                    University Name
+                                </label>
+                                <!-- Read-only display -->
+                                <div id="uni-name-display"
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 font-bold text-gray-900 dark:text-white text-lg min-h-[46px] flex items-center gap-2">
+                                    <i class="fas fa-university text-blue-500 text-base shrink-0"></i>
+                                    <span id="uni-name-text" class="flex-1 truncate text-gray-500 italic">Loading...</span>
+                                </div>
+                                <!-- Editable input (hidden by default) -->
+                                <input type="text" id="uni-name"
+                                    class="hidden w-full px-4 py-2 rounded-xl border border-blue-400 dark:border-blue-500 bg-white dark:bg-gray-900 outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-900 dark:text-white text-lg mt-1"
+                                    placeholder="e.g. Savitribai Phule Pune University">
+                                <p class="text-xs text-gray-400 mt-1">
+                                    <i class="fas fa-info-circle mr-1"></i>This name is registered with the institution. Edit carefully.
+                                </p>
+                            </div>
+
+                            <!-- Action buttons -->
+                            <div class="flex gap-2">
+                                <!-- Edit button (visible in read mode) -->
+                                <button type="button" id="edit-uni-name-btn"
+                                    onclick="enableUniversityNameEdit()"
+                                    class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors text-sm">
+                                    <i class="fas fa-pencil-alt"></i> Edit Name
+                                </button>
+                                <!-- Save button (hidden in read mode) -->
+                                <button type="button" id="save-uni-name-btn"
+                                    onclick="saveUniversityIdentity()"
+                                    class="hidden flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-indigo-500/30 text-sm">
+                                    <i class="fas fa-save"></i> Save to DB
+                                </button>
+                                <!-- Cancel button (hidden in read mode) -->
+                                <button type="button" id="cancel-uni-name-btn"
+                                    onclick="cancelUniversityNameEdit()"
+                                    class="hidden py-2.5 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-colors text-sm">
+                                    Cancel
+                                </button>
+                            </div>
+
+                            <div id="uni-identity-message" class="hidden mt-3 p-3 rounded-xl text-sm"></div>
+                        </div>
+
+                        <!-- Hidden change-password-form (keeps existing JS handler from erroring) -->
+                        <form id="change-password-form" class="hidden"></form>
+                    </div>
+                </div>
+
+
+                <!-- 5. COMMUNICATION / INBOX -->
+                <div id="communication-section" class="tab-content hidden space-y-6">
+                    <h2 class="text-2xl font-bold">Communication / Inbox</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                        <tr>
+                                            <th class="px-6 py-3">Subject</th>
+                                            <th class="px-6 py-3">Type</th>
+                                            <th class="px-6 py-3">Sender</th>
+                                            <th class="px-6 py-3">Date</th>
+                                            <th class="px-6 py-3">Priority</th>
+                                            <th class="px-6 py-3">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="communication-inbox-body">
+                                        <tr class="border-b dark:border-gray-700">
+                                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading inbox...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="communication-message-card" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+                            <h3 class="text-lg font-semibold mb-2">Message Details</h3>
+                            <p id="comm-card-empty" class="text-sm text-gray-500">Select a message to view details.</p>
+                            <div id="comm-card-content" class="hidden space-y-3">
+                                <div class="text-xs text-gray-500">Type: <span id="comm-card-type" class="font-semibold px-2 py-0.5 rounded"></span> · Status: <span id="comm-card-status" class="font-semibold"></span></div>
+                                <div class="text-sm"><span class="font-semibold">Subject:</span> <span id="comm-card-subject"></span></div>
+                                <div class="text-sm"><span class="font-semibold">From:</span> <span id="comm-card-sender"></span></div>
+                                <div class="text-sm"><span class="font-semibold">Date:</span> <span id="comm-card-date"></span></div>
+                                <div class="text-sm"><span class="font-semibold">Message:</span></div>
+                                <div id="comm-card-message" class="text-sm bg-gray-50 dark:bg-gray-700 p-3 rounded-lg whitespace-pre-wrap"></div>
+                                <div id="comm-card-actions" class="flex gap-2"></div>
+                                <textarea id="comm-reply-text" rows="3" class="hidden w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900" placeholder="Type your reply..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OLD SECTIONS REMOVED -->
+                <div id="registrations-section" class="tab-content hidden space-y-6" style="display: none;">
+                    <!-- This section is no longer used in the new design -->
+                </div>
+
+                <div id="analytics-section" class="tab-content hidden space-y-6" style="display: none;">
+                    <!-- This section is no longer used in the new design -->
+                </div>
+
+                <!-- SPA Container isolated for CreateExam.js -->
+                <div id="app" class="tab-content hidden space-y-6"></div>
 
             </main>
         </div>
@@ -684,24 +647,7 @@
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal('create-exam-modal')"></div>
         <div
             class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-
-            <!-- University Branding Header -->
-            <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-                <div
-                    class="w-14 h-14 bg-indigo-50 dark:bg-gray-700 rounded-xl flex items-center justify-center border border-indigo-100 dark:border-gray-600 shrink-0">
-                    <i class="fas fa-university text-2xl text-indigo-600 dark:text-indigo-400"
-                        id="exam-form-uni-logo-icon"></i>
-                    <img id="exam-form-uni-logo-img" src="" alt="University Logo"
-                        class="hidden w-full h-full object-contain rounded-xl p-1">
-                </div>
-                <div>
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white" id="exam-form-uni-name">Savitribai Phule
-                        Pune University</h2>
-                    <p class="text-sm text-gray-500 font-medium">Department of Examinations</p>
-                </div>
-            </div>
-
-            <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Create New Exam</h3>
+            <h3 class="text-xl font-bold mb-4">Create New University Exam</h3>
             <form id="create-exam-form" class="space-y-4">
 
                 <!-- Basic Details -->
@@ -819,13 +765,9 @@
 
     <!-- Scripts -->
     <script src="js/university/dashboard.js"></script>
-    <script src="js/university/collegeContext.js"></script>
     <script src="js/university/exams.js"></script>
-    <script src="js/university/students.js"></script>
-    <script src="js/university/staff.js"></script>
     <script src="js/university/registrations.js"></script>
     <script src="js/university/analytics.js"></script>
-    <script src="js/university/colleges.js"></script>
 
     <!-- Safe ES6 Injection of CreateExam -->
     <script type="module">

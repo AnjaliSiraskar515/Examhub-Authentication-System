@@ -27,7 +27,7 @@ public class Exam {
     private String mode; // online, offline
     private String location;
     private String status; // upcoming, completed
-
+    
     private Long supervisorId;
     private String supervisorName;
 

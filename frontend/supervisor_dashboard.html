@@ -25,37 +25,25 @@
     html.dark {
       --bg: #0f172a;
     }
-
-    html.dark body {
-      color: #f8fafc;
+    html.dark body { 
+      color: #f8fafc; 
     }
-
-    html.dark .bg-white,
-    html.dark .card {
-      background-color: #1e293b !important;
-      border-color: #334155 !important;
+    html.dark .bg-white, html.dark .card { 
+      background-color: #1e293b !important; 
+      border-color: #334155 !important; 
     }
-
-    html.dark .text-gray-900,
-    html.dark .text-gray-800,
-    html.dark .text-gray-700 {
-      color: #f1f5f9 !important;
+    html.dark .text-gray-900, html.dark .text-gray-800, html.dark .text-gray-700 { 
+      color: #f1f5f9 !important; 
     }
-
-    html.dark .text-gray-600,
-    html.dark .text-gray-500 {
-      color: #cbd5e1 !important;
+    html.dark .text-gray-600, html.dark .text-gray-500 { 
+      color: #cbd5e1 !important; 
     }
-
-    html.dark .bg-gray-50,
-    html.dark .bg-gray-100 {
-      background-color: #0f172a !important;
-      border-color: #1e293b !important;
+    html.dark .bg-gray-50, html.dark .bg-gray-100 { 
+      background-color: #0f172a !important; 
+      border-color: #1e293b !important; 
     }
-
-    html.dark .border-gray-200,
-    html.dark .border-gray-100 {
-      border-color: #334155 !important;
+    html.dark .border-gray-200, html.dark .border-gray-100 { 
+      border-color: #334155 !important; 
     }
 
     .tab-btn.active {
@@ -111,29 +99,22 @@
         </div>
       </div>
       <div class="flex items-center space-x-4">
-
+        
         <!-- Theme & Notifications Section -->
         <div class="flex items-center space-x-3 pr-4 border-r border-gray-200">
-          <button
-            class="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors shadow-sm"
-            title="Toggle Theme" onclick="toggleTheme()">
+          <button class="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors shadow-sm" title="Toggle Theme" onclick="toggleTheme()">
             <i id="themeIcon" class="fas fa-moon text-lg"></i>
           </button>
-
+          
           <div class="relative">
-            <button id="notificationBtn"
-              class="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors shadow-sm relative"
-              title="Notifications" onclick="toggleNotifications()">
+            <button id="notificationBtn" class="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors shadow-sm relative" title="Notifications" onclick="toggleNotifications()">
               <i class="fas fa-bell text-lg"></i>
-              <span id="notificationBadge"
-                class="hidden absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+              <span id="notificationBadge" class="hidden absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
             </button>
-            <div id="notificationPanel"
-              class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+            <div id="notificationPanel" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
               <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                 <h3 class="font-semibold text-gray-700">Notifications</h3>
-                <button onclick="markAllNotificationsRead()" class="text-xs text-indigo-600 hover:text-indigo-800">Mark
-                  all read</button>
+                <button onclick="markAllNotificationsRead()" class="text-xs text-indigo-600 hover:text-indigo-800">Mark all read</button>
               </div>
               <div id="notificationList" class="max-h-80 overflow-y-auto">
                 <div class="p-4 text-center text-sm text-gray-500">No exams assigned yet</div>
@@ -155,18 +136,6 @@
       </div>
     </div>
   </header>
-
-  <!-- College Affiliation Banner -->
-  <div id="college-affiliation-bar" class="bg-gradient-to-r from-indigo-600 to-indigo-700 border-b border-indigo-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-center gap-3">
-      <i class="fas fa-building text-indigo-200 text-xs"></i>
-      <span class="text-xs font-semibold text-indigo-200 uppercase tracking-widest">Assigned College:</span>
-      <span id="header-college-badge"
-        class="inline-flex items-center gap-1.5 px-3 py-0.5 bg-white/20 text-white text-xs font-bold rounded-full border border-white/30">
-        <i class="fas fa-spinner fa-spin text-[10px]"></i> Loading...
-      </span>
-    </div>
-  </div>
 
   <div class="flex">
     <!-- Sidebar -->
@@ -247,9 +216,6 @@
               <div>
                 <h3 id="profileName" class="text-xl font-semibold text-gray-900">Supervisor Name</h3>
                 <p id="profileEmail" class="text-gray-600">supervisor@example.com</p>
-                <p id="profileDepartment"
-                  class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded mt-2 inline-block shadow-sm">
-                  --</p>
               </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -606,16 +572,9 @@
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">College / Exam Center
-                  <span class="ml-2 text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><i
-                      class="fas fa-lock mr-1"></i>Assigned by Admin</span>
-                </label>
-                <div id="inputCollegeDisplay"
-                  class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium text-sm flex items-center gap-2">
-                  <i class="fas fa-building text-indigo-400"></i>
-                  <span id="inputCollegeText">—</span>
-                </div>
-                <p class="text-xs text-gray-400 mt-1">Your college assignment is managed by the university admin.</p>
+                <label class="block text-sm font-medium text-gray-700 mb-1">College / Exam Center</label>
+                <input type="text" name="college" id="inputCollege" placeholder="e.g. COEP Technological University"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Designation / Role</label>
@@ -785,13 +744,10 @@
   </div>
 
   <!-- ===== Exam Details Modal ===== -->
-  <div id="examDetailsModal"
-    class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-center justify-center z-[70] p-4"
-    onclick="if(event.target===this)closeExamDetailsModal()">
+  <div id="examDetailsModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-center justify-center z-[70] p-4" onclick="if(event.target===this)closeExamDetailsModal()">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
       <!-- Header -->
-      <div
-        class="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-t-2xl px-6 py-5 flex items-start justify-between">
+      <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-t-2xl px-6 py-5 flex items-start justify-between">
         <div>
           <p class="text-indigo-200 text-xs font-semibold uppercase tracking-wider mb-1">Exam Details</p>
           <h2 id="edModalTitle" class="text-white text-xl font-bold leading-tight">Loading...</h2>
@@ -876,10 +832,8 @@
 
         <!-- Actions -->
         <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
-          <button onclick="closeExamDetailsModal()"
-            class="px-5 py-2.5 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 font-medium transition-colors text-sm">Close</button>
-          <button id="edModalSuperviseBtn"
-            class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow transition-all text-sm flex items-center gap-2">
+          <button onclick="closeExamDetailsModal()" class="px-5 py-2.5 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 font-medium transition-colors text-sm">Close</button>
+          <button id="edModalSuperviseBtn" class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow transition-all text-sm flex items-center gap-2">
             <i class="fas fa-eye"></i> Supervise Exam
           </button>
         </div>
@@ -905,7 +859,7 @@
       try {
         const d = new Date(ex.date);
         document.getElementById('edModalDate').textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-      } catch (e) { document.getElementById('edModalDate').textContent = ex.date || '--'; }
+      } catch(e) { document.getElementById('edModalDate').textContent = ex.date || '--'; }
 
       // Time (start → end)
       let timeStr = ex.startTime || '--';
@@ -914,8 +868,8 @@
           const [h, m] = ex.startTime.split(':').map(Number);
           const s = new Date(); s.setHours(h, m, 0);
           const e2 = new Date(s.getTime() + ex.duration * 60000);
-          timeStr = `${ex.startTime.slice(0, 5)} – ${e2.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
-        } catch (e) { }
+          timeStr = `${ex.startTime.slice(0,5)} – ${e2.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false})}`;
+        } catch(e) {}
       }
       document.getElementById('edModalTime').textContent = timeStr;
 
@@ -1025,7 +979,7 @@
         const payload = field === 'email' ? { email: value } : { phone: value };
 
         showToast(`Sending OTP to ${value}...`, 'info');
-        const res = await fetch(`http://localhost:8080${endpoint}`, {
+        const res = await fetch(`http://localhost:8081${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -1042,7 +996,7 @@
         const verifyEndpoint = field === 'email' ? '/api/otp/verify/email' : '/api/otp/verify/phone';
         const verifyPayload = field === 'email' ? { email: value, otp: otp } : { phone: value, otp: otp };
 
-        const vRes = await fetch(`http://localhost:8080${verifyEndpoint}`, {
+        const vRes = await fetch(`http://localhost:8081${verifyEndpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(verifyPayload)
@@ -1105,21 +1059,12 @@
       container.innerHTML = '<div class="text-center text-gray-500 my-8"><i class="fas fa-spinner fa-spin text-3xl"></i><p class="mt-2">Loading forms...</p></div>';
 
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/exam-forms', { headers: authHeaders() });
+        const res = await fetch('http://localhost:8081/api/supervisor/exam-forms', { headers: authHeaders() });
         if (!res.ok) throw new Error('Failed to fetch approvals');
         const forms = await res.json();
 
         if (!forms || forms.length === 0) {
-          // Build a descriptive empty state using the supervisor's college if available
-          const collegeName = window._supervisorCollege || 'your college';
-          container.innerHTML = `
-            <div class="p-10 text-center bg-gray-50 rounded-2xl border border-gray-200">
-              <div class="w-16 h-16 bg-indigo-50 text-indigo-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-clipboard-check text-3xl"></i>
-              </div>
-              <h3 class="text-lg font-bold text-gray-700 mb-1">All caught up!</h3>
-              <p class="text-gray-500 text-sm">No pending exam forms from <span class="font-semibold text-indigo-600">${collegeName}</span> students at this time.</p>
-            </div>`;
+          container.innerHTML = '<div class="p-8 text-center bg-gray-50 rounded-xl border border-gray-200"><i class="fas fa-check-circle text-gray-300 text-5xl mb-4"></i><h3 class="text-lg font-medium text-gray-600">All caught up!</h3><p class="text-gray-500">No pending exam forms to approve.</p></div>';
           return;
         }
 
@@ -1175,7 +1120,7 @@
       btnElement.disabled = true;
 
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam-forms/${id}/accept`, {
+        const res = await fetch(`http://localhost:8081/api/supervisor/exam-forms/${id}/accept`, {
           method: 'POST',
           headers: authHeaders()
         });
@@ -1202,13 +1147,12 @@
       const profileBox = document.getElementById('tab-profile');
       // if (profileBox.dataset.loaded) return; // Removed to allow auto-refresh
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/profile', { headers: authHeaders() });
+        const res = await fetch('http://localhost:8081/api/supervisor/profile', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-profile');
         const p = await res.json();
         document.getElementById('profileAvatar').src = p.avatar || 'placeholder-avatar.png';
         document.getElementById('profileName').innerText = p.name || 'Supervisor Name';
         document.getElementById('profileEmail').innerText = p.email || '';
-        document.getElementById('profileDepartment').innerText = p.department || 'Not Assigned';
 
         // Update Header Profile
         document.getElementById('headerProfileName').innerText = p.name || 'Supervisor';
@@ -1238,13 +1182,13 @@
       if (container.dataset.loaded) return;
       container.innerHTML = '<div class="muted">Loading exams...</div>';
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/exams', { headers: authHeaders() });
+        const res = await fetch('http://localhost:8081/api/supervisor/exams', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-exams');
         let arr = await res.json();
-
+        
         // Sort newest first
         arr.sort((a, b) => new Date(b.date) - new Date(a.date));
-
+        
         // Process Notifications before rendering body
         processNotifications(arr);
 
@@ -1354,7 +1298,7 @@
 
     // --- Notifications Logic ---
     let unreadCount = 0;
-
+    
     function toggleNotifications() {
       const panel = document.getElementById('notificationPanel');
       panel.classList.toggle('hidden');
@@ -1367,84 +1311,84 @@
       unreadCount = 0;
 
       const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
-
+      
       const now = new Date();
       let notifications = [];
 
       exams.forEach(ex => {
         const examDateObj = new Date(ex.date);
         let startDateTime = examDateObj;
-
+        
         if (ex.startTime) {
-          const [h, m] = ex.startTime.split(':').map(Number);
-          startDateTime = new Date(examDateObj);
-          startDateTime.setHours(h, m, 0, 0);
+           const [h, m] = ex.startTime.split(':').map(Number);
+           startDateTime = new Date(examDateObj);
+           startDateTime.setHours(h, m, 0, 0);
         }
 
         const diffTime = startDateTime - now;
         const diffHours = diffTime / (1000 * 60 * 60);
         const diffMins = diffTime / (1000 * 60);
-
+        
         const isLive = ex.status === 'LIVE' || ex.status === 'ONGOING';
         const isUpcoming = diffHours >= 0;
         const isRecentlyPassed = diffHours < 0 && diffHours > -24; // Started within last 24h
 
         // 1. Live Exam or Starting Soon Reminder
         if (isLive || (isUpcoming && diffHours <= 1)) {
-          const isStartingSoon = !isLive && diffMins > 0;
-          notifications.push({
-            type: isLive ? 'LIVE_EXAM' : 'REMINDER',
-            id: ex.id,
-            notifId: `exam-${ex.id}-reminder`,
-            exam: ex,
-            title: isLive ? 'Exam is Live Now!' : (diffMins <= 30 ? `Your exam starts in ${Math.round(diffMins)} minutes` : `Starting in ${Math.round(diffMins)} mins!`),
-            message: isLive ? `Click to supervise ${ex.title}` : `Your exam ${ex.title} is about to begin.`,
-            iconClass: isLive ? 'fa-video' : 'fa-clock',
-            colorClass: isLive ? 'text-red-600 bg-red-100' : 'text-blue-600 bg-blue-100',
-            timestamp: now.getTime()
-          });
-        }
-
+            const isStartingSoon = !isLive && diffMins > 0;
+            notifications.push({
+               type: isLive ? 'LIVE_EXAM' : 'REMINDER',
+               id: ex.id,
+               notifId: `exam-${ex.id}-reminder`,
+               exam: ex,
+               title: isLive ? 'Exam is Live Now!' : (diffMins <= 30 ? `Your exam starts in ${Math.round(diffMins)} minutes` : `Starting in ${Math.round(diffMins)} mins!`),
+               message: isLive ? `Click to supervise ${ex.title}` : `Your exam ${ex.title} is about to begin.`,
+               iconClass: isLive ? 'fa-video' : 'fa-clock',
+               colorClass: isLive ? 'text-red-600 bg-red-100' : 'text-blue-600 bg-blue-100',
+               timestamp: now.getTime()
+            });
+        } 
+        
         // 2. New Assignment Context
         if (isUpcoming || isLive || isRecentlyPassed) {
-          let timeContextStr = "";
-          if (diffHours > 24) {
-            timeContextStr = `Starts in ${Math.floor(diffHours / 24)} days`;
-          } else if (diffHours > 0) {
-            if (diffHours >= 1) {
-              timeContextStr = `Starts in ${Math.floor(diffHours)} hours`;
-            } else {
-              timeContextStr = `Starts in ${Math.round(diffMins)} minutes`;
-            }
-          } else {
-            timeContextStr = `Started ${Math.abs(Math.floor(diffHours))} hours ago`;
-          }
+           let timeContextStr = "";
+           if (diffHours > 24) {
+               timeContextStr = `Starts in ${Math.floor(diffHours/24)} days`;
+           } else if (diffHours > 0) {
+               if (diffHours >= 1) {
+                   timeContextStr = `Starts in ${Math.floor(diffHours)} hours`;
+               } else {
+                   timeContextStr = `Starts in ${Math.round(diffMins)} minutes`;
+               }
+           } else {
+               timeContextStr = `Started ${Math.abs(Math.floor(diffHours))} hours ago`;
+           }
 
-          // We assume assigned recently if it's in the future
-          notifications.push({
-            type: 'NEW_ASSIGNMENT',
-            id: ex.id,
-            notifId: `exam-${ex.id}-assigned`,
-            exam: ex,
-            title: 'New Exam Assignment',
-            message: `You have been assigned: ${ex.title} on ${examDateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} at ${ex.startTime || 'TBD'}`,
-            timeContext: timeContextStr,
-            iconClass: 'fa-clipboard-check',
-            colorClass: 'text-green-600 bg-green-100',
-            timestamp: examDateObj.getTime()
-          });
+           // We assume assigned recently if it's in the future
+           notifications.push({
+               type: 'NEW_ASSIGNMENT',
+               id: ex.id,
+               notifId: `exam-${ex.id}-assigned`,
+               exam: ex,
+               title: 'New Exam Assignment',
+               message: `You have been assigned: ${ex.title} on ${examDateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} at ${ex.startTime || 'TBD'}`,
+               timeContext: timeContextStr,
+               iconClass: 'fa-clipboard-check',
+               colorClass: 'text-green-600 bg-green-100',
+               timestamp: examDateObj.getTime()
+            });
         }
       });
 
       // Sort notifications - Reminders/Live first, then by date 
       notifications.sort((a, b) => {
-        if (a.type !== b.type) {
-          if (a.type === 'LIVE_EXAM') return -1;
-          if (b.type === 'LIVE_EXAM') return 1;
-          if (a.type === 'REMINDER') return -1;
-          if (b.type === 'REMINDER') return 1;
-        }
-        return b.timestamp - a.timestamp;
+         if (a.type !== b.type) {
+            if (a.type === 'LIVE_EXAM') return -1;
+            if (b.type === 'LIVE_EXAM') return 1;
+            if (a.type === 'REMINDER') return -1;
+            if (b.type === 'REMINDER') return 1;
+         }
+         return b.timestamp - a.timestamp;
       });
 
       if (notifications.length === 0) {
@@ -1463,11 +1407,11 @@
           markNotificationRead(n.notifId);
           toggleNotifications();
           showTab('exams');
-          if (typeof openExamDetail === 'function') {
-            openExamDetail(n.exam.id, n.exam.title.replace(/'/g, "\\'"), n.exam.date, n.exam.startTime, n.exam.mode || 'OFFLINE', n.exam.location || '', n.exam.status, n.exam.duration || 0);
+          if(typeof openExamDetail === 'function') {
+              openExamDetail(n.exam.id, n.exam.title.replace(/'/g, "\\'"), n.exam.date, n.exam.startTime, n.exam.mode || 'OFFLINE', n.exam.location || '', n.exam.status, n.exam.duration || 0);
           }
         };
-
+        
         item.innerHTML = `
           <div class="mt-1 flex-shrink-0 relative">
             <div class="w-8 h-8 rounded-full flex items-center justify-center ${n.colorClass}">
@@ -1506,20 +1450,20 @@
     function markAllNotificationsRead() {
       const list = document.getElementById('notificationList');
       if (list.innerText.includes('No exams assigned') || list.innerText.includes('No new notifications')) return;
-
-      const res = fetch('http://localhost:8080/api/supervisor/exams', { headers: authHeaders() })
-        .then(r => r.json())
-        .then(arr => {
-          let read = JSON.parse(localStorage.getItem('readNotifications') || '[]');
-          arr.forEach(ex => {
+      
+      const res = fetch('http://localhost:8081/api/supervisor/exams', { headers: authHeaders() })
+      .then(r => r.json())
+      .then(arr => {
+         let read = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+         arr.forEach(ex => {
             const assignedId = `exam-${ex.id}-assigned`;
             const reminderId = `exam-${ex.id}-reminder`;
-            if (!read.includes(assignedId)) read.push(assignedId);
-            if (!read.includes(reminderId)) read.push(reminderId);
-          });
-          localStorage.setItem('readNotifications', JSON.stringify(read));
-          loadExams();
-        });
+            if(!read.includes(assignedId)) read.push(assignedId);
+            if(!read.includes(reminderId)) read.push(reminderId);
+         });
+         localStorage.setItem('readNotifications', JSON.stringify(read));
+         loadExams();
+      });
     }
 
     // Master-Detail Navigation
@@ -1643,8 +1587,8 @@
 
       try {
         const url = examId
-          ? `http://localhost:8080/api/supervisor/students?examId=${examId}`
-          : 'http://localhost:8080/api/supervisor/students';
+          ? `http://localhost:8081/api/supervisor/students?examId=${examId}`
+          : 'http://localhost:8081/api/supervisor/students';
         const res = await fetch(url, { headers: authHeaders() });
         const arr = await res.json();
 
@@ -1753,7 +1697,7 @@
       }
 
       // call backend to verify token (secured with JWT)
-      fetch('http://localhost:8080/api/qr/verify', {
+      fetch('http://localhost:8081/api/qr/verify', {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ qrToken: decodedText })
@@ -1938,7 +1882,7 @@
     }
 
     window.verifyStudentQR = async function (studentId) {
-      const res = await fetch('http://localhost:8080/api/qr/generate?studentId=' + encodeURIComponent(studentId) + '&examId=1');
+      const res = await fetch('http://localhost:8081/api/qr/generate?studentId=' + encodeURIComponent(studentId) + '&examId=1');
       if (res.ok) alert('QR generated (simulate scanning)'); else alert('QR generate failed');
     }
 
@@ -1958,19 +1902,30 @@
 
         await delay(1500); // Wait 1.5s for "scanning"
 
-        // Step 3: Capture Simulation
-        const deterministicHash = "PHYSICAL_MINUTIAE_" + studentId.toString();
+        // Step 3: Capture
+        const captureRes = await fetch('http://localhost:8081/api/biometric/capture', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const captureData = await captureRes.json();
+
+        if (!captureData.success) {
+          alert('Fingerprint Capture Failed');
+          btn.innerText = originalText;
+          btn.disabled = false;
+          return;
+        }
 
         btn.innerText = "Verifying...";
         await delay(1000); // Wait 1s for "verifying"
 
         // Step 4: Verify
-        const res = await fetch('http://localhost:8080/api/supervisor/verify-student-biometric', {
+        const res = await fetch('http://localhost:8081/api/biometric/verify', {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
             studentId: studentId.toString(),
-            fingerprint: deterministicHash
+            fingerprint: captureData.hash
           })
         });
         const js = await res.json();
@@ -1979,9 +1934,9 @@
         btn.disabled = false;
 
         if (js.success) {
-          alert(`✅ Biometric Verified Successfully!\n\nUser: ${js.message}\nStatus: ${js.attendanceStatus || 'Verified'}`);
+          alert(`✅ Biometric Verified Successfully!\n\nUser: ${js.message} \nConfidence Score: ${js.score}% `);
         } else {
-          alert(`❌ Verification Failed\n\n${js.message}`);
+          alert(`❌ Verification Failed\n\n${js.message} `);
         }
 
       } catch (e) {
@@ -2006,7 +1961,7 @@
 
         await delay(2000); // Simulate hardware scan time
 
-        const res = await fetch('http://localhost:8080/api/biometric/capture', {
+        const res = await fetch('http://localhost:8081/api/biometric/capture', {
           method: 'POST',
           headers: authHeaders()
         });
@@ -2069,117 +2024,84 @@
         const originalText = btn.innerHTML;
         const originalClass = btn.className;
 
+        // 1. Simulation: Scanning
+        btn.innerHTML = '<i class="fas fa-fingerprint fa-pulse mr-2"></i> Acquiring...';
+        btn.className = "w-full bg-slate-700 text-white font-bold py-3 rounded-xl shadow-inner cursor-not-allowed flex items-center justify-center space-x-2";
         btn.disabled = true;
-
-        // --- INJECT SWEET SUPERVISOR SCANNER MODAL ---
-        const overlayId = 'simulatedScannerOverlay';
-        let overlay = document.getElementById(overlayId);
-        if (!overlay) {
-          overlay = document.createElement('div');
-          overlay.id = overlayId;
-          overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900 bg-opacity-80 backdrop-blur-md transition-opacity';
-          overlay.innerHTML = `
-            <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-10 max-w-sm w-full shadow-[0_20px_50px_rgba(8,_112,_184,_0.7)] transform transition-all scale-100 flex flex-col items-center relative overflow-hidden border border-slate-200 dark:border-slate-700">
-               <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 animate-pulse"></div>
-               <h3 class="text-2xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Biometric Engine</h3>
-               <p class="text-xs text-slate-500 dark:text-slate-400 mb-8 font-medium">VERIFYING STUDENT: ${studentName.toUpperCase()}</p>
-               
-               <div class="relative w-36 h-36 mb-8 flex justify-center items-center bg-slate-50 dark:bg-slate-900 rounded-3xl shadow-inner border border-slate-100 dark:border-slate-700">
-                  <i id="scanIcon" class="fas fa-fingerprint text-7xl text-indigo-500 transition-colors duration-500"></i>
-                  <!-- Sweep line -->
-                  <div id="scanLaser" class="absolute left-0 w-full h-1 bg-green-400 shadow-[0_0_20px_4px_rgba(74,222,128,0.9)] z-10 hidden rounded-full"></div>
-               </div>
-               
-               <p id="scanStatusText" class="text-sm font-bold tracking-wide text-indigo-600 dark:text-indigo-400 animate-pulse uppercase">Acquiring User Input...</p>
-            </div>
-          `;
-          document.body.appendChild(overlay);
-
-          if (!document.getElementById('sweeping-laser-keyframes')) {
-            const style = document.createElement('style');
-            style.id = 'sweeping-laser-keyframes';
-            style.innerHTML = `@keyframes sweepLaser { 0% { top: 0%; opacity: 0; } 15% { opacity: 1; filter: brightness(1.2); } 85% { opacity: 1; filter: brightness(1.2); } 100% { top: 100%; opacity: 0; } }`;
-            document.head.appendChild(style);
-          }
-        }
-
-        overlay.classList.remove('hidden');
-        const scanIcon = document.getElementById('scanIcon');
-        const scanLaser = document.getElementById('scanLaser');
-        const scanStatusText = document.getElementById('scanStatusText');
-
-        // Reset state
-        scanIcon.className = "fas fa-fingerprint text-7xl text-indigo-500";
-        scanLaser.classList.remove('hidden');
-        scanLaser.style.animation = 'sweepLaser 1.5s infinite ease-in-out alternate';
-        scanStatusText.textContent = "ACQUIRING MINUTIAE...";
-        scanStatusText.className = "text-sm font-bold tracking-wide text-indigo-600 dark:text-indigo-400 animate-pulse uppercase";
-
-        await delay(1500);
-        scanStatusText.textContent = "MATCHING SERVER HASH...";
-
-        // 2. Simulation: Capture (Deterministic Generation)
-        const deterministicHash = "PHYSICAL_MINUTIAE_" + studentId.toString();
 
         await delay(1200);
 
-        // 4. Verification from Backend
-        const res = await fetch('http://localhost:8080/api/supervisor/verify-student-biometric', {
+        // 2. Simulation: Capture
+        const captureRes = await fetch('http://localhost:8081/api/biometric/capture', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const captureData = await captureRes.json();
+
+        if (!captureData.success) {
+          showToast('Fingerprint Capture Failed', 'error');
+          btn.innerHTML = originalText;
+          btn.className = originalClass;
+          btn.disabled = false;
+          return;
+        }
+
+        // 3. Simulation: Processing
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Matching...';
+        await delay(800);
+
+        // 4. Verification from Backend (includes examId so server can mark attendance)
+        const res = await fetch('http://localhost:8081/api/biometric/verify', {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
             studentId: studentId.toString(),
-            fingerprint: deterministicHash,
-            examId: currentExamId ? currentExamId.toString() : ""
+            fingerprint: captureData.hash,
+            examId: currentExamId
           })
         });
         const js = await res.json();
 
-        scanLaser.classList.add('hidden');
         const attendanceStatus = js.attendanceStatus; // PRESENT / ABSENT (if server recorded it)
         const alreadyRecorded = js.message === "Attendance already recorded." || !!js.attendanceAlreadyRecorded;
 
         if (alreadyRecorded) {
-          scanIcon.className = "fas fa-check-double text-7xl text-blue-500";
-          scanStatusText.textContent = "ATTENDANCE ALREADY RECORDED";
-          scanStatusText.className = "text-sm font-black tracking-widest text-blue-600 uppercase";
           showToast('Attendance already recorded.', 'success');
-        } else if (attendanceStatus === 'PRESENT') {
-          // Success State UI
-          scanIcon.className = "fas fa-check-circle text-7xl text-green-500 drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]";
-          scanStatusText.textContent = "VERIFIED: MATCHED 100%";
-          scanStatusText.className = "text-sm font-black tracking-widest text-green-600 uppercase";
-
-          btn.className = "w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all scale-105";
-          btn.innerHTML = '<i class="fas fa-check-circle text-lg"></i> <span>Biometric Verified</span>';
-          showToast('Student Marked Present', 'success');
-        } else if (attendanceStatus === 'ABSENT' || !js.success) {
-          // Failure State UI
-          scanIcon.className = "fas fa-times-circle text-7xl text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]";
-          scanStatusText.textContent = "MISMATCH: ACCESS DENIED";
-          scanStatusText.className = "text-sm font-black tracking-widest text-red-600 uppercase";
-
-          btn.className = "w-full bg-red-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all";
-          btn.innerHTML = '<i class="fas fa-times-circle text-lg"></i> <span>Biometric Mismatch</span>';
-          showToast(js.message || 'Biometric Mismatch', 'error');
-        } else if (js.success) {
-          // Fallback
-          scanIcon.className = "fas fa-check-circle text-7xl text-green-500";
-          scanStatusText.textContent = "VERIFIED (LEGACY)";
-          scanStatusText.className = "text-sm font-bold tracking-widest text-green-600 uppercase";
-          btn.className = "w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all scale-105";
-          btn.innerHTML = '<i class="fas fa-check-circle text-lg"></i> <span>Biometric Verified</span>';
-          showToast('Student Marked Present', 'success');
         }
 
-        await delay(2000);
-        overlay.classList.add('hidden');
-        overlay.remove(); // Safely clear out the DOM
+        if (attendanceStatus === 'PRESENT') {
+          // Success State UI
+          btn.className = "w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all scale-105";
+          btn.innerHTML = '<i class="fas fa-check-circle text-lg"></i> <span>Biometric Verified</span>';
 
-        if (attendanceStatus === 'PRESENT' || js.success) {
+          showToast('Student Marked Present', 'success');
+
+          // Attendance has been marked server-side; refresh stats and scanner
+          await delay(600);
           markPresent(); // Refreshes stats and clears scanner
+        } else if (attendanceStatus === 'ABSENT' || js.success === false) {
+          // Failure: treated as absent (attendance recorded after biometric only)
+          btn.className = "w-full bg-red-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all";
+          btn.innerHTML = '<i class="fas fa-times-circle text-lg"></i> <span>Biometric Mismatch</span>';
+
+          showToast('Student Marked Absent - Biometric Mismatch', 'error');
+
+          await delay(600);
+          markPresent(); // Refresh stats and clear scanner for next student
+          btn.innerHTML = originalText;
+          btn.className = originalClass;
+          btn.disabled = false;
+        } else if (js.success) {
+          // Fallback (older backend response without attendance fields)
+          btn.className = "w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all scale-105";
+          btn.innerHTML = '<i class="fas fa-check-circle text-lg"></i> <span>Biometric Verified</span>';
+
+          showToast('Student Marked Present', 'success');
+
+          await delay(600);
+          markPresent();
         } else {
-          markPresent(); // Refreshes stats for failed matches
+          showToast(js.message || 'Biometric verification failed', 'error');
           btn.innerHTML = originalText;
           btn.className = originalClass;
           btn.disabled = false;
@@ -2240,7 +2162,7 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
         btn.disabled = true;
 
-        const res = await fetch('http://localhost:8080/api/supervisor/update-profile', {
+        const res = await fetch('http://localhost:8081/api/supervisor/update-profile', {
           method: 'POST',
           headers: authHeaders(),
           body: formData // Content-Type handled automatically with boundary
@@ -2273,12 +2195,12 @@
 
       const profileBox = document.getElementById('tab-profile');
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/profile', { headers: authHeaders() });
+        const res = await fetch('http://localhost:8081/api/supervisor/profile', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-profile');
         const p = await res.json();
 
         // 1. Dashboard Stats & Info
-        const avatarSrc = p.avatar ? (p.avatar.startsWith('http') ? p.avatar : `http://localhost:8080/${p.avatar}`) : 'placeholder-avatar.png';
+        const avatarSrc = p.avatar ? (p.avatar.startsWith('http') ? p.avatar : `http://localhost:8081/${p.avatar}`) : 'placeholder-avatar.png';
 
         document.getElementById('profileAvatar').src = avatarSrc;
         document.getElementById('profileName').innerText = p.name || 'Supervisor Name';
@@ -2292,18 +2214,6 @@
         document.getElementById('statStudents').innerText = p.studentsCount ?? '--';
         document.getElementById('statScans').innerText = p.scansToday ?? '--';
         document.getElementById('statPending').innerText = p.pendingVerifications ?? '--';
-
-        // Update the college affiliation header badge
-        const collegeBadge = document.getElementById('header-college-badge');
-        if (collegeBadge) {
-          const collegeName = p.college || null;
-          window._supervisorCollege = collegeName; // Store for use in empty states
-          if (collegeName) {
-            collegeBadge.innerHTML = `<i class="fas fa-building text-[10px]"></i> ${collegeName}`;
-          } else {
-            collegeBadge.innerHTML = `<i class="fas fa-exclamation-circle text-amber-300 text-[10px]"></i> <span class="text-amber-200">Not assigned</span>`;
-          }
-        }
 
         const docsUl = document.getElementById('profileDocs');
         if (docsUl) {
@@ -2322,9 +2232,7 @@
           document.getElementById('inputEmail').value = p.email || '';
           document.getElementById('inputPhone').value = p.phone || '';
           document.getElementById('inputUniversity').value = p.university || '';
-          // College is read-only — show in display div, not editable input
-          const collegeText = document.getElementById('inputCollegeText');
-          if (collegeText) collegeText.textContent = p.college || '(Not assigned yet)';
+          document.getElementById('inputCollege').value = p.college || '';
           document.getElementById('inputDesignation').value = p.designation || 'Room Invigilator';
           document.getElementById('inputEmployeeId').value = p.employeeId || '';
 
@@ -2422,7 +2330,7 @@
 
       // 2. Call Backend
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/enroll-biometric', {
+        const res = await fetch('http://localhost:8081/api/supervisor/enroll-biometric', {
           method: 'POST',
           headers: authHeaders()
         });
@@ -2642,7 +2550,7 @@
 
     async function executeStatusChange(newStatus) {
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/status`, {
+        const res = await fetch(`http://localhost:8081/api/supervisor/exam/${currentExamId}/status`, {
           method: 'PUT',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ status: newStatus })
@@ -2661,7 +2569,7 @@
       if (!msg) return alert('Enter a message');
 
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/broadcast`, {
+        const res = await fetch(`http://localhost:8081/api/supervisor/exam/${currentExamId}/broadcast`, {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ message: msg })
@@ -2675,7 +2583,7 @@
     async function fetchLiveStudents() {
       try {
         // Pass examId to filter (simulated api call)
-        const res = await fetch(`http://localhost:8080/api/supervisor/students?examId=${currentExamId}`, {
+        const res = await fetch(`http://localhost:8081/api/supervisor/students?examId=${currentExamId}`, {
           headers: authHeaders()
         });
         const students = await res.json();
@@ -2774,7 +2682,7 @@
     // --- Phase 4: Exam Summary Logic ---
     async function fetchExamSummary() {
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/summary`, {
+        const res = await fetch(`http://localhost:8081/api/supervisor/exam/${currentExamId}/summary`, {
           headers: authHeaders()
         });
         if (res.ok) {
@@ -2799,7 +2707,7 @@
       if (!reason) return;
 
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/incident`, {
+        const res = await fetch(`http://localhost:8081/api/supervisor/incident`, {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
@@ -2817,7 +2725,7 @@
     async function fetchAlerts() {
       if (!currentExamId) return;
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/alerts`, {
+        const res = await fetch(`http://localhost:8081/api/supervisor/exam/${currentExamId}/alerts`, {
           headers: authHeaders()
         });
         const alerts = await res.json();
@@ -2850,7 +2758,7 @@
 
       // Fetch latest student data
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/students?examId=${currentExamId}`, { headers: authHeaders() });
+        const res = await fetch(`http://localhost:8081/api/supervisor/students?examId=${currentExamId}`, { headers: authHeaders() });
         const students = await res.json();
 
         let y = 60;
@@ -2895,7 +2803,7 @@
     // Download Incident Log
     window.downloadIncidentLog = async function () {
       if (!currentExamId) return showToast("No exam selected", "error");
-
+      
       showToast("Generating incident log...", "info");
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
@@ -2909,9 +2817,9 @@
       doc.text(`Supervisor: ${document.getElementById('headerProfileName').innerText}`, 14, 44);
 
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/alerts`, { headers: authHeaders() });
+        const res = await fetch(`http://localhost:8081/api/supervisor/exam/${currentExamId}/alerts`, { headers: authHeaders() });
         const alerts = await res.json();
-
+        
         let y = 60;
         doc.setFontSize(10);
         doc.text("Time", 14, y);
@@ -2993,7 +2901,7 @@
         formData.append('currentPassword', currentPassword);
         formData.append('newPassword', newPassword);
 
-        const res = await fetch('http://localhost:8080/api/supervisor/update-password', {
+        const res = await fetch('http://localhost:8081/api/supervisor/update-password', {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
           body: formData.toString()

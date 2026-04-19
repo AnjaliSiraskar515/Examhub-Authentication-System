@@ -25,6 +25,10 @@ public class User {
     private String role;
     private String status;
 
+    // Used for JWT invalidation: increment this to force logout on all existing tokens
+    @Column(columnDefinition = "INT DEFAULT 0")
+    private int tokenVersion = 0;
+
     // Eligibility & Billing
     @Column(nullable = false, columnDefinition = "boolean default false")
     private Boolean feesPaid = false;
@@ -308,6 +312,14 @@ public class User {
         this.status = status;
     }
 
+    public int getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void setTokenVersion(int tokenVersion) {
+        this.tokenVersion = tokenVersion;
+    }
+
     public void setBiometricHash(String h) {
         this.biometricHash = h;
     }
@@ -516,7 +528,6 @@ public class User {
     public void setGender(String gender) {
         this.gender = gender;
     }
-
     public Boolean getFeesPaid() {
         return feesPaid;
     }
