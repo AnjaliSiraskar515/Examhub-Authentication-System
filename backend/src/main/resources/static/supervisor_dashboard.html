@@ -1,0 +1,3044 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supervisor Dashboard - ExamHub</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --teal: #14b8a6;
+      --bg: #f8fafc;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui;
+    }
+
+    /* Dark Mode Defaults */
+    html.dark {
+      --bg: #0f172a;
+    }
+
+    html.dark body {
+      color: #f8fafc;
+    }
+
+    html.dark .bg-white,
+    html.dark .card {
+      background-color: #1e293b !important;
+      border-color: #334155 !important;
+    }
+
+    html.dark .text-gray-900,
+    html.dark .text-gray-800,
+    html.dark .text-gray-700 {
+      color: #f1f5f9 !important;
+    }
+
+    html.dark .text-gray-600,
+    html.dark .text-gray-500 {
+      color: #cbd5e1 !important;
+    }
+
+    html.dark .bg-gray-50,
+    html.dark .bg-gray-100 {
+      background-color: #0f172a !important;
+      border-color: #1e293b !important;
+    }
+
+    html.dark .border-gray-200,
+    html.dark .border-gray-100 {
+      border-color: #334155 !important;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .tab-btn {
+      transition: all 0.3s ease;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .qr-reader-box {
+      width: 100%;
+      max-width: 400px;
+      height: 300px;
+      border: 2px dashed #d1d5db;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6b7280;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <div id="networkStatus" class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="System Online"></div>
+        <div class="flex items-center space-x-3">
+          <img src="logo.png" alt="ExamHub" class="w-10 h-10 object-contain">
+          <div>
+            <h1 class="text-xl font-semibold text-gray-900">Supervisor Dashboard</h1>
+            <p class="text-sm text-gray-500">ExamHub - Secure Authentication System</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+
+        <!-- Theme & Notifications Section -->
+        <div class="flex items-center space-x-3 pr-4 border-r border-gray-200">
+          <button
+            class="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors shadow-sm"
+            title="Toggle Theme" onclick="toggleTheme()">
+            <i id="themeIcon" class="fas fa-moon text-lg"></i>
+          </button>
+
+          <div class="relative">
+            <button id="notificationBtn"
+              class="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors shadow-sm relative"
+              title="Notifications" onclick="toggleNotifications()">
+              <i class="fas fa-bell text-lg"></i>
+              <span id="notificationBadge"
+                class="hidden absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+            </button>
+            <div id="notificationPanel"
+              class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+              <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h3 class="font-semibold text-gray-700">Notifications</h3>
+                <button onclick="markAllNotificationsRead()" class="text-xs text-indigo-600 hover:text-indigo-800">Mark
+                  all read</button>
+              </div>
+              <div id="notificationList" class="max-h-80 overflow-y-auto">
+                <div class="p-4 text-center text-sm text-gray-500">No exams assigned yet</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Dropdown Trigger -->
+        <button onclick="openProfileModal()"
+          class="flex items-center space-x-2 focus:outline-none hover:bg-gray-50 p-2 rounded-lg transition-colors">
+          <div class="text-right hidden sm:block">
+            <p class="text-sm font-semibold text-gray-900" id="headerProfileName">Supervisor</p>
+            <p class="text-xs text-gray-500">View Profile</p>
+          </div>
+          <img id="headerProfileAvatar" src="placeholder-avatar.png" alt="Profile"
+            class="w-10 h-10 rounded-full border-2 border-indigo-100 object-cover">
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- College Affiliation Banner -->
+  <div id="college-affiliation-bar" class="bg-gradient-to-r from-indigo-600 to-indigo-700 border-b border-indigo-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-center gap-3">
+      <i class="fas fa-building text-indigo-200 text-xs"></i>
+      <span class="text-xs font-semibold text-indigo-200 uppercase tracking-widest">Assigned College:</span>
+      <span id="header-college-badge"
+        class="inline-flex items-center gap-1.5 px-3 py-0.5 bg-white/20 text-white text-xs font-bold rounded-full border border-white/30">
+        <i class="fas fa-spinner fa-spin text-[10px]"></i> Loading...
+      </span>
+    </div>
+  </div>
+
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 min-h-screen">
+      <nav class="px-4 py-6">
+        <button onclick="showTab('profile')"
+          class="w-full tab-btn py-3 px-4 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 mb-2">
+          <i class="fa-solid fa-user w-5"></i> My Profile
+        </button>
+        <button onclick="showTab('exams')"
+          class="w-full tab-btn active py-3 px-4 rounded-lg flex items-center gap-3 text-indigo-700 mb-2">
+          <i class="fa-solid fa-tasks w-5"></i> Exams Assigned
+        </button>
+        <button onclick="showTab('approvals')"
+          class="w-full tab-btn py-3 px-4 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 mb-2">
+          <i class="fa-solid fa-clipboard-check w-5"></i> Exam Form Approvals
+        </button>
+
+        <!-- Logout Button -->
+        <button onclick="logout()"
+          class="w-full tab-btn py-3 px-4 rounded-lg flex items-center gap-3 text-red-600 hover:bg-red-50 hover:text-red-700 mt-10">
+          <i class="fa-solid fa-sign-out-alt w-5"></i> Logout
+        </button>
+
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="stat-card p-6 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-blue-100 text-sm">Exams Assigned Today</p>
+              <p class="text-2xl font-bold" id="statExams">--</p>
+            </div>
+            <i class="fas fa-calendar-day text-3xl text-blue-200 opacity-50"></i>
+          </div>
+        </div>
+        <div class="stat-card p-6 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-emerald-100 text-sm">Total Students Assigned</p>
+              <p class="text-2xl font-bold" id="statStudents">--</p>
+            </div>
+            <i class="fas fa-user-check text-3xl text-emerald-200 opacity-50"></i>
+          </div>
+        </div>
+        <div class="stat-card p-6 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-violet-100 text-sm">QR Scans Today</p>
+              <p class="text-2xl font-bold" id="statScans">--</p>
+            </div>
+            <i class="fas fa-qrcode text-3xl text-violet-200 opacity-50"></i>
+          </div>
+        </div>
+        <div class="stat-card p-6 rounded-lg bg-gradient-to-r from-orange-400 to-red-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-orange-100 text-sm">Pending Verifications</p>
+              <p class="text-2xl font-bold" id="statPending">--</p>
+            </div>
+            <i class="fas fa-clock text-3xl text-orange-200 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content -->
+      <div id="tab-profile" class="tab-content hidden">
+        <div class="card p-6">
+          <h2 class="text-2xl font-semibold mb-6 text-gray-900"><i class="fas fa-user mr-2"></i> My Profile</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="flex items-center space-x-4">
+              <img id="profileAvatar" src="placeholder-avatar.png"
+                class="w-20 h-20 rounded-full border-4 border-indigo-200">
+              <div>
+                <h3 id="profileName" class="text-xl font-semibold text-gray-900">Supervisor Name</h3>
+                <p id="profileEmail" class="text-gray-600">supervisor@example.com</p>
+                <p id="profileDepartment"
+                  class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded mt-2 inline-block shadow-sm">
+                  --</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="text-center">
+                <p class="text-2xl font-bold text-indigo-600" id="profileAssigned">--</p>
+                <p class="text-sm text-gray-600">Assigned Exams</p>
+              </div>
+              <div class="text-center">
+                <p class="text-2xl font-bold text-teal-600" id="profileStudents">--</p>
+                <p class="text-sm text-gray-600">Students</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <ul id="profileDocs" class="list-disc list-inside text-sm text-gray-500"></ul>
+          </div>
+          <div class="mt-6 flex items-center justify-between">
+            <button onclick="openProfileModal()"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition-all">
+              <i class="fas fa-user-edit mr-2"></i> My Profile
+            </button>
+            <p class="text-sm text-gray-500 italic"><i class="fas fa-shield-alt mr-1 text-emerald-500"></i> Supervisor
+              biometric is required for secure system access.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-exams" class="tab-content hidden">
+        <!-- 1. Exams List View -->
+        <div id="examsListView">
+          <div class="card p-6">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-900"><i class="fas fa-tasks mr-2"></i> Exams Assigned</h2>
+            <div id="assignedExams" class="space-y-4">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Nested Exam Detail View (INDUSTRIAL UPGRADE) -->
+        <div id="examDetailView" class="hidden space-y-6">
+          <!-- Navigation & Title -->
+          <div class="flex justify-between items-center">
+            <button onclick="closeExamDetail()"
+              class="flex items-center text-gray-600 hover:text-indigo-600 transition-colors font-medium">
+              <i class="fas fa-arrow-left mr-2"></i> Back to All Exams
+            </button>
+            <div class="flex gap-2">
+              <span id="examStatusBadge"
+                class="px-3 py-1 rounded-full text-sm font-bold bg-gray-100 text-gray-600">LOADING</span>
+            </div>
+          </div>
+
+          <!-- 0. Post-Exam Summary Panel (Hidden by default) -->
+          <div id="examSummaryPanel"
+            class="hidden bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-10">
+              <i class="fas fa-clipboard-check text-9xl text-green-700"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <i class="fas fa-check-circle text-green-600 mr-2"></i> Exam Completed Successfully
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 relative z-10">
+              <!-- Stats Cards -->
+              <div class="bg-blue-50 p-5 rounded-xl border border-blue-100">
+                <h3 class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">Total Students</h3>
+                <p class="text-4xl font-extrabold text-blue-900" id="summaryTotal">--</p>
+                <p class="text-xs text-blue-600 mt-2"><i class="fas fa-users"></i> Assigned Candidates</p>
+              </div>
+              <div class="bg-green-50 p-5 rounded-xl border border-green-100">
+                <h3 class="text-xs font-bold text-green-800 uppercase tracking-wider mb-1">Submitted</h3>
+                <p class="text-4xl font-extrabold text-green-900" id="summarySubmitted">--</p>
+                <p class="text-xs text-green-600 mt-2" id="summaryNotSubmittedLabel">-- Not Submitted</p>
+              </div>
+              <div class="bg-red-50 p-5 rounded-xl border border-red-100">
+                <h3 class="text-xs font-bold text-red-800 uppercase tracking-wider mb-1">Incidents Reported</h3>
+                <p class="text-4xl font-extrabold text-red-900" id="summaryIncidents">--</p>
+                <p class="text-xs text-red-600 mt-2"><i class="fas fa-exclamation-triangle"></i> Malpractice Cases</p>
+              </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4 relative z-10">
+              <button onclick="downloadAttendance()"
+                class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 shadow-md transition-all flex items-center justify-center">
+                <i class="fas fa-file-pdf mr-2"></i> Download Attendance Report
+              </button>
+              <button onclick="downloadIncidentLog()"
+                class="flex-1 bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 shadow-md transition-all flex items-center justify-center">
+                <i class="fas fa-file-alt mr-2"></i> Download Incident Log
+              </button>
+            </div>
+          </div>
+
+          <!-- 1. Exam Center Control Panel -->
+          <div id="examControlPanel" class="card p-6 border-l-4 border-indigo-600 bg-indigo-50">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+              <div>
+                <h2 class="text-2xl font-bold text-gray-900" id="detailExamTitle">Exam Title</h2>
+                <div class="flex items-center gap-4 mt-1 text-indigo-700">
+                  <span><i class="far fa-clock mr-1"></i> <span id="detailExamTime">--</span></span>
+                  <span><i class="fas fa-map-marker-alt mr-1"></i> <span id="detailExamLocation">Center 1</span></span>
+                </div>
+              </div>
+
+              <!-- Control Buttons -->
+              <div class="flex flex-wrap gap-2" id="examControls">
+                <!-- Injected dynamically based on status -->
+              </div>
+            </div>
+
+            <!-- Broadcast Section -->
+            <div class="mt-4 pt-4 border-t border-indigo-200 flex gap-2">
+              <input type="text" id="broadcastInput" placeholder="Type announcement for all candidates..."
+                class="flex-1 px-3 py-2 rounded border border-indigo-200 text-sm">
+              <button onclick="sendBroadcast()"
+                class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm font-medium">
+                <i class="fas fa-bullhorn mr-2"></i> Broadcast
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Live Monitoring Stats -->
+          <div id="liveStatsPanel" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="card p-4 flex items-center justify-between border-l-4 border-emerald-500">
+              <div>
+                <p class="text-sm text-gray-500">Active Students</p>
+                <p class="text-xl font-bold text-gray-800" id="statActive">--</p>
+              </div>
+              <i class="fas fa-user-check text-emerald-100 text-3xl"></i>
+            </div>
+            <div class="card p-4 flex items-center justify-between border-l-4 border-amber-500">
+              <div>
+                <p class="text-sm text-gray-500">Idle / Warnings</p>
+                <p class="text-xl font-bold text-gray-800" id="statWarnings">--</p>
+              </div>
+              <i class="fas fa-exclamation-triangle text-amber-100 text-3xl"></i>
+            </div>
+            <div class="card p-4 flex items-center justify-between border-l-4 border-red-500">
+              <div>
+                <p class="text-sm text-gray-500">Disconnected</p>
+                <p class="text-xl font-bold text-gray-800" id="statDisconnected">--</p>
+              </div>
+              <i class="fas fa-wifi-slash text-red-100 text-3xl"></i>
+            </div>
+            <div class="card p-4 flex items-center justify-between border-l-4 border-purple-500">
+              <div>
+                <p class="text-sm text-gray-500">Incidents</p>
+                <p class="text-xl font-bold text-gray-800" id="statIncidents">--</p>
+              </div>
+              <i class="fas fa-file-invoice text-purple-100 text-3xl"></i>
+            </div>
+          </div>
+
+          <!-- 3. Live Student Monitoring Table -->
+          <div class="card p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-xl font-semibold text-gray-800">
+                <i class="fas fa-users-viewfinder mr-2 text-indigo-500"></i>Live Candidate Monitoring
+              </h3>
+              <div class="flex gap-2">
+                <button onclick="downloadAttendance()"
+                  class="text-sm text-indigo-600 hover:text-indigo-800 font-medium"><i class="fas fa-file-pdf mr-1"></i>
+                  Attendance Sheet</button>
+                <button onclick="refreshStudentList()" class="text-sm text-gray-500 hover:text-gray-700"><i
+                    class="fas fa-sync-alt"></i></button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Candidate
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll No
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Verification</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Live
+                      Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity
+                    </th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="studentListContainer">
+                  <!-- Rows injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-approvals" class="tab-content hidden">
+        <div class="card p-6">
+          <h2 class="text-2xl font-semibold mb-6 text-gray-900"><i class="fas fa-clipboard-check mr-2"></i> Exam Form
+            Approvals</h2>
+          <div class="flex flex-col gap-4" id="approvalsListContainer">
+            <!-- Pending exam registrations will be injected here -->
+            <p class="text-gray-500 italic">No pending forms to approve right now.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-qr" class="tab-content hidden">
+        <div class="card p-6">
+          <h2 class="text-2xl font-semibold mb-6 text-gray-900"><i class="fas fa-qrcode mr-2"></i> Scan Student QR</h2>
+          <div id="qr-reader" class="qr-reader-box mb-4 mx-auto">
+            <i class="fas fa-camera text-4xl"></i>
+            <p class="mt-2">Camera feed will appear here</p>
+          </div>
+
+          <!-- Manual Entry for Testing -->
+          <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 class="text-sm font-semibold text-yellow-800 mb-2"><i class="fas fa-bug mr-1"></i> Manual Verification
+              (For Testing)</h3>
+            <div class="flex gap-2">
+              <input type="text" id="manualTokenInput" placeholder="Paste qrToken here..."
+                class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
+              <button onclick="handleManualVerify()"
+                class="px-3 py-2 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700">Verify</button>
+            </div>
+          </div>
+
+          <div id="scanResult" class="p-4 bg-gray-50 rounded-lg"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 transition-opacity">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div
+        class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto transform transition-all">
+
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-900">Supervisor Profile</h2>
+            <p class="text-sm text-gray-500">Manage your professional identity and authorization.</p>
+          </div>
+          <button onclick="closeProfileModal()" class="text-gray-400 hover:text-red-500 transition-colors"
+            title="Close">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <form id="profileForm" onsubmit="handleProfileUpdate(event)" class="p-8 space-y-8">
+
+          <!-- Section 1: Identity -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2 border-b border-gray-200 pb-2">
+              <i class="fas fa-user-circle text-indigo-600"></i> Supervisor Identity
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Photo Upload -->
+              <div class="flex items-center gap-4">
+                <div class="relative group">
+                  <img id="modalProfileAvatar" src="placeholder-avatar.png"
+                    class="w-20 h-20 rounded-full object-cover border-4 border-gray-100 shadow-sm">
+                  <div
+                    class="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    onclick="document.getElementById('photoInput').click()">
+                    <i class="fas fa-camera text-white"></i>
+                  </div>
+                  <input type="file" id="photoInput" name="photo" accept="image/*" class="hidden"
+                    onchange="previewImage(this, 'modalProfileAvatar')">
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Profile Photo</p>
+                  <p class="text-xs text-gray-500">Recent passport-size photo</p>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input type="text" name="name" id="inputName"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  required>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Official Email</label>
+                <div class="flex gap-2">
+                  <input type="email" name="email" id="inputEmail"
+                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    oninput="checkVerificationStatus('email')">
+                  <button type="button" id="btnVerifyEmail" onclick="verifyField('email')"
+                    class="hidden px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 whitespace-nowrap">
+                    Verify
+                  </button>
+                  <span id="badgeVerifiedEmail" class="hidden flex items-center text-green-600 font-bold text-sm px-2">
+                    <i class="fas fa-check-circle mr-1"></i> Verified
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <div class="flex gap-2">
+                  <input type="tel" name="phone" id="inputPhone"
+                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    required oninput="checkVerificationStatus('phone')">
+                  <button type="button" id="btnVerifyPhone" onclick="verifyField('phone')"
+                    class="hidden px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 whitespace-nowrap">
+                    Verify
+                  </button>
+                  <span id="badgeVerifiedPhone" class="hidden flex items-center text-green-600 font-bold text-sm px-2">
+                    <i class="fas fa-check-circle mr-1"></i> Verified
+                  </span>
+                </div>
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Government ID Proof Details</label>
+                <div class="flex gap-4 items-center">
+                  <div class="flex-1 relative">
+                    <input type="file" name="idProof" id="idProofFile" accept=".pdf,image/*"
+                      class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                  </div>
+                  <div id="idProofStatus"
+                    class="flex items-center text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+                    <i class="fas fa-spinner fa-spin mr-2 hidden"></i>
+                    <span class="status-text">Pending Upload</span>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Accepts Aadhaar, Voter ID, or Passport (PDF/Image).</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Professional Affiliation -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2 border-b border-gray-200 pb-2">
+              <i class="fas fa-building-columns text-teal-600"></i> Professional Affiliation
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Affiliated University</label>
+                <select name="university" id="inputUniversity"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                  <option value="">Select University</option>
+                  <option value="Savitribai Phule Pune University">Savitribai Phule Pune University</option>
+                  <option value="Mumbai University">Mumbai University</option>
+                  <option value="Visvesvaraya Technological University">Visvesvaraya Technological University (VTU)
+                  </option>
+                  <option value="Anna University">Anna University</option>
+                  <option value="Jawaharlal Nehru Technological University">JNTU Hyderabad</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">College / Exam Center
+                  <span class="ml-2 text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><i
+                      class="fas fa-lock mr-1"></i>Assigned by Admin</span>
+                </label>
+                <div id="inputCollegeDisplay"
+                  class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium text-sm flex items-center gap-2">
+                  <i class="fas fa-building text-indigo-400"></i>
+                  <span id="inputCollegeText">—</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Your college assignment is managed by the university admin.</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Designation / Role</label>
+                <select name="designation" id="inputDesignation"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                  <option value="Room Invigilator">Room Invigilator</option>
+                  <option value="Chief Supervisor">Chief Supervisor</option>
+                  <option value="Flying Squad">Flying Squad</option>
+                  <option value="Support Staff">Observer / Support Staff</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Authorization (CRITICAL) -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2 border-b border-gray-200 pb-2">
+              <i class="fas fa-file-contract text-blue-600"></i> Authorization
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Employee / Staff ID</label>
+                <input type="text" name="employeeId" id="inputEmployeeId" placeholder="e.g. EMP-2025-X99"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Appointment Letter</label>
+                <div class="flex gap-4 items-center">
+                  <div class="flex-1">
+                    <input type="file" name="appointmentLetter" id="authLetterFile" accept=".pdf,.jpg,.png"
+                      class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                  </div>
+                  <div id="authLetterStatus"
+                    class="flex items-center text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+                    <span class="status-text">Pending</span>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Official letter issued by the University/Exam Authority.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Security -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2 border-b border-gray-200 pb-2">
+              <i class="fas fa-fingerprint text-purple-600"></i> Security & Verification
+            </h3>
+            <div class="bg-purple-50 rounded-lg p-4 border border-purple-100 flex items-center justify-between">
+              <div>
+                <p class="font-medium text-purple-900">Biometric Enrollment Status</p>
+                <p class="text-sm text-purple-700 mt-1">Required for login at exam centers.</p>
+              </div>
+              <div class="flex items-center gap-2" id="biometricStatusContainer">
+                <!-- Content injected by loadProfile -->
+                <span class="text-sm text-gray-500"><i class="fas fa-circle-notch fa-spin"></i> Checking...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Change Password -->
+          <div class="space-y-4 pt-4 border-t border-gray-200" id="passwordSection">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2 pb-2">
+              <i class="fas fa-lock text-red-600"></i> Change Password
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                <input type="password" id="currentPassword" placeholder="••••••••"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input type="password" id="newPassword" placeholder="••••••••"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                <input type="password" id="confirmNewPassword" placeholder="••••••••"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+              </div>
+            </div>
+            <div class="flex justify-end mt-2">
+              <button type="button" onclick="handlePasswordChange(event)"
+                class="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 shadow-sm transition-all text-sm flex items-center gap-2">
+                <i class="fas fa-key"></i> Update Password
+              </button>
+            </div>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="flex justify-end gap-3 pt-6 border-t border-gray-100">
+            <button type="button" onclick="closeProfileModal()"
+              class="px-5 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition-colors">Cancel</button>
+            <button type="submit"
+              class="px-6 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center gap-2">
+              <i class="fas fa-save"></i> Save Profile
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-gray-500 text-sm">
+      © 2025 ExamHub Platform. All rights reserved.
+    </div>
+  </footer>
+
+  <!-- Biometric Enrollment Modal -->
+  <div id="biometricModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center transform transition-all scale-100">
+      <div class="mb-4">
+        <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto animate-pulse"
+          id="bioIconContainer">
+          <i class="fas fa-fingerprint text-4xl text-purple-600" id="bioIcon"></i>
+        </div>
+      </div>
+      <h3 class="text-xl font-bold text-gray-800 mb-2" id="bioTitle">Enroll Biometric</h3>
+      <p class="text-gray-500 text-sm mb-6" id="bioDesc">Please place your finger on the scanner to enroll your
+        biometric identity.</p>
+
+      <div id="bioActions">
+        <button onclick="handleBiometricEnrollment()"
+          class="w-full bg-purple-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-purple-700 transition-all mb-3">
+          <i class="fas fa-fingerprint mr-2"></i> Start Scanning
+        </button>
+        <button onclick="closeBiometricModal()"
+          class="w-full bg-gray-100 text-gray-600 font-semibold py-3 rounded-xl hover:bg-gray-200 transition-all">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Strict Confirmation Modal -->
+  <div id="confirmModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-[60]">
+    <div
+      class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center transform transition-all scale-100 border border-red-100">
+      <div class="mb-6">
+        <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-exclamation-triangle text-4xl text-red-600"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">End Exam?</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Are you sure you want to end this exam? <br>
+          <span class="font-bold text-red-600">This action cannot be undone.</span><br>
+          All monitoring will stop and final reports will be generated.
+        </p>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="closeConfirmModal()"
+          class="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-200 transition-all">
+          Cancel
+        </button>
+        <button onclick="confirmEndExamAction()"
+          class="flex-1 bg-red-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-red-700 transition-all">
+          Yes, End Exam
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Exam Details Modal ===== -->
+  <div id="examDetailsModal"
+    class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-center justify-center z-[70] p-4"
+    onclick="if(event.target===this)closeExamDetailsModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
+      <!-- Header -->
+      <div
+        class="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-t-2xl px-6 py-5 flex items-start justify-between">
+        <div>
+          <p class="text-indigo-200 text-xs font-semibold uppercase tracking-wider mb-1">Exam Details</p>
+          <h2 id="edModalTitle" class="text-white text-xl font-bold leading-tight">Loading...</h2>
+          <p id="edModalStatus" class="mt-1"></p>
+        </div>
+        <button onclick="closeExamDetailsModal()" class="text-indigo-200 hover:text-white transition-colors mt-1">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="px-6 py-5 space-y-5">
+
+        <!-- Row 1: Date / Time / Duration -->
+        <div class="grid grid-cols-3 gap-4">
+          <div class="bg-indigo-50 rounded-xl p-4 text-center">
+            <i class="far fa-calendar-alt text-indigo-500 text-xl mb-1"></i>
+            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">Date</p>
+            <p id="edModalDate" class="text-gray-900 font-bold text-sm mt-0.5">--</p>
+          </div>
+          <div class="bg-indigo-50 rounded-xl p-4 text-center">
+            <i class="far fa-clock text-indigo-500 text-xl mb-1"></i>
+            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">Time</p>
+            <p id="edModalTime" class="text-gray-900 font-bold text-sm mt-0.5">--</p>
+          </div>
+          <div class="bg-indigo-50 rounded-xl p-4 text-center">
+            <i class="fas fa-hourglass-half text-indigo-500 text-xl mb-1"></i>
+            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">Duration</p>
+            <p id="edModalDuration" class="text-gray-900 font-bold text-sm mt-0.5">--</p>
+          </div>
+        </div>
+
+        <!-- Row 2: Mode / Location / Center -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4 border border-gray-100">
+            <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-wifi text-blue-600"></i>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Mode</p>
+              <p id="edModalMode" class="text-gray-900 font-bold text-sm mt-0.5">--</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4 border border-gray-100">
+            <div class="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-map-marker-alt text-green-600"></i>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Location</p>
+              <p id="edModalLocation" class="text-gray-900 font-bold text-sm mt-0.5">--</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4 border border-gray-100">
+            <div class="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-building text-purple-600"></i>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Center</p>
+              <p id="edModalCenter" class="text-gray-900 font-bold text-sm mt-0.5">--</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Halls / Students / Exam ID -->
+        <div class="grid grid-cols-3 gap-4">
+          <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center">
+            <i class="fas fa-door-open text-amber-500 text-xl mb-1"></i>
+            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">Halls</p>
+            <p id="edModalHalls" class="text-gray-900 font-bold text-sm mt-0.5">--</p>
+          </div>
+          <div class="bg-teal-50 border border-teal-100 rounded-xl p-4 text-center">
+            <i class="fas fa-users text-teal-500 text-xl mb-1"></i>
+            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">Students</p>
+            <p id="edModalStudents" class="text-gray-900 font-bold text-sm mt-0.5">--</p>
+          </div>
+          <div class="bg-gray-50 border border-gray-100 rounded-xl p-4 text-center">
+            <i class="fas fa-fingerprint text-gray-400 text-xl mb-1"></i>
+            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">Exam ID</p>
+            <p id="edModalId" class="text-gray-900 font-bold text-sm mt-0.5 font-mono">--</p>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+          <button onclick="closeExamDetailsModal()"
+            class="px-5 py-2.5 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 font-medium transition-colors text-sm">Close</button>
+          <button id="edModalSuperviseBtn"
+            class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow transition-all text-sm flex items-center gap-2">
+            <i class="fas fa-eye"></i> Supervise Exam
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openExamDetailsModal(id) {
+      const ex = (window._examDataMap || {})[id];
+      if (!ex) return;
+
+      // Title & status badge
+      document.getElementById('edModalTitle').textContent = ex.title || 'Exam';
+      const isLive = ex.status === 'LIVE' || ex.status === 'ONGOING' || ex.status === 'OPEN';
+      const isUpcoming = new Date(ex.date) > new Date();
+      let badgeColor = isLive ? 'bg-green-500' : isUpcoming ? 'bg-yellow-500' : 'bg-gray-400';
+      let badgeLabel = isLive ? '● LIVE' : isUpcoming ? 'UPCOMING' : ex.status || 'COMPLETED';
+      document.getElementById('edModalStatus').innerHTML =
+        `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold text-white ${badgeColor}">${badgeLabel}</span>`;
+
+      // Date
+      try {
+        const d = new Date(ex.date);
+        document.getElementById('edModalDate').textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      } catch (e) { document.getElementById('edModalDate').textContent = ex.date || '--'; }
+
+      // Time (start → end)
+      let timeStr = ex.startTime || '--';
+      if (ex.startTime && ex.duration) {
+        try {
+          const [h, m] = ex.startTime.split(':').map(Number);
+          const s = new Date(); s.setHours(h, m, 0);
+          const e2 = new Date(s.getTime() + ex.duration * 60000);
+          timeStr = `${ex.startTime.slice(0, 5)} – ${e2.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+        } catch (e) { }
+      }
+      document.getElementById('edModalTime').textContent = timeStr;
+
+      // Duration
+      document.getElementById('edModalDuration').textContent = ex.duration ? `${ex.duration} min` : '--';
+
+      // Mode
+      document.getElementById('edModalMode').textContent = ex.mode || 'OFFLINE';
+
+      // Location
+      document.getElementById('edModalLocation').textContent = ex.location || 'Not specified';
+
+      // Center – available for university-wizard exams; fallback to location or 'Not specified'
+      document.getElementById('edModalCenter').textContent = ex.centerName || ex.center || ex.location || 'Not specified';
+
+      // Halls – derive from capacity or show 'Not specified'
+      const cap = ex.centerCapacity || ex.maxStudents;
+      const halls = ex.halls || ex.hallCount ||
+        (cap ? Math.max(1, Math.ceil(Number(cap) / 30)) + ' (est.)' : 'Not specified');
+      document.getElementById('edModalHalls').textContent = halls;
+
+      // Student count (live from assigned list if available, else capacity)
+      const stu = ex.studentCount || ex.totalStudents ||
+        (cap ? cap + ' (max)' : 'Not specified');
+      document.getElementById('edModalStudents').textContent = stu;
+
+      // Exam ID
+      document.getElementById('edModalId').textContent = '#' + ex.id;
+
+      // Wire Supervise button
+      const supBtn = document.getElementById('edModalSuperviseBtn');
+      supBtn.onclick = () => {
+        closeExamDetailsModal();
+        openExamDetail(ex.id, ex.title, ex.date, ex.startTime, ex.mode, ex.location, ex.status, ex.duration || 0);
+      };
+
+      // Show modal
+      document.getElementById('examDetailsModal').classList.remove('hidden');
+    }
+
+    function closeExamDetailsModal() {
+      document.getElementById('examDetailsModal').classList.add('hidden');
+    }
+  </script>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col items-end"></div>
+
+  <script>
+    // JWT auth for dashboard profile APIs (logged-in user's data only)
+    function authHeaders(extra) {
+      const token = localStorage.getItem('token');
+      const h = extra ? { ...extra } : {};
+      if (token) h['Authorization'] = 'Bearer ' + token;
+      return h;
+    }
+    // --- Theme Toggle Logic ---
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+      const icon = document.getElementById('themeIcon');
+      if (document.documentElement.classList.contains('dark')) {
+        icon.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        icon.classList.replace('fa-sun', 'fa-moon');
+      }
+    }
+
+    // --- OTP Verification Logic ---
+    let originalEmail = "";
+    let originalPhone = "";
+    let isEmailVerified = true; // Assume true initially if no change
+    let isPhoneVerified = true;
+
+    function checkVerificationStatus(field) {
+      const input = document.getElementById(field === 'email' ? 'inputEmail' : 'inputPhone');
+      const btn = document.getElementById(field === 'email' ? 'btnVerifyEmail' : 'btnVerifyPhone');
+      const badge = document.getElementById(field === 'email' ? 'badgeVerifiedEmail' : 'badgeVerifiedPhone');
+
+      const original = field === 'email' ? originalEmail : originalPhone;
+
+      if (input.value !== original) {
+        // Changed: Needs verification
+        isEmailVerified = (field === 'email' ? false : isEmailVerified);
+        if (field === 'phone') isPhoneVerified = false;
+
+        btn.classList.remove('hidden');
+        badge.classList.add('hidden');
+      } else {
+        // Reverted to original: Verified
+        isEmailVerified = (field === 'email' ? true : isEmailVerified);
+        if (field === 'phone') isPhoneVerified = true;
+
+        btn.classList.add('hidden');
+        // Optional: Hide badge if it's just original, or show it? Let's hide to keep clean
+        badge.classList.add('hidden');
+      }
+    }
+
+    async function verifyField(field) {
+      const input = document.getElementById(field === 'email' ? 'inputEmail' : 'inputPhone');
+      const value = input.value;
+      if (!value) return showToast("Please enter a value first", "error");
+
+      // 1. Send OTP
+      try {
+        const endpoint = field === 'email' ? '/api/otp/send/email' : '/api/otp/send/phone';
+        const payload = field === 'email' ? { email: value } : { phone: value };
+
+        showToast(`Sending OTP to ${value}...`, 'info');
+        const res = await fetch(`http://localhost:8080${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.message || "Failed to send OTP");
+
+        // 2. Prompt for OTP
+        const otp = prompt(`Enter OTP sent to your ${field}:`);
+        if (!otp) return;
+
+        // 3. Verify OTP
+        const verifyEndpoint = field === 'email' ? '/api/otp/verify/email' : '/api/otp/verify/phone';
+        const verifyPayload = field === 'email' ? { email: value, otp: otp } : { phone: value, otp: otp };
+
+        const vRes = await fetch(`http://localhost:8080${verifyEndpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(verifyPayload)
+        });
+        const vData = await vRes.json();
+
+        if (vData.verified) {
+          showToast(`${field} Verified Successfully!`, "success");
+          // Update State
+          if (field === 'email') isEmailVerified = true;
+          else isPhoneVerified = true;
+
+          // Update UI
+          document.getElementById(field === 'email' ? 'btnVerifyEmail' : 'btnVerifyPhone').classList.add('hidden');
+          document.getElementById(field === 'email' ? 'badgeVerifiedEmail' : 'badgeVerifiedPhone').classList.remove('hidden');
+        } else {
+          showToast("Invalid OTP. Please try again.", "error");
+        }
+
+      } catch (e) {
+        console.error(e);
+        // Fallback Simulation if Backend Fails (to prevent blocking user in demo)
+        if (confirm("Backend OTP Service unavailable. Simulate success for demo?")) {
+          if (field === 'email') isEmailVerified = true;
+          else isPhoneVerified = true;
+          document.getElementById(field === 'email' ? 'btnVerifyEmail' : 'btnVerifyPhone').classList.add('hidden');
+          document.getElementById(field === 'email' ? 'badgeVerifiedEmail' : 'badgeVerifiedPhone').classList.remove('hidden');
+        }
+      }
+    }
+
+    // Tab switching logic with lazy-loading for tab content
+    const tabs = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    let qrScanner;
+    function hideAllTabs() { tabContents.forEach(tc => tc.style.display = 'none'); tabs.forEach(b => b.classList.remove('active')); }
+
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.remove('hidden');
+      event.target.classList.add('active');
+
+      // Lazy load data per tab
+      if (tabName === 'profile') loadProfile();
+      if (tabName === 'exams') loadExams();
+      if (tabName === 'approvals') loadExamForms();
+      if (tabName === 'students') loadStudents();
+      if (tabName === 'qr') initQrScanner();
+    }
+
+    // Initial: show exams tab by default
+    document.getElementById('tab-exams').classList.remove('hidden');
+    loadExams();
+    loadProfile(); // Init stats immediately
+
+    // Fetch and render pending exam registrations
+    async function loadExamForms() {
+      const container = document.getElementById('approvalsListContainer');
+      container.innerHTML = '<div class="text-center text-gray-500 my-8"><i class="fas fa-spinner fa-spin text-3xl"></i><p class="mt-2">Loading forms...</p></div>';
+
+      try {
+        const res = await fetch('http://localhost:8080/api/supervisor/exam-forms', { headers: authHeaders() });
+        if (!res.ok) throw new Error('Failed to fetch approvals');
+        const forms = await res.json();
+
+        if (!forms || forms.length === 0) {
+          // Build a descriptive empty state using the supervisor's college if available
+          const collegeName = window._supervisorCollege || 'your college';
+          container.innerHTML = `
+            <div class="p-10 text-center bg-gray-50 rounded-2xl border border-gray-200">
+              <div class="w-16 h-16 bg-indigo-50 text-indigo-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-clipboard-check text-3xl"></i>
+              </div>
+              <h3 class="text-lg font-bold text-gray-700 mb-1">All caught up!</h3>
+              <p class="text-gray-500 text-sm">No pending exam forms from <span class="font-semibold text-indigo-600">${collegeName}</span> students at this time.</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = forms.map(form => `
+                <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow relative transition-all group">
+                    <div class="absolute top-4 right-4 text-xs font-bold px-3 py-1 rounded-full ${form.status === 'APPLIED' || form.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}">
+                        ${form.status}
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-xl flex-shrink-0">
+                            ${form.fullName ? form.fullName.charAt(0).toUpperCase() : '<i class="fas fa-user"></i>'}
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-gray-900 mb-1">${form.fullName || 'Unknown Student'}</h3>
+                            <div class="flex flex-wrap gap-y-2 gap-x-4 text-sm text-gray-600 mb-3">
+                                <span class="flex items-center"><i class="fas fa-id-card w-4 text-gray-400"></i> ${form.prn || 'N/A'}</span>
+                                <span class="flex items-center"><i class="fas fa-graduation-cap w-4 text-gray-400"></i> ${form.course || 'N/A'}</span>
+                                <span class="flex items-center"><i class="fas fa-calendar-alt w-4 text-gray-400"></i> ${form.examSession || 'N/A'}</span>
+                                <span class="flex items-center"><i class="fas fa-book w-4 text-gray-400"></i> Exam: ${form.examName || 'N/A'}</span>
+                            </div>
+                            <div class="bg-gray-50 rounded p-3 text-sm border border-gray-100">
+                                <span class="font-semibold text-gray-700">Selected Subjects:</span>
+                                <div class="mt-1 flex flex-wrap gap-2">
+                                    ${(form.selectedSubjects || []).map(s => `<span class="bg-white border border-gray-300 px-2 py-0.5 rounded text-xs text-gray-600">${s}</span>`).join('') || '<span class="text-gray-400 italic">None selected</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end gap-3">
+                        <button onclick="alert('View full form feature coming soon.')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                            <i class="fas fa-eye mr-1"></i> View Details
+                        </button>
+                        ${(form.status === 'APPLIED' || form.status === 'PENDING') ? `
+                            <button onclick="acceptExamForm(${form.id}, this)" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">
+                                <i class="fas fa-check mr-1"></i> Accept & Verify
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+      } catch (err) {
+        console.error('Error loading exam forms:', err);
+        container.innerHTML = '<p class="text-red-500 italic">Failed to load exam forms. Please try again.</p>';
+      }
+    }
+
+    async function acceptExamForm(id, btnElement) {
+      if (!confirm("Are you sure you want to accept and verify this student's exam form?")) return;
+
+      const originalHtml = btnElement.innerHTML;
+      btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+      btnElement.disabled = true;
+
+      try {
+        const res = await fetch(`http://localhost:8080/api/supervisor/exam-forms/${id}/accept`, {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast(data.message || 'Form verified successfully', 'success');
+          loadExamForms(); // Refresh the list
+        } else {
+          showToast(data.message || 'Failed to verify form', 'error');
+          btnElement.innerHTML = originalHtml;
+          btnElement.disabled = false;
+        }
+      } catch (err) {
+        console.error('Error accepting form:', err);
+        showToast('An error occurred.', 'error');
+        btnElement.innerHTML = originalHtml;
+        btnElement.disabled = false;
+      }
+    }
+
+    // Fetch and render profile
+    async function loadProfile() {
+      const profileBox = document.getElementById('tab-profile');
+      // if (profileBox.dataset.loaded) return; // Removed to allow auto-refresh
+      try {
+        const res = await fetch('http://localhost:8080/api/supervisor/profile', { headers: authHeaders() });
+        if (!res.ok) throw new Error('no-profile');
+        const p = await res.json();
+        document.getElementById('profileAvatar').src = p.avatar || 'placeholder-avatar.png';
+        document.getElementById('profileName').innerText = p.name || 'Supervisor Name';
+        
+        const roleSpan = document.getElementById('profileType');
+        if (roleSpan) {
+            roleSpan.innerText = p.supervisorType === 'HEAD' ? 'Head Supervisor' : 'Exam Supervisor';
+            roleSpan.classList.remove('hidden');
+        }
+
+        document.getElementById('profileEmail').innerText = p.email || '';
+        document.getElementById('profileDepartment').innerText = p.department || 'Not Assigned';
+
+        // Update Header Profile
+        document.getElementById('headerProfileName').innerText = p.name || 'Supervisor';
+        document.getElementById('headerProfileAvatar').src = p.avatar || 'placeholder-avatar.png';
+
+        document.getElementById('profileAssigned').innerText = p.assignedExamsCount ?? '--';
+        document.getElementById('profileStudents').innerText = p.studentsCount ?? '--';
+
+        // Update Main Stat Cards
+        document.getElementById('statExams').innerText = p.assignedExamsCount ?? '--';
+        document.getElementById('statStudents').innerText = p.studentsCount ?? '--'; // Total Students
+        document.getElementById('statScans').innerText = p.scansToday ?? '--'; // Total Scans
+        document.getElementById('statPending').innerText = p.pendingVerifications ?? '--'; // Pending
+
+        const docs = document.getElementById('profileDocs'); docs.innerHTML = '';
+        (p.documents || []).forEach(d => { const li = document.createElement('li'); li.innerText = d.filename; docs.appendChild(li); });
+        profileBox.dataset.loaded = '1';
+      } catch (e) { console.warn('Profile load failed', e); }
+    }
+
+    // Auto-refresh stats every 3 seconds for realtime updates
+    setInterval(loadProfile, 3000);
+
+    // Load assigned exams
+    async function loadExams() {
+      const container = document.getElementById('assignedExams');
+      if (container.dataset.loaded) return;
+      container.innerHTML = '<div class="muted">Loading exams...</div>';
+      try {
+        const res = await fetch('http://localhost:8080/api/supervisor/exams', { headers: authHeaders() });
+        if (!res.ok) throw new Error('no-exams');
+        let arr = await res.json();
+
+        // Sort newest first
+        arr.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Process Notifications before rendering body
+        processNotifications(arr);
+
+        container.innerHTML = '';
+        if (arr.length === 0) container.innerHTML = '<div class="muted">No assigned exams.</div>';
+
+        arr.forEach(ex => {
+          const div = document.createElement('div'); div.className = 'exam-row card';
+
+          // Date Logic: Allow access if exam is TODAY (or Live status)
+          const examDateObj = new Date(ex.date);
+          const todayObj = new Date();
+          const isToday = examDateObj.toDateString() === todayObj.toDateString();
+
+          // Logic for Status Badge
+          let statusBadge = '';
+          const isLive = ex.status === 'LIVE' || ex.status === 'ONGOING';
+
+          if (isLive || isToday) statusBadge = `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold animate-pulse">● LIVE</span>`;
+          else if (examDateObj > todayObj) statusBadge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">UPCOMING</span>`;
+          else statusBadge = `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">COMPLETED</span>`;
+
+          // Mode Badge
+          const modeBadge = `<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-semibold border border-indigo-100"><i class="fas fa-wifi mr-1"></i>${ex.mode || 'OFFLINE'}</span>`;
+
+          // Button Logic
+          // Supervise is ALWAYS active
+          const superviseBtn = `
+        <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition-all font-medium text-sm flex items-center" 
+                         onclick="openExamDetail('${ex.id}', '${ex.title.replace(/'/g, "\\'")}', '${ex.date}', '${ex.startTime}', '${ex.mode}', '${ex.location}', '${ex.status}', ${ex.duration || 0})">
+          <i class="fas fa-eye mr-2"></i>Supervise Exam
+                </button>`;
+
+          // Scanning is CONDITIONAL
+          let scanBtn = '';
+          if (isToday || isLive) {
+            scanBtn = `
+          <button class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 border border-gray-200 text-sm" onclick="showTab('qr')" title="Start Scanning Immediately">
+            <i class="fas fa-qrcode"></i>
+                </button>`;
+          } else {
+            scanBtn = `
+          <button disabled class="px-3 py-2 bg-gray-50 text-gray-300 rounded-lg cursor-not-allowed border border-gray-100 text-sm" title="Not Active">
+            <i class="fas fa-qrcode"></i>
+                </button>`;
+          }
+          // Store full exam data for the details modal
+          window._examDataMap = window._examDataMap || {};
+          window._examDataMap[ex.id] = ex;
+
+          const viewDetailsBtn = `
+        <button class="px-4 py-2 bg-white text-indigo-700 border border-indigo-300 rounded-lg hover:bg-indigo-50 shadow-sm transition-all font-medium text-sm flex items-center"
+                onclick="openExamDetailsModal('${ex.id}')">
+          <i class="fas fa-info-circle mr-2"></i>View Details
+        </button>`;
+
+          let buttonsHTML = viewDetailsBtn + superviseBtn + scanBtn;
+
+          div.innerHTML = `
+          <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        ${statusBadge}
+                        ${modeBadge}
+                        <span class="text-xs text-gray-400 font-mono">ID: ${ex.id}</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800">${ex.title}</h3>
+                    <div class="text-sm text-gray-500 mt-1 flex items-center gap-4">
+                        ${(() => {
+              // Time Calculation
+              let timeDisplay = `${ex.startTime}`;
+              if (ex.duration) {
+                try {
+                  const [h, m] = ex.startTime.split(':').map(Number);
+                  const start = new Date();
+                  start.setHours(h, m, 0);
+                  const end = new Date(start.getTime() + ex.duration * 60000);
+                  const endStr = end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                  timeDisplay = `${ex.startTime} - ${endStr}`;
+                } catch (e) { }
+              }
+
+              // Date Formatting
+              let dateObj = new Date(ex.date);
+              // User Request: If LIVE, show current date
+              if (ex.status === 'LIVE' || ex.status === 'ONGOING') {
+                dateObj = new Date();
+              }
+              const dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+              return `
+                            <span><i class="far fa-calendar-alt mr-1 text-indigo-500"></i> ${dateStr}</span>
+                            <span class="border-l border-gray-300 pl-3 mx-2"><i class="far fa-clock mr-1 text-indigo-500"></i> ${timeDisplay}</span>
+                            <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-semibold"><i class="fas fa-hourglass-half mr-1"></i> ${ex.duration} min</span>`;
+            })()}
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    ${buttonsHTML}
+                </div>
+            </div>`;
+          container.appendChild(div);
+        });
+        container.dataset.loaded = '1';
+      } catch (e) { console.error(e); container.innerHTML = '<div class="message error">Failed to load exams</div>'; }
+    }
+
+    // --- Notifications Logic ---
+    let unreadCount = 0;
+
+    function toggleNotifications() {
+      const panel = document.getElementById('notificationPanel');
+      panel.classList.toggle('hidden');
+    }
+
+    function processNotifications(exams) {
+      const list = document.getElementById('notificationList');
+      const badge = document.getElementById('notificationBadge');
+      list.innerHTML = '';
+      unreadCount = 0;
+
+      const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+
+      const now = new Date();
+      let notifications = [];
+
+      exams.forEach(ex => {
+        const examDateObj = new Date(ex.date);
+        let startDateTime = examDateObj;
+
+        if (ex.startTime) {
+          const [h, m] = ex.startTime.split(':').map(Number);
+          startDateTime = new Date(examDateObj);
+          startDateTime.setHours(h, m, 0, 0);
+        }
+
+        const diffTime = startDateTime - now;
+        const diffHours = diffTime / (1000 * 60 * 60);
+        const diffMins = diffTime / (1000 * 60);
+
+        const isLive = ex.status === 'LIVE' || ex.status === 'ONGOING';
+        const isUpcoming = diffHours >= 0;
+        const isRecentlyPassed = diffHours < 0 && diffHours > -24; // Started within last 24h
+
+        // 1. Live Exam or Starting Soon Reminder
+        if (isLive || (isUpcoming && diffHours <= 1)) {
+          const isStartingSoon = !isLive && diffMins > 0;
+          notifications.push({
+            type: isLive ? 'LIVE_EXAM' : 'REMINDER',
+            id: ex.id,
+            notifId: `exam-${ex.id}-reminder`,
+            exam: ex,
+            title: isLive ? 'Exam is Live Now!' : (diffMins <= 30 ? `Your exam starts in ${Math.round(diffMins)} minutes` : `Starting in ${Math.round(diffMins)} mins!`),
+            message: isLive ? `Click to supervise ${ex.title}` : `Your exam ${ex.title} is about to begin.`,
+            iconClass: isLive ? 'fa-video' : 'fa-clock',
+            colorClass: isLive ? 'text-red-600 bg-red-100' : 'text-blue-600 bg-blue-100',
+            timestamp: now.getTime()
+          });
+        }
+
+        // 2. New Assignment Context
+        if (isUpcoming || isLive || isRecentlyPassed) {
+          let timeContextStr = "";
+          if (diffHours > 24) {
+            timeContextStr = `Starts in ${Math.floor(diffHours / 24)} days`;
+          } else if (diffHours > 0) {
+            if (diffHours >= 1) {
+              timeContextStr = `Starts in ${Math.floor(diffHours)} hours`;
+            } else {
+              timeContextStr = `Starts in ${Math.round(diffMins)} minutes`;
+            }
+          } else {
+            timeContextStr = `Started ${Math.abs(Math.floor(diffHours))} hours ago`;
+          }
+
+          // We assume assigned recently if it's in the future
+          notifications.push({
+            type: 'NEW_ASSIGNMENT',
+            id: ex.id,
+            notifId: `exam-${ex.id}-assigned`,
+            exam: ex,
+            title: 'New Exam Assignment',
+            message: `You have been assigned: ${ex.title} on ${examDateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} at ${ex.startTime || 'TBD'}`,
+            timeContext: timeContextStr,
+            iconClass: 'fa-clipboard-check',
+            colorClass: 'text-green-600 bg-green-100',
+            timestamp: examDateObj.getTime()
+          });
+        }
+      });
+
+      // Sort notifications - Reminders/Live first, then by date 
+      notifications.sort((a, b) => {
+        if (a.type !== b.type) {
+          if (a.type === 'LIVE_EXAM') return -1;
+          if (b.type === 'LIVE_EXAM') return 1;
+          if (a.type === 'REMINDER') return -1;
+          if (b.type === 'REMINDER') return 1;
+        }
+        return b.timestamp - a.timestamp;
+      });
+
+      if (notifications.length === 0) {
+        list.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">No new notifications</div>';
+        badge.classList.add('hidden');
+        return;
+      }
+
+      notifications.forEach(n => {
+        const isRead = readNotifications.includes(n.notifId);
+        if (!isRead) unreadCount++;
+
+        const item = document.createElement('div');
+        item.className = `p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 flex gap-3 transition-colors ${!isRead ? 'bg-indigo-50/30' : ''}`;
+        item.onclick = () => {
+          markNotificationRead(n.notifId);
+          toggleNotifications();
+          showTab('exams');
+          if (typeof openExamDetail === 'function') {
+            openExamDetail(n.exam.id, n.exam.title.replace(/'/g, "\\'"), n.exam.date, n.exam.startTime, n.exam.mode || 'OFFLINE', n.exam.location || '', n.exam.status, n.exam.duration || 0);
+          }
+        };
+
+        item.innerHTML = `
+          <div class="mt-1 flex-shrink-0 relative">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center ${n.colorClass}">
+                <i class="fas ${n.iconClass} text-sm"></i>
+            </div>
+            ${!isRead ? '<span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-600 rounded-full border-2 border-white"></span>' : ''}
+          </div>
+          <div class="flex-1">
+            <div class="flex justify-between items-start">
+               <p class="text-sm font-bold text-gray-800 leading-tight">${n.title}</p>
+            </div>
+            <p class="text-xs text-gray-600 mt-1">${n.message}</p>
+            ${n.timeContext ? `<p class="text-[10px] text-gray-400 mt-1.5 font-medium"><i class="far fa-clock mr-1"></i>${n.timeContext}</p>` : ''}
+          </div>
+        `;
+        list.appendChild(item);
+      });
+
+      if (unreadCount > 0) {
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function markNotificationRead(notifId) {
+      let read = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+      if (!read.includes(notifId)) {
+        read.push(notifId);
+        localStorage.setItem('readNotifications', JSON.stringify(read));
+        // Soft refresh without API call
+        loadExams();
+      }
+    }
+
+    function markAllNotificationsRead() {
+      const list = document.getElementById('notificationList');
+      if (list.innerText.includes('No exams assigned') || list.innerText.includes('No new notifications')) return;
+
+      const res = fetch('http://localhost:8080/api/supervisor/exams', { headers: authHeaders() })
+        .then(r => r.json())
+        .then(arr => {
+          let read = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+          arr.forEach(ex => {
+            const assignedId = `exam-${ex.id}-assigned`;
+            const reminderId = `exam-${ex.id}-reminder`;
+            if (!read.includes(assignedId)) read.push(assignedId);
+            if (!read.includes(reminderId)) read.push(reminderId);
+          });
+          localStorage.setItem('readNotifications', JSON.stringify(read));
+          loadExams();
+        });
+    }
+
+    // Master-Detail Navigation
+    // Master-Detail Navigation
+    var examTimerInterval = null;
+
+    window.openExamDetail = function (id, title, date, startTime, mode, location, status, duration) {
+      document.getElementById('examsListView').classList.add('hidden');
+      document.getElementById('examDetailView').classList.remove('hidden');
+
+      // Logic for Scan Button in Detail View
+      const examDateObj = new Date(date);
+      const todayObj = new Date();
+      const isToday = examDateObj.toDateString() === todayObj.toDateString();
+      const isLive = status === 'LIVE' || status === 'ONGOING' || isToday;
+
+      let detailScanBtn = '';
+      if (isLive) {
+        detailScanBtn = `
+          < button onclick = "showTab('qr')" class="px-5 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-lg font-bold flex items-center animate-bounce-slow" >
+            <i class="fas fa-qrcode mr-2"></i> Start Scanning
+                </button > `;
+      } else {
+        detailScanBtn = `
+          < button disabled class="px-5 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed font-medium flex items-center" >
+            <i class="fas fa-lock mr-2"></i> Scanning Inactive
+                </button > `;
+      }
+
+      let badge = isLive ? 'Active' : (status || 'Upcoming');
+      let badgeColor = isLive ? 'green' : 'gray';
+
+      // Inject enhanced header
+      const metaCard = document.querySelector('#examDetailView .card.border-l-4');
+      if (metaCard) {
+        metaCard.innerHTML = `
+          < div class="flex justify-between items-start" >
+                   <div>
+                       <h2 class="text-2xl font-bold text-gray-900">${title}</h2>
+                       <p class="text-indigo-600 mt-1 font-medium" id="detailExamTimeDynamic"><i class="far fa-clock mr-1"></i> ${date} • ${startTime}</p>
+                   </div>
+                   <span class="px-3 py-1 bg-${badgeColor}-100 text-${badgeColor}-800 rounded-full text-sm font-medium">${badge}</span>
+               </div >
+
+          <div class="flex items-center gap-3 mt-4 pt-4 border-t border-indigo-100">
+            <div class="text-sm text-gray-600">
+              <span class="mr-3"><i class="fas fa-map-marker-alt mr-1"></i> ${location || 'Hall A'}</span>
+              <span class="mr-3"><i class="fas fa-desktop mr-1"></i> ${mode || 'Offline'}</span>
+            </div>
+            <div class="ml-auto">
+              ${detailScanBtn}
+            </div>
+          </div>
+        `;
+      }
+
+      // Start Timer Logic
+      startExamTimer(status, date, startTime, duration);
+
+      loadStudents(id, title, status, isLive);
+    }
+
+    function startExamTimer(status, date, startTime, duration) {
+      const timeEl = document.getElementById('detailExamTimeDynamic');
+      if (!timeEl) return;
+
+      if (examTimerInterval) clearInterval(examTimerInterval);
+
+      if (status === 'LIVE' || status === 'ONGOING') {
+        // Live Clock
+        const updateClock = () => {
+          const now = new Date();
+          const dateStr = now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+          const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
+          timeEl.innerHTML = `< i class="far fa-clock mr-1" ></i > Current Date: ${dateStr} <span class="mx-2">|</span> Current Time: ${timeStr} `;
+        };
+        updateClock();
+        examTimerInterval = setInterval(updateClock, 1000);
+      } else if (status === 'ENDED' || status === 'COMPLETED') {
+        // Static Start - End Time
+        // Assume date + startTime is start. End is + duration.
+        // If duration is missing, assume 3 hours.
+        const dur = duration ? parseInt(duration) : 180;
+
+        // Parse Start Time (HH:MM:SS)
+        // startTime is "10:00:00" or "10:00"
+        // We just need to display it + end time calculation (optional, if we want actual end time)
+
+        // Improve: Calculate End Time properly
+        let endTimeStr = "Unknown";
+        try {
+          const [h, m] = startTime.split(':').map(Number);
+          const startD = new Date();
+          startD.setHours(h, m, 0, 0);
+          const endD = new Date(startD.getTime() + dur * 60000);
+          endTimeStr = endD.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+          // Format StartTime too for consistency
+          const startTimeStr = startD.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+          timeEl.innerHTML = `<i class="far fa-check-circle mr-1"></i> Start Time: ${startTimeStr} <span class="mx-2">|</span> End Time: ${endTimeStr}`;
+        } catch (e) {
+          timeEl.innerHTML = `<i class="far fa-clock mr-1"></i> ${date} • ${startTime}`;
+        }
+
+      } else {
+        // Default
+        timeEl.innerHTML = `<i class="far fa-clock mr-1"></i> ${date} • ${startTime} (${duration || 180} min)`;
+      }
+    }
+
+    window.closeExamDetail = function () {
+      document.getElementById('examDetailView').classList.add('hidden');
+      document.getElementById('examsListView').classList.remove('hidden');
+    }
+
+    // Load students into Nested View
+    async function loadStudents(examId, examTitle, examStatus, isScanningActive) {
+      const container = document.getElementById('studentListContainer');
+      container.innerHTML = '<div class="flex justify-center p-8"><i class="fas fa-circle-notch fa-spin text-indigo-600 text-2xl"></i></div>';
+
+      try {
+        const url = examId
+          ? `http://localhost:8080/api/supervisor/students?examId=${examId}`
+          : 'http://localhost:8080/api/supervisor/students';
+        const res = await fetch(url, { headers: authHeaders() });
+        const arr = await res.json();
+
+        container.innerHTML = '';
+        document.getElementById('detailStudentCount').innerText = arr.length;
+
+        if (arr.length === 0) {
+          container.innerHTML = '<div class="p-8 text-center text-gray-500 bg-gray-50 rounded-lg"><i class="fas fa-user-slash text-4xl mb-3 block text-gray-300"></i>No candidates are registered for this exam yet.</div>';
+          return;
+        }
+
+        arr.forEach((s, index) => {
+          // Status Logic
+          let status = 'PENDING';
+          const isCompleted = examStatus === 'COMPLETED' || examStatus === 'FINISHED';
+
+          if (isCompleted) {
+            if (s.biometricVerified) status = 'FULLY_VERIFIED';
+            else status = 'UNVERIFIED';
+          } else {
+            if (s.biometricVerified) status = 'FULLY_VERIFIED';
+            else if (s.qrVerified) status = 'QR_VERIFIED';
+          }
+
+          // Card Component
+          const row = document.createElement('div');
+          row.className = 'bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4 transition-all hover:shadow-md';
+
+          // Left: Student Info
+          const infoHTML = `
+          <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold border border-gray-200 overflow-hidden">
+                    ${s.photoUrl ? `<img src="${s.photoUrl}" class="w-full h-full object-cover">` : (s.name ? s.name.charAt(0) : 'S')}
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900">${s.name || 'Unknown Student'}</h3>
+                    <p class="text-xs text-gray-500 font-mono">Roll: ${s.regno || 'N/A'}</p>
+                    <p class="text-xs text-indigo-600 font-medium mt-0.5">${examTitle || 'Exam Candidate'}</p>
+                </div>
+             </div>
+          `;
+
+          // Middle: Status Badge
+          let badgeHTML = '';
+          if (status === 'PENDING') badgeHTML = `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600"><i class="far fa-circle mr-1"></i> Pending</span>`;
+          else if (status === 'QR_VERIFIED') badgeHTML = `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 animate-pulse"><i class="fas fa-qrcode mr-1"></i> QR Verified</span>`;
+          else if (status === 'FULLY_VERIFIED') badgeHTML = `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700"><i class="fas fa-check-circle mr-1"></i> Verified</span>`;
+          else if (status === 'UNVERIFIED') badgeHTML = `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700"><i class="fas fa-times-circle mr-1"></i> Unverified / Absent</span>`;
+
+          // Right: Contextual Action Button
+          let actionHTML = '';
+          if (status === 'PENDING') {
+            if (isCompleted) {
+              actionHTML = `<div class="px-4 py-2 text-red-600 font-bold text-sm"><i class="fas fa-exclamation-triangle mr-1"></i> Absent</div>`;
+            } else if (isScanningActive) {
+              actionHTML = `<button onclick="showTab('qr')" class="px-4 py-2 bg-indigo-50 text-indigo-600 text-sm rounded hover:bg-indigo-100 border border-indigo-200"><i class="fas fa-qrcode mr-2"></i>Scan QR</button>`;
+            } else {
+              actionHTML = `<button disabled class="px-4 py-2 bg-gray-50 text-gray-400 text-sm rounded cursor-not-allowed border border-gray-100"><i class="fas fa-lock mr-2"></i>Locked</button>`;
+            }
+          } else if (status === 'QR_VERIFIED') {
+            if (isCompleted) {
+              actionHTML = `<div class="px-4 py-2 text-yellow-600 font-bold text-sm"><i class="fas fa-exclamation-circle mr-1"></i> Partially Verified</div>`;
+            } else {
+              actionHTML = `<button onclick="verifyIdentityForScan('${s.id}', '${(s.name || '').replace(/'/g, "\\'")}', this)" class="px-4 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 shadow-md transform hover:scale-105 transition-all"><i class="fas fa-fingerprint mr-2"></i>Verify Biometric</button>`;
+            }
+          } else if (status === 'UNVERIFIED') {
+            actionHTML = `<div class="px-4 py-2 text-red-600 font-bold text-sm"><i class="fas fa-exclamation-triangle mr-1"></i> Absent</div>`;
+          } else {
+            actionHTML = `<div class="px-4 py-2 text-green-600 font-bold text-sm"><i class="fas fa-check-double mr-1"></i> Present</div>`;
+          }
+
+          row.innerHTML = infoHTML + '<div class="flex flex-col md:flex-row items-center gap-6">' + badgeHTML + actionHTML + '</div>';
+          container.appendChild(row);
+        });
+      } catch (e) { console.error(e); container.innerHTML = '<div class="message error">Failed to load students</div>'; }
+    }
+
+    // QR scanner init
+    function initQrScanner() {
+      // Fix: Check for Html5Qrcode (capital H)
+      if (typeof Html5Qrcode !== 'undefined' && !qrScanner) {
+        qrScanner = new Html5Qrcode("qr-reader");
+        const config = { fps: 10, qrbox: 250 };
+        qrScanner.start({ facingMode: "environment" }, config, qrSuccess, qrError)
+          .catch(err => {
+            console.warn('QR start failed', err);
+            alert('Could not start camera! Please ensure you have granted camera permissions.\nError: ' + err);
+          });
+      } else if (typeof Html5Qrcode === 'undefined') {
+        console.error('Html5Qrcode library not loaded');
+        alert('QR Library not ready yet. Please check your internet connection (library loads from CDN).');
+      }
+    }
+
+    function qrSuccess(decodedText, decodedResult) {
+      // ... existing logic ...
+      // logic remains same, but we need to ensure verifyIdentityForScan is available globally
+      if (qrScanner) {
+        qrScanner.stop().then(() => {
+          qrScanner.clear();
+          qrScanner = null;
+        }).catch(err => {
+          console.warn('Stop failed', err);
+          qrScanner = null;
+        });
+      }
+
+      // call backend to verify token (secured with JWT)
+      fetch('http://localhost:8080/api/qr/verify', {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ qrToken: decodedText })
+      })
+        .then(async r => {
+          if (!r.ok) {
+            // Show friendly error for auth/validation failures
+            const resBox = document.getElementById('scanResult');
+            resBox.innerHTML = `<div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                QR verification failed (HTTP ${r.status}). Please re-login and try again.
+              </div>`;
+            throw new Error(`HTTP ${r.status}`);
+          }
+          return r.json();
+        })
+        .then(js => {
+          // Render student card first; biometric is a separate step
+          const resBox = document.getElementById('scanResult');
+          if (js.valid) {
+            loadProfile();
+            const student = js.student || {};
+            const exam = js.exam || {};
+            const inst = js.institution || {};
+            const biometricEnrolled = !!js.biometricEnrolled;
+            const biometricRecentlyVerified = !!js.biometricRecentlyVerified;
+
+            // Biometric status badge
+            let bioBadgeText = 'Biometric Not Enrolled';
+            let bioBadgeClass = 'bg-red-100 text-red-700';
+            if (biometricEnrolled && biometricRecentlyVerified) {
+              bioBadgeText = 'Biometric Verified (Recent)';
+              bioBadgeClass = 'bg-emerald-100 text-emerald-700';
+            } else if (biometricEnrolled && !biometricRecentlyVerified) {
+              bioBadgeText = 'Biometric Enrolled - Re-Verify';
+              bioBadgeClass = 'bg-amber-100 text-amber-700';
+            }
+
+            resBox.innerHTML = `
+                  <div class="max-w-sm mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden card transform transition-all hover:scale-[1.01]">
+                    <!-- Status Header -->
+                    <div class="bg-emerald-600 p-4 text-center">
+                        <div class="flex items-center justify-center space-x-2 text-white animate-pulse">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="font-bold tracking-wider uppercase text-sm">Authentication Verified</span>
+                        </div>
+                    </div>
+
+                    <!-- Profile Section -->
+                    <div class="relative pt-6 pb-2 px-6 text-center">
+                        <div class="relative inline-block">
+                            <!-- Profile Image -->
+                            <div class="w-28 h-28 rounded-full border-4 border-emerald-100 p-1 mx-auto overflow-hidden bg-gray-50">
+                                <img src="${student.photoUrl || 'placeholder-avatar.png'}" class="w-full h-full rounded-full object-cover">
+                            </div>
+                            <!-- Verification Tag Overlay -->
+                            <div class="absolute bottom-0 right-0 bg-emerald-500 text-white p-1.5 rounded-full border-2 border-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <h1 class="mt-3 text-xl font-bold text-gray-800 uppercase tracking-tight">${student.name || 'Unknown'}</h1>
+                        <p class="text-emerald-600 font-semibold text-xs tracking-widest mt-1">ID: ${student.rollNo || student.prn || student.id || '--'}</p>
+                        <div class="mt-2">
+                          <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold ${bioBadgeClass} uppercase tracking-widest">
+                            <i class="fas fa-fingerprint mr-1"></i>${bioBadgeText}
+                          </span>
+                        </div>
+                    </div>
+
+                    <!--Details Grid-- >
+              <div class="px-6 pb-6 space-y-4">
+
+                <!-- Personal Info -->
+                <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+                  <p class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Aadhaar Card Number</p>
+                  <p class="text-gray-700 font-mono font-medium text-sm">${student.aadharMasked || 'XXXX-XXXX-XXXX'}</p>
+                </div>
+
+                <!-- Exam Details Card -->
+                <div class="bg-slate-800 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden">
+                  <div class="absolute -right-4 -top-4 opacity-10">
+                    <i class="fas fa-file-alt text-6xl"></i>
+                  </div>
+
+                  <h2 class="text-[10px] uppercase font-bold text-slate-400 mb-3 tracking-widest">Examination Details</h2>
+
+                  <div class="space-y-2">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                      <span class="text-xs text-slate-400">Subject</span>
+                      <span class="text-xs font-semibold truncate max-w-[150px]">${exam.subject || 'N/A'}</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                      <span class="text-xs text-slate-400">Subject Code</span>
+                      <span class="text-xs font-semibold">CS-50${(student.id % 9) + 1}</span> <!-- Dynamic-ish fallback -->
+                    </div>
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                      <span class="text-xs text-slate-400">Exam Hall</span>
+                      <span class="text-xs font-bold text-emerald-400">${student.hallNo || inst.centerCode || 'Hall A'}</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                      <span class="text-xs text-slate-400">Seat No.</span>
+                      <span class="text-xs font-semibold">${student.seatNo || 'Seat 01'}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-xs text-slate-400">Date & Time</span>
+                      <div class="text-right">
+                        <span class="block text-xs font-semibold">${exam.date || 'Today'}</span>
+                        <span class="block text-[10px] text-emerald-400">${exam.time || '10:00 AM'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Scan Info -->
+                <div class="flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-widest pt-1">
+                  <div>Scan Logged: <span class="font-mono">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
+                  <div>Server: <span class="text-emerald-500 font-bold">Live</span></div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-col space-y-2">
+                  <button onclick="verifyIdentityForScan('${student.id || 1}', '${(student.name || 'Student').replace(/'/g, "\\'")}', this)" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 active:scale-[0.98] transition-all flex items-center justify-center space-x-2">
+                  <i class="fas fa-fingerprint text-lg"></i>
+                  <span>Biometric Verification</span>
+                </button>
+
+                <button onclick="resetScanner()" class="w-full bg-white border-2 border-gray-100 text-gray-500 font-bold py-2.5 rounded-xl hover:bg-gray-50 active:scale-[0.98] transition-all text-xs">
+                  Cancel
+                </button>
+              </div>
+                    </div >
+                  </div >
+              `;
+          } else {
+            // Error state (existing)
+            resBox.innerHTML = `
+              < div class="bg-red-50 border-l-8 border-red-600 p-6 rounded-r-lg shadow-md" >
+                    <div class="flex items-center">
+                      <i class="fas fa-exclamation-triangle text-3xl text-red-600 mr-4"></i>
+                      <div>
+                        <h3 class="text-xl font-bold text-red-700">Verification Failed!</h3>
+                        <p class="text-red-600 mt-1">${js.message || 'Invalid or Expired QR Code'}</p>
+                      </div>
+                    </div>
+                    <div class="mt-4 text-right">
+                       <button onclick="resetScanner()" class="text-red-700 font-semibold hover:underline">Try Scanning Again</button>
+                    </div>
+                  </div >
+              `;
+          }
+        })
+        .catch(e => {
+          document.getElementById('scanResult').innerText = 'System Error: ' + e;
+        });
+    }
+    function qrError(err) { /* ignore scanning errors */ }
+
+    // Helper functions
+    function resetScanner() {
+      document.getElementById('scanResult').innerHTML = '';
+      initQrScanner();
+    }
+
+    function markPresent() {
+      // alert('Student successfully marked present.'); // Removed for smoother flow
+      loadProfile(); // refresh stats
+      // resetScanner(); // Optional: Keep scanner active or clear it. User asked for "scan next", so maybe clear.
+      // Reset scanner is handled by resetScanner() call if needed, but markPresent usually resets context.
+      // Let's keep resetScanner() as it was.
+      resetScanner();
+    }
+
+    // Manual Verify Handler
+    function handleManualVerify() {
+      const token = document.getElementById('manualTokenInput').value.trim();
+      if (!token) return alert('Please paste a token first');
+      qrSuccess(token, null);
+    }
+
+    window.verifyStudentQR = async function (studentId) {
+      const res = await fetch('http://localhost:8080/api/qr/generate?studentId=' + encodeURIComponent(studentId) + '&examId=1');
+      if (res.ok) alert('QR generated (simulate scanning)'); else alert('QR generate failed');
+    }
+
+    // Helper delay function
+    const delay = ms => new Promise(res => setTimeout(res, ms));
+
+    window.verifyStudentFP = async function (studentId) {
+      try {
+        // Step 1: Prompt user
+        if (!confirm("Please ask the student to place their finger on the scanner.\n\nClick OK to start scanning.")) return;
+
+        // Step 2: Simulate Scanning
+        const btn = event.target; // The button that was clicked
+        const originalText = btn.innerText;
+        btn.innerText = "Scanning...";
+        btn.disabled = true;
+
+        await delay(1500); // Wait 1.5s for "scanning"
+
+        // Step 3: Capture Simulation
+        const deterministicHash = "PHYSICAL_MINUTIAE_" + studentId.toString();
+
+        btn.innerText = "Verifying...";
+        await delay(1000); // Wait 1s for "verifying"
+
+        // Step 4: Verify
+        const res = await fetch('http://localhost:8080/api/supervisor/verify-student-biometric', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            studentId: studentId.toString(),
+            fingerprint: deterministicHash
+          })
+        });
+        const js = await res.json();
+
+        btn.innerText = originalText;
+        btn.disabled = false;
+
+        if (js.success) {
+          alert(`✅ Biometric Verified Successfully!\n\nUser: ${js.message}\nStatus: ${js.attendanceStatus || 'Verified'}`);
+        } else {
+          alert(`❌ Verification Failed\n\n${js.message}`);
+        }
+
+      } catch (e) {
+        console.error(e);
+        alert('Biometric System Error');
+        // ensure button reset
+        if (event && event.target) {
+          event.target.innerText = "Verify Fingerprint";
+          event.target.disabled = false;
+        }
+      }
+    }
+
+    // Capture fingerprint button (Independent Test)
+    document.getElementById('captureFingerprint')?.addEventListener('click', async (e) => {
+      const btn = e.target;
+      const originalText = btn.innerHTML;
+
+      try {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Scanning...';
+        btn.disabled = true;
+
+        await delay(2000); // Simulate hardware scan time
+
+        const res = await fetch('http://localhost:8080/api/biometric/capture', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const js = await res.json();
+
+        document.getElementById('fpResult').innerHTML = `
+              < div class="bg-green-50 text-green-700 p-4 rounded border border-green-200 animate-pulse" >
+                <i class="fas fa-fingerprint text-2xl mr-2"></i> 
+                <strong>Captured Successfully</strong><br>
+                <span class="text-xs text-gray-500">Hash: ${js.hash}</span>
+            </div>
+            `;
+      } catch (e) {
+        document.getElementById('fpResult').innerText = 'FP capture failed';
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    });
+
+    // Start Scan button - Removed from header, but kept for safety if re-added
+    // document.getElementById('startScanBtn')?.addEventListener('click', (e) => { showTab('qr'); });
+
+    // --- Toast Notification System ---
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toast-container');
+      if (!container) return; // Should be in HTML, if not, create it dynamically
+
+      const div = document.createElement('div');
+      const color = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+      const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+
+      div.className = `${color} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transform transition-all translate-y-10 opacity-0 mb-3`;
+      div.innerHTML = `<i class="fas ${icon} text-xl"></i> <span class="font-semibold">${msg}</span>`;
+
+      container.appendChild(div);
+
+      // Animate In
+      requestAnimationFrame(() => {
+        div.classList.remove('translate-y-10', 'opacity-0');
+      });
+
+      // Remove after 3s
+      setTimeout(() => {
+        div.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => div.remove(), 300);
+      }, 3000);
+    }
+
+    // Verify Identity (Biometric) + Attendance marking (after biometric only)
+    window.verifyIdentityForScan = async function (studentId, studentName, btnElement) {
+      if (!studentId) studentId = "2"; // Default to Test ID
+
+      try {
+        // Use passed button or fallback
+        let btn = btnElement;
+        if (!btn) btn = document.getElementById('verifyBioBtn');
+        if (!btn) return;
+
+        const originalText = btn.innerHTML;
+        const originalClass = btn.className;
+
+        btn.disabled = true;
+
+        // --- INJECT SWEET SUPERVISOR SCANNER MODAL ---
+        const overlayId = 'simulatedScannerOverlay';
+        let overlay = document.getElementById(overlayId);
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.id = overlayId;
+          overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900 bg-opacity-80 backdrop-blur-md transition-opacity';
+          overlay.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-10 max-w-sm w-full shadow-[0_20px_50px_rgba(8,_112,_184,_0.7)] transform transition-all scale-100 flex flex-col items-center relative overflow-hidden border border-slate-200 dark:border-slate-700">
+               <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 animate-pulse"></div>
+               <h3 class="text-2xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Biometric Engine</h3>
+               <p class="text-xs text-slate-500 dark:text-slate-400 mb-8 font-medium">VERIFYING STUDENT: ${studentName.toUpperCase()}</p>
+               
+               <div class="relative w-36 h-36 mb-8 flex justify-center items-center bg-slate-50 dark:bg-slate-900 rounded-3xl shadow-inner border border-slate-100 dark:border-slate-700">
+                  <i id="scanIcon" class="fas fa-fingerprint text-7xl text-indigo-500 transition-colors duration-500"></i>
+                  <!-- Sweep line -->
+                  <div id="scanLaser" class="absolute left-0 w-full h-1 bg-green-400 shadow-[0_0_20px_4px_rgba(74,222,128,0.9)] z-10 hidden rounded-full"></div>
+               </div>
+               
+               <p id="scanStatusText" class="text-sm font-bold tracking-wide text-indigo-600 dark:text-indigo-400 animate-pulse uppercase">Acquiring User Input...</p>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+
+          if (!document.getElementById('sweeping-laser-keyframes')) {
+            const style = document.createElement('style');
+            style.id = 'sweeping-laser-keyframes';
+            style.innerHTML = `@keyframes sweepLaser { 0% { top: 0%; opacity: 0; } 15% { opacity: 1; filter: brightness(1.2); } 85% { opacity: 1; filter: brightness(1.2); } 100% { top: 100%; opacity: 0; } }`;
+            document.head.appendChild(style);
+          }
+        }
+
+        overlay.classList.remove('hidden');
+        const scanIcon = document.getElementById('scanIcon');
+        const scanLaser = document.getElementById('scanLaser');
+        const scanStatusText = document.getElementById('scanStatusText');
+
+        // Reset state
+        scanIcon.className = "fas fa-fingerprint text-7xl text-indigo-500";
+        scanLaser.classList.remove('hidden');
+        scanLaser.style.animation = 'sweepLaser 1.5s infinite ease-in-out alternate';
+        scanStatusText.textContent = "ACQUIRING MINUTIAE...";
+        scanStatusText.className = "text-sm font-bold tracking-wide text-indigo-600 dark:text-indigo-400 animate-pulse uppercase";
+
+        await delay(1500);
+        scanStatusText.textContent = "MATCHING SERVER HASH...";
+
+        // 2. Simulation: Capture (Deterministic Generation)
+        const deterministicHash = "PHYSICAL_MINUTIAE_" + studentId.toString();
+
+        await delay(1200);
+
+        // 4. Verification from Backend
+        const res = await fetch('http://localhost:8080/api/supervisor/verify-student-biometric', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            studentId: studentId.toString(),
+            fingerprint: deterministicHash,
+            examId: currentExamId ? currentExamId.toString() : ""
+          })
+        });
+        const js = await res.json();
+
+        scanLaser.classList.add('hidden');
+        const attendanceStatus = js.attendanceStatus; // PRESENT / ABSENT (if server recorded it)
+        const alreadyRecorded = js.message === "Attendance already recorded." || !!js.attendanceAlreadyRecorded;
+
+        if (alreadyRecorded) {
+          scanIcon.className = "fas fa-check-double text-7xl text-blue-500";
+          scanStatusText.textContent = "ATTENDANCE ALREADY RECORDED";
+          scanStatusText.className = "text-sm font-black tracking-widest text-blue-600 uppercase";
+          showToast('Attendance already recorded.', 'success');
+        } else if (attendanceStatus === 'PRESENT') {
+          // Success State UI
+          scanIcon.className = "fas fa-check-circle text-7xl text-green-500 drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]";
+          scanStatusText.textContent = "VERIFIED: MATCHED 100%";
+          scanStatusText.className = "text-sm font-black tracking-widest text-green-600 uppercase";
+
+          btn.className = "w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all scale-105";
+          btn.innerHTML = '<i class="fas fa-check-circle text-lg"></i> <span>Biometric Verified</span>';
+          showToast('Student Marked Present', 'success');
+        } else if (attendanceStatus === 'ABSENT' || !js.success) {
+          // Failure State UI
+          scanIcon.className = "fas fa-times-circle text-7xl text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]";
+          scanStatusText.textContent = "MISMATCH: ACCESS DENIED";
+          scanStatusText.className = "text-sm font-black tracking-widest text-red-600 uppercase";
+
+          btn.className = "w-full bg-red-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all";
+          btn.innerHTML = '<i class="fas fa-times-circle text-lg"></i> <span>Biometric Mismatch</span>';
+          showToast(js.message || 'Biometric Mismatch', 'error');
+        } else if (js.success) {
+          // Fallback
+          scanIcon.className = "fas fa-check-circle text-7xl text-green-500";
+          scanStatusText.textContent = "VERIFIED (LEGACY)";
+          scanStatusText.className = "text-sm font-bold tracking-widest text-green-600 uppercase";
+          btn.className = "w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all scale-105";
+          btn.innerHTML = '<i class="fas fa-check-circle text-lg"></i> <span>Biometric Verified</span>';
+          showToast('Student Marked Present', 'success');
+        }
+
+        await delay(2000);
+        overlay.classList.add('hidden');
+        overlay.remove(); // Safely clear out the DOM
+
+        if (attendanceStatus === 'PRESENT' || js.success) {
+          markPresent(); // Refreshes stats and clears scanner
+        } else {
+          markPresent(); // Refreshes stats for failed matches
+          btn.innerHTML = originalText;
+          btn.className = originalClass;
+          btn.disabled = false;
+        }
+
+      } catch (e) {
+        console.error(e);
+        showToast('System Error during verification', 'error');
+        if (btnElement) {
+          btnElement.disabled = false;
+          btnElement.innerHTML = originalText;
+          btnElement.className = originalClass;
+        }
+      }
+    }
+
+    // Preview Image
+    window.previewImage = function (input, imgId) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          document.getElementById(imgId).src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    // Global toggle for new enrollment session, declared at top level
+    let isBiometricSuccess = false;
+
+    // Handle Profile Update Form Submission
+    window.handleProfileUpdate = async function (event) {
+      event.preventDefault();
+
+      // --- Security Check ---
+      if (!isEmailVerified) {
+        showToast("Please verify your new Email Address", "error");
+        document.getElementById('inputEmail').focus();
+        return;
+      }
+      if (!isPhoneVerified) {
+        showToast("Please verify your new Phone Number", "error");
+        document.getElementById('inputPhone').focus();
+        return;
+      }
+      const form = event.target;
+      const formData = new FormData(form);
+
+      // Append the biometric status flag
+      if (isBiometricSuccess) {
+        formData.append('isBiometricEnrolled', 'true');
+      }
+
+      const btn = form.querySelector('button[type="submit"]');
+      const originalText = btn.innerHTML;
+
+      try {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+        btn.disabled = true;
+
+        const res = await fetch('http://localhost:8080/api/supervisor/update-profile', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: formData // Content-Type handled automatically with boundary
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          // Reset flag after successful save
+          isBiometricSuccess = false;
+          closeProfileModal();
+          // Allow closeProfileModal to trigger loadProfile or do it manually here if needed
+          // But closeProfileModal below now handles reset, so we should just reload data
+          loadProfile();
+        } else {
+          throw new Error(data.message || 'Update failed');
+        }
+      } catch (e) {
+        console.error(e);
+        showToast(e.message, 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Updated loadProfile to populate new fields
+    async function loadProfile() {
+      // NOTE: We do NOT reset isBiometricSuccess here anymore, to allow it to persist while modal is open
+
+      const profileBox = document.getElementById('tab-profile');
+      try {
+        const res = await fetch('http://localhost:8080/api/supervisor/profile', { headers: authHeaders() });
+        if (!res.ok) throw new Error('no-profile');
+        const p = await res.json();
+
+        // 1. Dashboard Stats & Info
+        const avatarSrc = p.avatar ? (p.avatar.startsWith('http') ? p.avatar : `http://localhost:8080/${p.avatar}`) : 'placeholder-avatar.png';
+
+        document.getElementById('profileAvatar').src = avatarSrc;
+        document.getElementById('profileName').innerText = p.name || 'Supervisor Name';
+        
+        const roleSpan2 = document.getElementById('profileType');
+        if (roleSpan2) {
+            roleSpan2.innerHTML = p.supervisorType === 'HEAD' ? '<i class="fas fa-crown mr-1"></i> Head Supervisor' : 'Exam Supervisor';
+            roleSpan2.classList.remove('hidden');
+        }
+
+        document.getElementById('profileEmail').innerText = p.email || '';
+        document.getElementById('headerProfileName').innerText = p.name || 'Supervisor';
+        document.getElementById('headerProfileAvatar').src = avatarSrc;
+
+        document.getElementById('profileAssigned').innerText = p.assignedExamsCount ?? '--';
+        document.getElementById('profileStudents').innerText = p.studentsCount ?? '--';
+        document.getElementById('statExams').innerText = p.assignedExamsCount ?? '--';
+        document.getElementById('statStudents').innerText = p.studentsCount ?? '--';
+        document.getElementById('statScans').innerText = p.scansToday ?? '--';
+        document.getElementById('statPending').innerText = p.pendingVerifications ?? '--';
+
+        // Update the college affiliation header badge
+        const collegeBadge = document.getElementById('header-college-badge');
+        if (collegeBadge) {
+          const collegeName = p.college || null;
+          window._supervisorCollege = collegeName; // Store for use in empty states
+          if (collegeName) {
+            collegeBadge.innerHTML = `<i class="fas fa-building text-[10px]"></i> ${collegeName}`;
+          } else {
+            collegeBadge.innerHTML = `<i class="fas fa-exclamation-circle text-amber-300 text-[10px]"></i> <span class="text-amber-200">Not assigned</span>`;
+          }
+        }
+
+        const docsUl = document.getElementById('profileDocs');
+        if (docsUl) {
+          docsUl.innerHTML = '';
+          (p.documents || []).forEach(d => {
+            const li = document.createElement('li');
+            li.innerHTML = `${d.filename} <span class="text-xs ${d.status === 'Uploaded' ? 'text-green-600' : 'text-amber-600'}">(${d.status})</span>`;
+            docsUl.appendChild(li);
+          });
+        }
+
+        // 2. Populate Modal Fields - ONLY if modal is closed (to avoid overwriting user input)
+        if (document.getElementById('profileModal').classList.contains('hidden')) {
+          document.getElementById('modalProfileAvatar').src = avatarSrc;
+          document.getElementById('inputName').value = p.name || '';
+          document.getElementById('inputEmail').value = p.email || '';
+          document.getElementById('inputPhone').value = p.phone || '';
+          document.getElementById('inputUniversity').value = p.university || '';
+          // College is read-only — show in display div, not editable input
+          const collegeText = document.getElementById('inputCollegeText');
+          if (collegeText) collegeText.textContent = p.college || '(Not assigned yet)';
+          document.getElementById('inputDesignation').value = p.designation || 'Room Invigilator';
+          document.getElementById('inputEmployeeId').value = p.employeeId || '';
+
+          // --- OTP Verification Init ---
+          originalEmail = p.email || '';
+          originalPhone = p.phone || '';
+          isEmailVerified = true;
+          isPhoneVerified = true;
+
+          // Reset UI
+          document.getElementById('btnVerifyEmail').classList.add('hidden');
+          document.getElementById('badgeVerifiedEmail').classList.add('hidden');
+          document.getElementById('btnVerifyPhone').classList.add('hidden');
+          document.getElementById('badgeVerifiedPhone').classList.add('hidden');
+        }
+
+        // Update document status indicators in modal
+        const authStatus = p.documents.find(d => d.filename === 'Appointment Letter')?.status;
+        const idStatus = p.documents.find(d => d.filename === 'ID Proof')?.status;
+
+        if (authStatus === 'Uploaded') {
+          document.getElementById('authLetterStatus').innerHTML = '<i class="fas fa-check-circle mr-1"></i> Uploaded';
+          document.getElementById('authLetterStatus').className = "flex items-center text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full";
+        }
+        if (idStatus === 'Uploaded') {
+          document.getElementById('idProofStatus').innerHTML = '<i class="fas fa-check-circle mr-1"></i> Uploaded';
+          document.getElementById('idProofStatus').className = "flex items-center text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full";
+        }
+
+        // Biometric Status Logic
+        // If local success is true, show Enrolled (even if backend says false yet)
+        // If backend says true, show Enrolled
+        const showEnrolled = p.biometricEnrolled || isBiometricSuccess;
+        updateBiometricUI(showEnrolled);
+
+        profileBox.dataset.loaded = '1';
+      } catch (e) { console.warn('Profile load failed', e); }
+    }
+
+    // UI Helper for Biometric Status
+    function updateBiometricUI(isEnrolled) {
+      const bioContainer = document.getElementById('biometricStatusContainer');
+      if (bioContainer) {
+        if (isEnrolled) {
+          bioContainer.innerHTML = `
+                    <span class="px-3 py-1 bg-white text-green-700 text-sm font-bold rounded shadow-sm border border-green-200 flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i> Enrolled
+                    </span>`;
+        } else {
+          bioContainer.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="px-3 py-1 bg-white text-red-600 text-sm font-bold rounded shadow-sm border border-red-200 flex items-center">
+                            <i class="fas fa-times-circle mr-2"></i> Not Enrolled
+                        </span>
+                        <button onclick="openBiometricModal()" class="px-4 py-1.5 bg-purple-600 text-white text-sm font-semibold rounded shadow hover:bg-purple-700 transition-all hover:scale-105">
+                            Enroll Biometric
+                        </button>
+                    </div>`;
+        }
+      }
+    }
+
+    // Biometric Enrollment Logic
+    window.openBiometricModal = function () {
+      document.getElementById('biometricModal').classList.remove('hidden');
+      resetBiometricModal();
+    }
+
+    window.closeBiometricModal = function () {
+      document.getElementById('biometricModal').classList.add('hidden');
+    }
+
+    function resetBiometricModal() {
+      document.getElementById('bioIconContainer').className = "w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto animate-pulse";
+      document.getElementById('bioIcon').className = "fas fa-fingerprint text-4xl text-purple-600";
+      document.getElementById('bioTitle').innerText = "Enroll Biometric";
+      document.getElementById('bioDesc').innerText = "Please place your finger on the scanner to enroll your biometric identity.";
+      document.getElementById('bioActions').classList.remove('hidden');
+    }
+
+    window.handleBiometricEnrollment = async function () {
+      const iconContainer = document.getElementById('bioIconContainer');
+      const icon = document.getElementById('bioIcon');
+      const title = document.getElementById('bioTitle');
+      const desc = document.getElementById('bioDesc');
+      const actions = document.getElementById('bioActions');
+
+      // 1. Simulations: Scanning
+      actions.classList.add('hidden');
+      title.innerText = "Scanning...";
+      desc.innerText = "Keep your finger on the scanner...";
+      iconContainer.className = "w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto animate-ping";
+
+      await new Promise(r => setTimeout(r, 2000));
+
+      // 2. Call Backend
+      try {
+        const res = await fetch('http://localhost:8080/api/supervisor/enroll-biometric', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // Success State
+          iconContainer.className = "w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto transform scale-110 transition-all";
+          icon.className = "fas fa-check text-4xl text-green-600";
+          title.innerText = "Scan Verified";
+          desc.innerText = "Please SAVE your profile to complete enrollment.";
+
+          setTimeout(() => {
+            closeBiometricModal();
+            // DO NOT loadProfile() here. We want to keep the local state until saved.
+
+            // Mark as locally successful
+            isBiometricSuccess = true;
+            updateBiometricUI(true); // Show Green "Enrolled" badge immediately
+
+            showToast('Biometric Verified. Please Save Profile.', 'success');
+          }, 2000);
+        } else {
+          throw new Error("Enrollment failed");
+        }
+      } catch (e) {
+        // Error State
+        iconContainer.className = "w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto";
+        icon.className = "fas fa-exclamation-triangle text-4xl text-red-600";
+        title.innerText = "Enrollment Failed";
+        desc.innerText = "Please try again.";
+        actions.classList.remove('hidden');
+      }
+    }
+
+    // Helper functions
+    window.openProfileModal = function () { document.getElementById('profileModal').classList.remove('hidden'); };
+    window.closeProfileModal = function () {
+      document.getElementById('profileModal').classList.add('hidden');
+      // RESET biometric success flag on cancel/close without save
+      isBiometricSuccess = false;
+      // Refetch profile to revert UI to backend state
+      loadProfile();
+    };
+
+    // --- Phase 3: Exam Control Logic ---
+    let currentExamId = null;
+    let currentExamStatus = 'UPCOMING'; // Track status globally
+    let liveMonitorInterval = null;
+
+    // --- Improved Timer Logic ---
+    var examTimerInterval = null;
+
+    function startExamTimer(status, date, startTime, duration) {
+      const timeEl = document.getElementById('detailExamTime');
+      if (!timeEl) return;
+
+      // Clear existing interval
+      if (examTimerInterval) clearInterval(examTimerInterval);
+
+      if (status === 'LIVE' || status === 'ONGOING') {
+        // Live Timer
+        const updateClock = () => {
+          const now = new Date();
+          const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+          const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+          // User request: Live Date | Time
+          timeEl.innerText = `${dateStr} | ${timeStr}`;
+        };
+        updateClock(); // Initial call
+        examTimerInterval = setInterval(updateClock, 1000);
+      } else if (status === 'ENDED' || status === 'COMPLETED') {
+        // Static Time: Start - End using duration
+        let endStr = "??:??";
+        if (startTime && duration) {
+          try {
+            const [h, m] = startTime.split(':').map(Number);
+            const start = new Date();
+            start.setHours(h, m, 0);
+            const end = new Date(start.getTime() + duration * 60000);
+            endStr = end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+          } catch (e) { console.error("Time Calc Error", e); }
+        }
+        timeEl.innerText = `${startTime} - ${endStr}`;
+      } else {
+        // Default for Upcoming/Paused
+        timeEl.innerText = `${date} | ${startTime}`;
+      }
+    }
+
+    window.openExamDetail = function (id, title, date, startTime, mode, location, status, duration) {
+      currentExamId = id;
+      document.getElementById('examsListView').classList.add('hidden');
+      document.getElementById('examDetailView').classList.remove('hidden');
+
+      document.getElementById('detailExamTitle').innerText = title;
+      // Initial Placeholder
+      document.getElementById('detailExamTime').innerText = ` ${date} | ${startTime}`;
+
+      const locEl = document.getElementById('detailExamLocation');
+      if (locEl) locEl.innerText = location || 'Center 1';
+
+      // Start Timer
+      startExamTimer(status, date, startTime, duration);
+
+      updateExamStatusUI(status);
+      renderControlButtons(status);
+
+      // Start Live Monitoring
+      if (liveMonitorInterval) clearInterval(liveMonitorInterval); // Safety clear
+      fetchLiveStudents();
+      fetchAlerts();
+
+      if (status !== 'ENDED') {
+        liveMonitorInterval = setInterval(() => {
+          if (currentExamStatus === 'ENDED') {
+            clearInterval(liveMonitorInterval);
+            return;
+          }
+          fetchLiveStudents();
+          fetchAlerts();
+        }, 5000); // Poll every 5s
+      }
+    }
+
+    window.closeExamDetail = function () {
+      document.getElementById('examDetailView').classList.add('hidden');
+      document.getElementById('examsListView').classList.remove('hidden');
+      if (liveMonitorInterval) clearInterval(liveMonitorInterval);
+      loadExams(); // Refresh list
+    }
+
+    function updateExamStatusUI(status) {
+      currentExamStatus = status; // Update global status
+      const badge = document.getElementById('examStatusBadge');
+      if (badge) {
+        badge.innerText = status;
+        badge.className = "px-3 py-1 rounded-full text-sm font-bold ";
+        switch (status) {
+          case 'LIVE': badge.className += "bg-green-100 text-green-700 animate-pulse"; break;
+          case 'PAUSED': badge.className += "bg-amber-100 text-amber-700"; break;
+          case 'ENDED': badge.className += "bg-gray-800 text-white"; break;
+          case 'LOCKED': badge.className += "bg-red-100 text-red-700 font-black"; break;
+          default: badge.className += "bg-blue-100 text-blue-700";
+        }
+      }
+
+      // Toggle Panels based on state
+      const summaryPanel = document.getElementById('examSummaryPanel');
+      const controlPanel = document.getElementById('examControlPanel'); // Make sure this ID is added to HTML
+      const statsPanel = document.getElementById('liveStatsPanel');
+
+      if (status === 'ENDED') {
+        if (summaryPanel) summaryPanel.classList.remove('hidden');
+        if (controlPanel) controlPanel.classList.add('hidden');
+        if (statsPanel) statsPanel.classList.add('hidden');
+
+        // Stop polling
+        if (liveMonitorInterval) clearInterval(liveMonitorInterval);
+
+        // Fetch Final Summary
+        fetchExamSummary();
+
+        // Refresh student list one last time for final status
+        fetchLiveStudents();
+      } else {
+        if (summaryPanel) summaryPanel.classList.add('hidden');
+        if (controlPanel) controlPanel.classList.remove('hidden');
+        if (statsPanel) statsPanel.classList.remove('hidden');
+      }
+    }
+
+    function renderControlButtons(status) {
+      const container = document.getElementById('examControls');
+      if (!container) return;
+      let btns = '';
+
+      if (status === 'UPCOMING' || status === 'PAUSED') {
+        btns += `<button onclick="changeExamStatus('LIVE')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold"><i class="fas fa-play mr-2"></i> Start Exam</button>`;
+      }
+
+      if (status === 'LIVE') {
+        btns += `<button onclick="changeExamStatus('PAUSED')" class="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 font-bold"><i class="fas fa-pause mr-2"></i> Pause</button>`;
+        btns += `<button onclick="changeExamStatus('LOCKED')" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold"><i class="fas fa-lock mr-2"></i> EMERGENCY LOCK</button>`;
+        btns += `<button onclick="changeExamStatus('ENDED')" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 font-bold"><i class="fas fa-stop mr-2"></i> End Exam</button>`;
+      }
+
+      if (status === 'LOCKED') {
+        btns += `<button onclick="changeExamStatus('LIVE')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold"><i class="fas fa-unlock mr-2"></i> Resume Exam</button>`;
+        btns += `<button onclick="changeExamStatus('ENDED')" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 font-bold"><i class="fas fa-stop mr-2"></i> End Exam</button>`;
+      }
+
+      container.innerHTML = btns;
+    }
+
+    window.changeExamStatus = async function (newStatus) {
+      // Strict Confirmation for ENDED
+      if (newStatus === 'ENDED') {
+        document.getElementById('confirmModal').classList.remove('hidden');
+        return;
+      }
+
+      // Normal Confirmation for other states
+      if (!confirm(`Are you sure you want to change status to ${newStatus}?`)) return;
+      await executeStatusChange(newStatus);
+    }
+
+    // Modal Actions
+    window.closeConfirmModal = function () {
+      document.getElementById('confirmModal').classList.add('hidden');
+    }
+
+    window.confirmEndExamAction = async function () {
+      closeConfirmModal();
+      await executeStatusChange('ENDED');
+    }
+
+    async function executeStatusChange(newStatus) {
+      try {
+        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/status`, {
+          method: 'PUT',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          updateExamStatusUI(newStatus);
+          renderControlButtons(newStatus);
+        }
+      } catch (e) { console.error(e); showToast('Failed to update status', 'error'); }
+    }
+
+    window.sendBroadcast = async function () {
+      const msg = document.getElementById('broadcastInput').value;
+      if (!msg) return alert('Enter a message');
+
+      try {
+        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/broadcast`, {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ message: msg })
+        });
+        showToast('Broadcast Sent!', 'success');
+        document.getElementById('broadcastInput').value = '';
+      } catch (e) { console.error(e); }
+    }
+
+    // --- Phase 3: Live Monitoring ---
+    async function fetchLiveStudents() {
+      try {
+        // Pass examId to filter (simulated api call)
+        const res = await fetch(`http://localhost:8080/api/supervisor/students?examId=${currentExamId}`, {
+          headers: authHeaders()
+        });
+        const students = await res.json();
+        renderStudentTable(students);
+        updateLiveStats(students);
+      } catch (e) { console.error(e); }
+    }
+
+    function renderStudentTable(students) {
+      const tbody = document.getElementById('studentListContainer');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const isEnded = (currentExamStatus === 'ENDED');
+
+      // Update Table Header if possible (optional, but good for UX)
+      // For now, we adapt content
+
+      students.forEach(s => {
+        let statusColor = 'text-gray-500';
+        let displayStatus = s.status;
+
+        // Final Status Logic
+        if (isEnded) {
+          // Backend now provides stable "SUBMITTED" or "ABSENT"
+          if (s.status.includes('SUBMITTED')) {
+            statusColor = 'text-green-700 font-bold';
+            displayStatus = '<i class="fas fa-check-circle mr-1"></i> ' + s.status;
+          } else if (s.status === 'ABSENT') {
+            statusColor = 'text-red-700 font-bold';
+            displayStatus = '<i class="fas fa-times-circle mr-1"></i> ' + s.status;
+          } else {
+            statusColor = 'text-gray-700 font-bold';
+            displayStatus = s.status;
+          }
+        } else {
+          // Live Status Logic
+          if (s.status === 'ACTIVE') statusColor = 'text-emerald-600 font-bold';
+          if (s.status === 'DISCONNECTED') statusColor = 'text-red-600 font-bold animate-pulse';
+          if (s.status === 'SUSPICIOUS') statusColor = 'text-amber-600 font-bold';
+        }
+
+        const verificationBadge = s.biometricVerified ?
+          `<span class="px-2 py-0.5 rounded bg-green-100 text-green-700 text-xs font-bold"><i class="fas fa-check"></i> Verified</span>` :
+          `<span class="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs">Pending</span>`;
+
+        // Check if Actions should be shown
+        const actionButtons = isEnded ?
+          `<span class="text-xs text-gray-400 italic flex items-center justify-end"><i class="fas fa-lock mr-1"></i> Record Locked</span>` :
+          `<button onclick="reportIncident(${s.id}, '${s.name}')" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded transition-colors mr-2">
+                <i class="fas fa-flag"></i> Report
+             </button>
+             <button onclick="forceSubmit(${s.id}, '${s.name}')" class="text-amber-600 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-3 py-1 rounded transition-colors mr-2" title="Force Submit">
+                <i class="fas fa-upload"></i>
+             </button>
+             ${!s.biometricVerified ? `<button onclick="verifyIdentityForScan('${s.id}', '${s.name}', this)" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded"><i class="fas fa-fingerprint"></i> Verify</button>` : ''}`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold mr-3">${s.name.charAt(0)}</div>
+                        <div class="text-sm font-medium text-gray-900">${s.name}</div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.regno || '--'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${verificationBadge}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm ${statusColor}"><i class="fas fa-circle text-[8px] mr-1"></i> ${displayStatus}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div>${isEnded ? 'Finalized' : (s.lastActivityTime || 'Now')}</div>
+                    ${s.warningCount > 0 ? `<div class="text-amber-600 text-xs font-bold">${s.warningCount} Warnings</div>` : ''}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    ${actionButtons}
+                </td>
+            `;
+        tbody.appendChild(tr);
+      });
+
+      const countSpan = document.getElementById('detailStudentCount');
+      if (countSpan) countSpan.innerText = students.length;
+    }
+
+    function updateLiveStats(students) {
+      const active = document.getElementById('statActive');
+      const disc = document.getElementById('statDisconnected');
+      const warn = document.getElementById('statWarnings');
+      const inc = document.getElementById('statIncidents'); // Added selector
+
+      if (active) active.innerText = students.filter(s => s.status === 'ACTIVE').length;
+      if (disc) disc.innerText = students.filter(s => s.status === 'DISCONNECTED').length;
+      if (warn) warn.innerText = students.reduce((acc, s) => acc + (s.warningCount || 0), 0);
+      if (inc) inc.innerText = students.reduce((acc, s) => acc + (s.incidentCount || 0), 0);
+    }
+
+    // --- Phase 4: Exam Summary Logic ---
+    async function fetchExamSummary() {
+      try {
+        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/summary`, {
+          headers: authHeaders()
+        });
+        if (res.ok) {
+          const data = await res.json();
+          renderExamSummary(data);
+        }
+      } catch (e) { console.error('Failed to fetch summary', e); }
+    }
+
+    function renderExamSummary(data) {
+      document.getElementById('summaryTotal').innerText = data.totalStudents || 0;
+      document.getElementById('summarySubmitted').innerText = data.submitted || 0;
+      document.getElementById('summaryIncidents').innerText = data.incidents || 0;
+
+      const notSubmitted = data.notSubmitted || 0;
+      document.getElementById('summaryNotSubmittedLabel').innerText = `${notSubmitted} Not Submitted`;
+    }
+
+    // --- Phase 4: Incident Reporting ---
+    window.reportIncident = async function (studentId, studentName) {
+      const reason = prompt(`Report Malpractice for ${studentName}:\n\nEnter Reason (e.g. Mobile Usage, Talking, Suspicious):`);
+      if (!reason) return;
+
+      try {
+        const res = await fetch(`http://localhost:8080/api/supervisor/incident`, {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            examId: currentExamId || 1,
+            studentId: studentId,
+            reason: reason,
+            severity: 'HIGH'
+          })
+        });
+        showToast('Incident Reported Successfully', 'error'); // Error style for emphasis
+        fetchAlerts(); // Immediate update
+      } catch (e) { console.error(e); }
+    }
+
+    async function fetchAlerts() {
+      if (!currentExamId) return;
+      try {
+        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/alerts`, {
+          headers: authHeaders()
+        });
+        const alerts = await res.json();
+        const inc = document.getElementById('statIncidents');
+        if (inc) inc.innerText = alerts.length;
+
+        // Here you could calculate "unread" alerts for a bell icon
+      } catch (e) { console.error(e); }
+    }
+
+    // PDF Download Stub
+    window.downloadAttendance = function () {
+      alert("Downloading Attendance Sheet (PDF)... \n\n(Simulated: In production this would trigger backend PDF generation)");
+    }
+
+    window.refreshStudentList = () => fetchLiveStudents();
+
+    // --- Phase 4: Reporting ---
+    window.downloadAttendance = async function () {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text("Exam Attendance Sheet", 14, 22);
+
+      doc.setFontSize(12);
+      doc.text(`Exam: ${document.getElementById('detailExamTitle').innerText}`, 14, 32);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 38);
+      doc.text(`Supervisor: ${document.getElementById('headerProfileName').innerText}`, 14, 44);
+
+      // Fetch latest student data
+      try {
+        const res = await fetch(`http://localhost:8080/api/supervisor/students?examId=${currentExamId}`, { headers: authHeaders() });
+        const students = await res.json();
+
+        let y = 60;
+        doc.setFontSize(10);
+        doc.text("Roll No", 14, y);
+        doc.text("Student Name", 40, y);
+        doc.text("Verification", 110, y);
+        doc.text("Final Status", 150, y);
+
+        doc.line(14, y + 2, 190, y + 2);
+        y += 10;
+
+        students.forEach(s => {
+          doc.text(s.regno || "--", 14, y);
+          doc.text(s.name, 40, y);
+          doc.text(s.biometricVerified ? "Verified" : "Pending", 110, y);
+
+          let status = s.status;
+          if (currentExamStatus === 'ENDED') {
+            if (s.status && s.status.includes('SUBMITTED')) status = 'SUBMITTED';
+            else if (s.status === 'ABSENT') status = 'ABSENT';
+            else if (s.status === 'SUSPICIOUS') status = 'UNDER REVIEW';
+          }
+          doc.text(status || "--", 150, y);
+          y += 8;
+
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+        });
+
+        doc.save("attendance_report.pdf");
+        showToast("Attendance Report Downloaded", "success");
+
+      } catch (e) {
+        console.error(e);
+        showToast("Failed to generate report", "error");
+      }
+    }
+
+    // Download Incident Log
+    window.downloadIncidentLog = async function () {
+      if (!currentExamId) return showToast("No exam selected", "error");
+
+      showToast("Generating incident log...", "info");
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text("ExamHub - Official Incident Log", 14, 22);
+
+      doc.setFontSize(12);
+      doc.text(`Exam: ${document.getElementById('detailExamTitle').innerText}`, 14, 32);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 38);
+      doc.text(`Supervisor: ${document.getElementById('headerProfileName').innerText}`, 14, 44);
+
+      try {
+        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/alerts`, { headers: authHeaders() });
+        const alerts = await res.json();
+
+        let y = 60;
+        doc.setFontSize(10);
+        doc.text("Time", 14, y);
+        doc.text("Student Name", 40, y);
+        doc.text("Type", 100, y);
+        doc.text("Description", 130, y);
+
+        doc.line(14, y + 2, 190, y + 2);
+        y += 10;
+
+        if (alerts.length === 0) {
+          doc.text("No suspicious incidents recorded during this exam.", 14, y);
+        } else {
+          alerts.forEach(a => {
+            const timeStr = a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : "--:--";
+            doc.text(timeStr, 14, y);
+            doc.text(a.studentName || "--", 40, y);
+            doc.text(a.type || "SUSPICIOUS", 100, y);
+            doc.text(a.message || "--", 130, y);
+            y += 8;
+
+            if (y > 270) {
+              doc.addPage();
+              y = 20;
+            }
+          });
+        }
+
+        doc.save("incident_log.pdf");
+        showToast("Incident Log Downloaded", "success");
+      } catch (e) {
+        console.error(e);
+        showToast("Failed to generate incident log", "error");
+      }
+    }
+
+    // Force Submit Logic
+    window.forceSubmit = function (id, name) {
+      if (!confirm(`FORCE SUBMIT for ${name}?\n\nThis will auto-submit their current progress and end their session.`)) return;
+
+      // Simulate backend call
+      showToast(`Force submitted for ${name}`, 'success');
+      // Ideally call backend API here
+    }
+
+    // Network Health Logic
+    function updateNetworkStatus(isOnline) {
+      const el = document.getElementById('networkStatus');
+      if (!el) return;
+      if (isOnline) {
+        el.className = "w-3 h-3 bg-green-500 rounded-full animate-pulse";
+        el.title = "System Online";
+      } else {
+        el.className = "w-3 h-3 bg-red-500 rounded-full";
+        el.title = "Disconnected";
+      }
+    }
+
+    // Password Change Logic
+    window.handlePasswordChange = async function (e) {
+      e.preventDefault();
+
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+      if (!currentPassword || !newPassword || !confirmNewPassword) {
+        showToast('Please fill all password fields', 'error');
+        return;
+      }
+
+      if (newPassword !== confirmNewPassword) {
+        showToast('New passwords do not match', 'error');
+        return;
+      }
+
+      try {
+        const formData = new URLSearchParams();
+        formData.append('currentPassword', currentPassword);
+        formData.append('newPassword', newPassword);
+
+        const res = await fetch('http://localhost:8080/api/supervisor/update-password', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+          body: formData.toString()
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showToast(data.message || 'Password updated successfully!', 'success');
+          // Clear fields
+          document.getElementById('currentPassword').value = '';
+          document.getElementById('newPassword').value = '';
+          document.getElementById('confirmNewPassword').value = '';
+        } else {
+          showToast(data.message || 'Failed to update password', 'error');
+        }
+      } catch (err) {
+        console.error('Password change error', err);
+        showToast('An error occurred while updating the password', 'error');
+      }
+    }
+
+    // Logout Function
+    window.logout = function () {
+      if (confirm("Are you sure you want to log out?")) {
+        // Clear session data
+        localStorage.clear();
+        sessionStorage.clear();
+        // Redirect to login page
+        window.location.href = "auth_portal.html";
+      }
+    }
+  </script>
+  <script src="script.js"></script>
+</body>
+
+</html>

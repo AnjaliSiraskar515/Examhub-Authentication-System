@@ -17,6 +17,7 @@ public class Department {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "college_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private College college;
 
     public Department() {

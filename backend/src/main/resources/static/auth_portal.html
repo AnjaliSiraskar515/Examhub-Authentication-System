@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExamHub – Authentication Portal</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --primary: #4f46e5;
+      --teal: #14b8a6;
+    }
+
+    body {
+      background-color: #f0f5ff;
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Blobby Animated Background */
+    .blobby-bg {
+      pointer-events: none;
+      z-index: 0;
+      position: fixed;
+      width: 100vw;
+      height: 100vh;
+      left: 0;
+      top: 0;
+      overflow: hidden;
+    }
+
+    .blobby {
+      position: absolute;
+      border-radius: 9999px;
+      filter: blur(45px) brightness(1.1);
+      opacity: 0.4;
+      animation-duration: 15s;
+      animation-iteration-count: infinite;
+      animation-timing-function: ease-in-out;
+      will-change: transform;
+    }
+
+    .b1 {
+      background: #a5b4fc;
+      width: 400px;
+      height: 350px;
+      left: -5vw;
+      top: -10vh;
+      animation-name: float1;
+    }
+
+    .b2 {
+      background: #99f6e4;
+      width: 300px;
+      height: 300px;
+      right: -5vw;
+      top: 10vh;
+      animation-name: float2;
+    }
+
+    .b3 {
+      background: #818cf8;
+      width: 350px;
+      height: 350px;
+      left: 20vw;
+      bottom: -10vh;
+      animation-name: float3;
+    }
+
+    @keyframes float1 {
+
+      0%,
+      100% {
+        transform: translateY(0) scale(1);
+      }
+
+      50% {
+        transform: translateY(30px) scale(1.05);
+      }
+    }
+
+    @keyframes float2 {
+
+      0%,
+      100% {
+        transform: translateY(0) scale(1);
+      }
+
+      50% {
+        transform: translateY(-40px) scale(1.1);
+      }
+    }
+
+    @keyframes float3 {
+
+      0%,
+      100% {
+        transform: translateY(0) scale(1);
+      }
+
+      50% {
+        transform: translateY(-20px) translateX(20px) scale(0.95);
+      }
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+    }
+
+    .tab-btn {
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Better Inputs */
+    input,
+    select,
+    button {
+      transition: all 0.2s ease;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+    }
+
+    /* Login button hover state when active */
+    #loginButton:not(:disabled) {
+      background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+      box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+      color: white;
+    }
+
+    #loginButton:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px 0 rgba(79, 70, 229, 0.45);
+    }
+
+    #loginButton:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body class="relative min-h-screen flex items-center justify-center px-4 py-10 text-gray-800">
+
+  <!-- Animated Blobby Background -->
+  <div class="blobby-bg">
+    <div class="blobby b1"></div>
+    <div class="blobby b2"></div>
+    <div class="blobby b3"></div>
+  </div>
+
+  <div
+    class="relative z-10 w-full max-w-md glass-card rounded-2xl p-8 sm:p-10 transform transition-all duration-500 hover:scale-[1.01]">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div
+        class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/80 backdrop-blur-sm border border-indigo-100 mb-4 shadow-sm group hover:bg-indigo-50 transition-colors p-1">
+        <img src="logo.png" alt="ExamHub Logo" class="w-full h-full object-contain transform group-hover:scale-110 transition-transform duration-300">
+      </div>
+      <h1
+        class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-teal-500 mb-2 tracking-tight">
+        ExamHub Portal</h1>
+      <p class="text-sm text-gray-600 font-medium">Verify Identity. Access Exams.</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex mb-8 bg-gray-100/60 p-1.5 rounded-xl border border-gray-200/50">
+      <button id="loginTab" class="tab-btn active w-full py-2.5 rounded-lg text-sm transition-all"
+        onclick="switchTab('login')">Secure Login</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+      <form id="signinForm" class="space-y-5">
+        <div>
+          <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Select Role</label>
+          <select id="loginRole"
+            class="w-full border border-gray-200/80 rounded-xl px-4 py-3 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 transition"
+            required>
+            <option value="">-- Choose Role --</option>
+            <option value="STUDENT">Student</option>
+            <option value="SUPERVISOR">Supervisor</option>
+            <option value="UNIVERSITY_ADMIN">Institution Admin</option>
+            <option value="SUPERADMIN">Super Admin</option>
+          </select>
+        </div>
+
+        <!-- STUDENT LOGIN -->
+        <div id="studentLoginFields" class="hidden">
+          <!-- Email Login -->
+          <div id="studentEmailLogin" class="mt-4">
+            <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Email Address</label>
+            <div class="flex gap-2">
+              <input type="email" id="studentLoginEmail"
+                class="flex-1 w-full border border-gray-200/80 rounded-xl px-4 py-3 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                placeholder="Enter your email">
+              <button type="button" id="studentSendOtpBtn" onclick="sendOTP('studentLoginEmail')"
+                class="px-5 py-3 text-sm bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-indigo-800 transition font-medium shrink-0">
+                Send OTP
+              </button>
+            </div>
+            <div id="studentEmailOtpSection"
+              class="hidden mt-4 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+              <label class="text-sm font-semibold text-indigo-900 mb-1.5 block">Enter Email OTP</label>
+              <div class="flex gap-2">
+                <input id="studentEmailOtp" type="text" maxlength="6"
+                  class="flex-1 border border-indigo-200 rounded-xl px-4 py-3 text-center tracking-[0.5em] font-bold text-lg focus:ring-2 focus:ring-indigo-500 bg-white transition"
+                  placeholder="••••••">
+                <button type="button" id="verifyStudentEmailOtpBtn" onclick="verifyOTP('studentLoginEmail')"
+                  class="px-5 py-3 text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-xl shadow-md font-medium shrink-0 transition">Verify</button>
+              </div>
+              <p id="studentEmailOtpMsg" class="text-xs text-gray-500 mt-2 text-center"></p>
+            </div>
+          </div>
+
+          <!-- PRN Field -->
+          <div id="studentPrnField" class="mt-4">
+            <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Institution Roll No / PRN</label>
+            <input type="text" id="studentLoginPrn"
+              class="w-full border border-gray-200/80 rounded-xl px-4 py-3 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              placeholder="Enter your PRN" required>
+          </div>
+
+          <!-- Password -->
+          <label class="text-sm font-semibold text-gray-700 mt-4 mb-1.5 block">Password</label>
+          <div class="relative">
+            <input type="password" id="studentLoginPassword"
+              class="w-full border border-gray-200/80 rounded-xl px-4 py-3 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 pr-12 font-medium tracking-widest placeholder:tracking-normal transition"
+              placeholder="••••••••" required>
+            <button type="button" onclick="togglePassword('studentLoginPassword', this)"
+              class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-indigo-600 transition-colors"
+              aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- AUTHORITY LOGIN -->
+        <div id="authoritySteps" class="hidden mt-1">
+          <div>
+            <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Official Email</label>
+            <div class="flex gap-2 mt-1">
+              <input type="email" id="authEmail"
+                class="flex-1 w-full border border-gray-200/80 rounded-xl px-4 py-3 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                placeholder="email@institution.edu">
+              <button type="button" id="sendEmailOtpBtn" onclick="sendOTP('email')"
+                class="px-5 py-3 text-sm bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-indigo-800 transition font-medium shrink-0">Send
+                OTP</button>
+            </div>
+            <div id="emailOtpSection" class="hidden mt-4 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+              <label class="text-sm font-semibold text-indigo-900 mb-1.5 block">Enter Email OTP</label>
+              <div class="flex gap-2 mt-1">
+                <input id="emailOtp" type="text" maxlength="6"
+                  class="flex-1 border border-indigo-200 rounded-xl px-4 py-3 text-center tracking-[0.5em] font-bold text-lg focus:ring-2 focus:ring-indigo-500 bg-white transition"
+                  placeholder="••••••">
+                <button type="button" id="verifyEmailOtpBtn" onclick="verifyOTP('email')"
+                  class="px-5 py-3 text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-xl shadow-md font-medium shrink-0 transition">Verify</button>
+              </div>
+              <p id="emailOtpMsg" class="text-xs text-gray-500 mt-2 text-center"></p>
+            </div>
+
+            <div id="authorityPasswordField">
+              <label class="text-sm font-semibold text-gray-700 mt-4 mb-1.5 block">Password</label>
+              <div class="relative">
+                <input type="password" id="loginPassword"
+                  class="w-full border border-gray-200/80 rounded-xl px-4 py-3 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 pr-12 font-medium tracking-widest placeholder:tracking-normal transition"
+                  placeholder="••••••••">
+                <button type="button" onclick="togglePassword('loginPassword', this)"
+                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-indigo-600 transition-colors">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- INSTITUTION ADMIN SPECIFIC FIELDS (Hidden by default for Supervisors) -->
+            <div id="institutionAdminFields" class="hidden mt-4 space-y-4">
+              <div>
+                <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Institution Code</label>
+                <input type="text" id="institutionCode"
+                  class="w-full border border-gray-200/80 rounded-xl px-4 py-3 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition font-medium tracking-widest uppercase"
+                  placeholder="e.g. XYZ123">
+              </div>
+
+              <div>
+                <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Login Key (Secret Key)</label>
+                <div class="relative">
+                  <input type="password" id="institutionLoginKey"
+                    class="w-full border border-gray-200/80 rounded-xl px-4 py-3 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 pr-12 font-medium tracking-widest placeholder:tracking-normal transition"
+                    placeholder="INST-••••••••">
+                  <button type="button" onclick="togglePassword('institutionLoginKey', this)"
+                    class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-indigo-600 transition-colors">
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="loginButton" type="submit" disabled
+          class="w-full text-white py-3.5 rounded-xl font-bold mt-6 text-lg transition-all border border-transparent shadow-sm">
+          Login to Dashboard
+        </button>
+      </form>
+    </div>
+
+    <div class="text-center mt-6">
+      <a href="index.html"
+        class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors group">
+        <svg class="w-4 h-4 mr-1.5 transform group-hover:-translate-x-1 transition-transform" fill="none"
+          stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Back to Home
+      </a>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script src="script.js"></script>
+</body>
+
+</html>

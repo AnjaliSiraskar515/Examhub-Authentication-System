@@ -12,12 +12,7 @@
       background-color: #f0f5ff;
     }
 
-    /* LOGO icon style (SVG) */
-    .cg-logo {
-      width: 48px;
-      height: 48px;
-      display: inline-block;
-    }
+    /* LOGO icon style */
 
     /* Blobby Animated Background */
     .blobby-bg {
@@ -189,18 +184,7 @@
       <!-- LOGO (SVG, education/exam themed) -->
       <a href="#" class="flex items-center space-x-3 group">
         <span class="transform transition-transform group-hover:scale-110 duration-300">
-          <svg class="cg-logo drop-shadow-md" viewBox="0 0 54 54" fill="none">
-            <rect x="8" y="8" width="38" height="32" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2" />
-            <rect x="12.5" y="13.5" width="29" height="5" rx="2.5" fill="#4f46e5" opacity="0.13" />
-            <rect x="12.5" y="21.5" width="13" height="2" rx="1" fill="#4f46e5" opacity="0.16" />
-            <rect x="12.5" y="27.5" width="10" height="2" rx="1" fill="#4f46e5" opacity="0.18" />
-            <!-- Graduation Cap -->
-            <path d="M27 7L42 14L27 21L12 14L27 7Z" fill="#14b8a6" stroke="#14b8a6" stroke-width="1" />
-            <rect x="25.3" y="21" width="3.4" height="4.5" rx="1.5" fill="#4f46e5" opacity="0.12" />
-            <!-- Checkmark for 'verified' -->
-            <path d="M34.5 30.6l3.2 2.7 5.6-8.4" stroke="#14b8a6" stroke-width="2.2" stroke-linecap="round"
-              stroke-linejoin="round" />
-          </svg>
+          <img src="logo.png" alt="ExamHub Logo" class="w-10 h-10 object-contain drop-shadow-md">
         </span>
         <span
           class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-teal-500 drop-shadow-sm">ExamHub</span>
@@ -293,7 +277,7 @@
           <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <svg class="w-24 h-24 text-cyan-600" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd"
-                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1zM11 13a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1v-1a1 1 0 10-2 0v1h-1zm4 2v1h-1v-1h1zM11 5a1 1 0 100 2h1v1a1 1 0 102 0V7h1a1 1 0 100-2h-1V4a1 1 0 10-2 0v1h-1z"
                 clip-rule="evenodd" />
             </svg>
           </div>
@@ -301,15 +285,17 @@
             class="w-14 h-14 bg-cyan-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
             <svg class="w-8 h-8 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                d="M12 4v1m0 14v1M4 12h1m14 0h1M6.343 6.343l.707.707M16.95 16.95l.707.707M6.343 17.657l.707-.707M16.95 7.05l.707-.707M8 12a4 4 0 118 0 4 4 0 01-8 0z">
               </path>
             </svg>
           </div>
-          <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-cyan-600 transition-colors">AI Document
-            Validation</h3>
-          <p class="text-gray-600 leading-relaxed relative z-10">Advanced AI scans, verifies, and matches all exam and
-            ID documents, eliminating manual validation risks.</p>
+          <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-cyan-600 transition-colors">QR Admit
+            Card System</h3>
+          <p class="text-gray-600 leading-relaxed relative z-10">Auto-generated, time-bound QR admit cards are
+            issued to eligible students and scanned by supervisors at hall entry — eliminating paper-based
+            forgeries.</p>
         </div>
+
 
         <!-- Card 3 -->
         <div
@@ -365,14 +351,16 @@
           <div class="p-4 bg-teal-50 rounded-full mb-4 group-hover:bg-teal-100 transition-colors">
             <svg class="w-10 h-10 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
               </path>
             </svg>
           </div>
-          <span class="text-teal-600 text-xl font-extrabold mb-3 text-center">AI Verification Microservice</span>
-          <p class="text-gray-600 text-center text-sm leading-relaxed">Python microservice handles face authentication
-            and document validation independently for scalability.</p>
+          <span class="text-teal-600 text-xl font-extrabold mb-3 text-center">OTP Multi-Factor Auth</span>
+          <p class="text-gray-600 text-center text-sm leading-relaxed">Time-limited one-time passwords delivered
+            via email add a critical second layer of verification before every exam login — stopping
+            unauthorized access cold.</p>
         </div>
+
 
         <!-- Tech Stack 3 -->
         <div

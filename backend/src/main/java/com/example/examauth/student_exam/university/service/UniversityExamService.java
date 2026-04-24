@@ -45,6 +45,12 @@ public class UniversityExamService {
 
         exam.setSupervisorId(request.getSupervisorId());
         exam.setSupervisorName(request.getSupervisorName());
+        if (request.getSupervisorIds() != null) {
+            exam.setSupervisorIds(request.getSupervisorIds());
+        }
+        if (request.getCollegeId() != null) {
+            exam.setCollegeId(request.getCollegeId());
+        }
 
         exam.setCenterName(request.getCenterName());
         exam.setCenterCode(request.getCenterCode());

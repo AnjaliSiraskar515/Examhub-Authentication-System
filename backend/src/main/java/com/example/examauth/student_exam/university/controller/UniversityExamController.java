@@ -17,7 +17,10 @@ public class UniversityExamController {
     private final UniversityExamService service;
 
     @PostMapping({ "", "/" })
-    public ResponseEntity<UniversityExam> createExam(@RequestBody UniversityExam request) {
+    public ResponseEntity<?> createExam(@RequestBody UniversityExam request) {
+        if (request.getSubjectIds() == null || request.getSubjectIds().isEmpty()) {
+            return ResponseEntity.badRequest().body("Subject IDs are mandatory for exam creation.");
+        }
         return ResponseEntity.ok(service.createExam(request));
     }
 

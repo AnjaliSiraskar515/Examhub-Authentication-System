@@ -10,8 +10,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.examauth.model.Department;
 import com.example.examauth.repo.DepartmentRepository;
+import com.example.examauth.model.StudentBacklog;
+import com.example.examauth.repo.StudentBacklogRepository;
+import com.example.examauth.repo.SubjectRepository;
 
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 @Service
 public class UserManagementService {
@@ -24,6 +29,12 @@ public class UserManagementService {
 
     @Autowired
     private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private StudentBacklogRepository studentBacklogRepository;
+
+    @Autowired
+    private SubjectRepository subjectRepository;
 
     private String normalizeDepartment(String dept) {
         if (dept == null || dept.trim().isEmpty()) {
@@ -63,7 +74,7 @@ public class UserManagementService {
 
     @Transactional
     public void createStudent(String prn, String name, String email, String course, String department, String semester,
-            Long collegeId) {
+            String backlogs, Long collegeId) {
         if (userRepository.findByPrn(prn).isPresent()) {
             return; // Skip duplicate PRN
         }
@@ -110,12 +121,74 @@ public class UserManagementService {
         user.setIsEligible(true);
         user.setExamAccessAllowed(true);
 
-        userRepository.save(user);
+        // Process Backlogs
+        boolean hasBacklogs = false;
+        List<StudentBacklog> backlogList = new ArrayList<>();
+        java.util.Set<String> unique = new java.util.HashSet<>();
+        
+        if (backlogs != null && !backlogs.trim().isEmpty()) {
+            String[] backlogItems = backlogs.split(";");
+            for (String b : backlogItems) {
+                b = b.trim();
+                if (b.isEmpty()) continue;
+                
+                String[] parts = b.split("-");
+                if (parts.length < 2) continue; // Prevent runtime crashes on invalid format
+                
+                hasBacklogs = true;
+                String bCode = parts[0].trim();
+                
+                // Strip non-digits from semester to keep it consistently numeric (e.g. "Sem 4" -> "4")
+                String bSemStr = parts[1].trim().replaceAll("[^0-9]", "");
+                Integer bSem = null;
+                try {
+                    bSem = Integer.parseInt(bSemStr);
+                } catch (NumberFormatException e) {
+                    System.out.println("Warning: Invalid semester format in backlog: " + parts[1]);
+                    continue;
+                }
+                
+                String key = bCode + "-" + bSem;
+                
+                if (!unique.contains(key)) {
+                    unique.add(key);
+                    
+                    // Fallback create Subject if needed
+                    Integer finalBSem = bSem;
+                    com.example.examauth.model.Subject subject = subjectRepository.findByCodeAndSemesterAndDepartmentEntityIdAndCourse(bCode, bSem, deptEntity.getId(), course).orElseGet(() -> {
+                        System.out.println("Auto-creating Subject from Backlog mapping: Code=" + bCode + " Sem=" + finalBSem + " Dept=" + deptEntity.getName() + " Course=" + course);
+                        com.example.examauth.model.Subject newSub = new com.example.examauth.model.Subject();
+                        newSub.setCode(bCode);
+                        newSub.setName(bCode); // Name defaults to code for fallback
+                        newSub.setSemester(finalBSem);
+                        newSub.setCourse(course);
+                        newSub.setDepartmentEntity(deptEntity);
+                        return subjectRepository.save(newSub);
+                    });
+
+                    StudentBacklog sb = new StudentBacklog();
+                    sb.setSubjectName(subject.getName());
+                    sb.setSubjectId(subject.getId());
+                    sb.setSemester(String.valueOf(bSem));
+                    sb.setCleared(false);
+                    backlogList.add(sb);
+                }
+            }
+        }
+
+        user.setStudentType(hasBacklogs ? "BACKLOG" : "REGULAR");
+        User savedUser = userRepository.save(user);
+
+        // Save Backlogs with savedUser ID
+        for (StudentBacklog sb : backlogList) {
+            sb.setStudentId(savedUser.getUserId());
+            studentBacklogRepository.save(sb);
+        }
     }
 
     @Transactional
     public void createSupervisor(String name, String email, String phone, String designation, String department,
-            Long collegeId) {
+            Long collegeId, String supervisorType) {
         if (collegeId == null) {
             throw new IllegalArgumentException("College ID is mandatory for new supervisors.");
         }
@@ -128,6 +201,7 @@ public class UserManagementService {
         user.setEmail(email);
         user.setPhoneNumber(phone);
         user.setDesignation(designation);
+        user.setSupervisorType(supervisorType != null ? supervisorType.toUpperCase() : "EXAM");
 
         String normalizedDept = normalizeDepartment(department);
         Department deptEntity = departmentRepository.findByNameIgnoreCaseAndCollegeId(normalizedDept, collegeId)
@@ -147,6 +221,11 @@ public class UserManagementService {
         user.setRole("SUPERVISOR");
         if (user.getUsername() == null) {
             user.setUsername(email);
+        }
+
+        if (user.getPrn() == null) {
+            // Assign dummy PRN for supervisors to bypass NOT NULL DB constraint
+            user.setPrn("SUP_" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         }
 
         if (user.getPassword() == null) {

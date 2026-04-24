@@ -7,5 +7,7 @@ import java.util.Optional;
 
 public interface StudentBacklogRepository extends JpaRepository<StudentBacklog, Long> {
     List<StudentBacklog> findByStudentIdAndCleared(Long studentId, Boolean cleared);
+    List<StudentBacklog> findByStudentId(Long studentId);
     Optional<StudentBacklog> findByStudentIdAndSubjectId(Long studentId, Long subjectId);
+    List<StudentBacklog> findBySubjectId(Long subjectId);
 }

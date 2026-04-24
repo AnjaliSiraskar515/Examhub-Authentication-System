@@ -80,6 +80,7 @@ public class SupervisorController {
                 : user.getCollegeName());
         profile.put("collegeId", user.getCollege() != null ? user.getCollege().getId() : null);
         profile.put("designation", user.getDesignation());
+        profile.put("supervisorType", user.getSupervisorType() != null ? user.getSupervisorType() : "EXAM");
         profile.put("department", user.getDepartment());
         profile.put("employeeId", user.getEmployeeId());
         profile.put("avatar", user.getPhotoPath());
@@ -101,26 +102,43 @@ public class SupervisorController {
     public List<Map<String, Object>> getExams(Authentication authentication) {
         String supervisorName = "";
         Long supervisorId = 0L;
+        String supervisorType = "EXAM";
+        Long collegeId = null;
         if (authentication != null && authentication.getName() != null) {
             String email = authentication.getName();
             User user = userRepository.findFirstByEmail(email).orElse(null);
             if (user != null) {
                 supervisorName = user.getName() != null ? user.getName() : "";
                 supervisorId = user.getUserId();
+                supervisorType = user.getSupervisorType() != null ? user.getSupervisorType() : "EXAM";
+                if (user.getCollege() != null) {
+                    collegeId = user.getCollege().getId();
+                }
             }
         }
         final Long sId = supervisorId;
+        final String sType = supervisorType;
+        final Long cId = collegeId;
 
         List<Map<String, Object>> result = new ArrayList<>();
 
-        // 1. Old Exam table (existing behaviour)
+        // 1. Old Exam table
         examRepository.findAll().stream()
-                .filter(exam -> exam.getSupervisorId() != null && exam.getSupervisorId().equals(sId))
+                .filter(exam -> {
+                    if ("HEAD".equalsIgnoreCase(sType) && cId != null) {
+                        return cId.equals(exam.getCollegeId()) || 
+                               (exam.getSupervisorId() != null && exam.getSupervisorId().equals(sId)) ||
+                               (exam.getSupervisorIds() != null && exam.getSupervisorIds().contains(sId));
+                    } else {
+                        return (exam.getSupervisorId() != null && exam.getSupervisorId().equals(sId)) ||
+                               (exam.getSupervisorIds() != null && exam.getSupervisorIds().contains(sId));
+                    }
+                })
                 .forEach(exam -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("id", exam.getExamId());
                     map.put("title", exam.getExamName());
-                    map.put("date", exam.getDate().toString());
+                    map.put("date", exam.getDate() != null ? exam.getDate().toString() : "TBD");
                     map.put("duration", exam.getDurationMinutes());
                     map.put("startTime", exam.getStartTime() != null ? exam.getStartTime().toString() : "TBD");
                     map.put("mode", exam.getMode());
@@ -129,28 +147,39 @@ public class SupervisorController {
                     result.add(map);
                 });
 
-        // 2. New UniversityExam table (wizard-created exams)
-        universityExamRepository.findBySupervisorId(sId).forEach(uExam -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", uExam.getId());
-            map.put("title", uExam.getSessionName());
-            map.put("date", uExam.getExamDate() != null ? uExam.getExamDate().toString() : "TBD");
-            map.put("duration",
-                    uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null &&
-                    uExam.getSchedule().getEndTime() != null
-                        ? java.time.Duration.between(
-                            uExam.getSchedule().getStartTime(),
-                            uExam.getSchedule().getEndTime()).toMinutes()
-                        : 0);
-            map.put("startTime",
-                    uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null
-                        ? uExam.getSchedule().getStartTime().toString()
-                        : "TBD");
-            map.put("mode", uExam.getMode());
-            map.put("status", uExam.getStatus());
-            map.put("location", uExam.getCenterName() != null ? uExam.getCenterName() : "");
-            result.add(map);
-        });
+        // 2. New UniversityExam table
+        universityExamRepository.findAll().stream()
+                .filter(uExam -> {
+                    if ("HEAD".equalsIgnoreCase(sType) && cId != null) {
+                        return cId.equals(uExam.getCollegeId()) ||
+                               (uExam.getSupervisorId() != null && uExam.getSupervisorId().equals(sId)) ||
+                               (uExam.getSupervisorIds() != null && uExam.getSupervisorIds().contains(sId));
+                    } else {
+                        return (uExam.getSupervisorId() != null && uExam.getSupervisorId().equals(sId)) ||
+                               (uExam.getSupervisorIds() != null && uExam.getSupervisorIds().contains(sId));
+                    }
+                })
+                .forEach(uExam -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", uExam.getId());
+                    map.put("title", uExam.getSessionName());
+                    map.put("date", uExam.getExamDate() != null ? uExam.getExamDate().toString() : "TBD");
+                    map.put("duration",
+                            uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null &&
+                            uExam.getSchedule().getEndTime() != null
+                                ? java.time.Duration.between(
+                                    uExam.getSchedule().getStartTime(),
+                                    uExam.getSchedule().getEndTime()).toMinutes()
+                                : 0);
+                    map.put("startTime",
+                            uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null
+                                ? uExam.getSchedule().getStartTime().toString()
+                                : "TBD");
+                    map.put("mode", uExam.getMode());
+                    map.put("status", uExam.getStatus());
+                    map.put("location", uExam.getCenterName() != null ? uExam.getCenterName() : "");
+                    result.add(map);
+                });
 
         return result;
     }
