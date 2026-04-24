@@ -1,6 +1,6 @@
 // Global Config
-const API_BASE_URL = 'http://localhost:8080/api/university';
-const ADMIN_API_BASE_URL = 'http://localhost:8080/api/admin';
+const API_BASE_URL = '/api/university';
+const ADMIN_API_BASE_URL = '/api/admin';
 const UNIVERSITY_ID = 1; // Hardcoded for demo
 
 // Auth-aware fetch helper – attaches JWT token from localStorage
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else {
                     // Update preview to use the real server URL (avoids large data URLs)
-                    if (data.logoUrl) _showLogoPreview('http://localhost:8080' + data.logoUrl);
+                    if (data.logoUrl) _showLogoPreview('' + data.logoUrl);
                     if (msgEl) {
                         msgEl.innerText = '✅ Logo saved to server!';
                         msgEl.className = 'mt-3 p-3 rounded-xl text-sm text-green-700 bg-green-50';
@@ -447,7 +447,7 @@ function renderAdminProfile(profile) {
 
     // Load university logo from DB (stored as filename in uploads/logo/)
     if (profile?.universityLogoPath) {
-        _showLogoPreview('http://localhost:8080/uploads/logo/' + profile.universityLogoPath);
+        _showLogoPreview('/uploads/logo/' + profile.universityLogoPath);
     }
 }
 

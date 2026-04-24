@@ -87,7 +87,7 @@ export const Profile = {
         // Use passportPhotoPath (uploaded) or photoPath (Google/Auth), else avatar generator
         const avatarPath = data.passportPhotoPath || data.photoPath;
         const avatarUrl = avatarPath
-            ? `http://localhost:8080/uploads/${avatarPath}`
+            ? `/uploads/${avatarPath}`
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'User')}&background=random&size=150`;
 
         return `

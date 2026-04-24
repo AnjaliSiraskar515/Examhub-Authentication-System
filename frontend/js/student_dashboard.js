@@ -330,7 +330,7 @@ async function registerExam(examId) {
         }
 
         // Build eligibility check URL
-        const eligibilityUrl = `http://localhost:8080/api/student/check-exam-eligibility?prnNumber=${encodeURIComponent(prn)}&examSession=${encodeURIComponent(examSession)}`;
+        const eligibilityUrl = `/api/student/check-exam-eligibility?prnNumber=${encodeURIComponent(prn)}&examSession=${encodeURIComponent(examSession)}`;
         console.log('[REGISTRATION] Calling eligibility API:', eligibilityUrl);
 
         // Call eligibility API
@@ -556,7 +556,7 @@ async function handleRegistrationSubmit(e) {
     const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
 
     try {
-        const response = await fetch('http://localhost:8080/api/student/registrations', {
+        const response = await fetch('/api/student/registrations', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,

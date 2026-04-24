@@ -91,7 +91,7 @@ function renderExamsTable(exams) {
 
 window.updateExamStatus = async function (id, status) {
     try {
-        const response = await authFetch('http://localhost:8080/api/exam/' + id + '/status', {
+        const response = await authFetch('/api/exam/' + id + '/status', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: status })
@@ -129,7 +129,7 @@ window.editExam = function (id) {
 window.releaseHallTicket = async function (examId) {
     if (!confirm('Are you sure you want to release hall tickets for this exam?')) return;
     try {
-        const response = await fetch(`http://localhost:8080/api/university/release-hallticket/${examId}`, {
+        const response = await fetch(`/api/university/release-hallticket/${examId}`, {
             method: 'POST'
         });
         

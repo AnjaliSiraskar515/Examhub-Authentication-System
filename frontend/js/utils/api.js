@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8081/api/student';
+const API_BASE_URL = '/api/student';
 
 // Get auth headers with JWT token
 const getHeaders = () => {

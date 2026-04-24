@@ -159,7 +159,7 @@ async function loadAndInjectUserProfile() {
         const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
         if (!token || token === 'mock-token-xyz') return;
 
-        const response = await fetch('http://localhost:8080/api/profile/info', {
+        const response = await fetch('/api/profile/info', {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (!response.ok) return;
@@ -170,7 +170,7 @@ async function loadAndInjectUserProfile() {
         const dept = profile.department || profile.major || '';
         const courseLine = [year, dept].filter(Boolean).join(' - ') || 'Student';
         const avatarUrl = profile.passportPhotoPath
-            ? `http://localhost:8080/uploads/${profile.passportPhotoPath}`
+            ? `/uploads/${profile.passportPhotoPath}`
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4f46e5&color=fff`;
 
         // Store globally for DashboardHome welcome message
@@ -219,7 +219,7 @@ async function enforceStudentVerificationGate() {
 
     let studentProfileId = localStorage.getItem('userId');
     try {
-        const infoRes = await fetch('http://localhost:8080/api/profile/info', {
+        const infoRes = await fetch('/api/profile/info', {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (infoRes.ok) {
@@ -237,7 +237,7 @@ async function enforceStudentVerificationGate() {
 
     try {
         const response = await fetch(
-            `http://localhost:8080/api/student-profile/${encodeURIComponent(studentProfileId)}`,
+            `/api/student-profile/${encodeURIComponent(studentProfileId)}`,
             { headers: { 'Authorization': `Bearer ${token}` } }
         );
         if (!response.ok) return;
