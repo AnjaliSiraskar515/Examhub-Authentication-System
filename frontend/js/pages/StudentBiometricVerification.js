@@ -68,7 +68,7 @@ export const StudentBiometricVerification = {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
-                const response = await fetch('http://localhost:8080/api/student-profile/biometric/status', {
+                const response = await fetch('/api/student-profile/biometric/status', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -175,7 +175,7 @@ export const StudentBiometricVerification = {
                         const fingerprintData = "PHYSICAL_MINUTIAE_" + userId;
                         const token = localStorage.getItem('token');
 
-                        const response = await fetch('http://localhost:8080/api/student-profile/biometric/enroll', {
+                        const response = await fetch('/api/student-profile/biometric/enroll', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

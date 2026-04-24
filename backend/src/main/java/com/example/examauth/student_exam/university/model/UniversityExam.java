@@ -27,6 +27,7 @@ public class UniversityExam {
     private List<Long> subjectIds = new ArrayList<>();
     private String status;
     private Long collegeId;
+    private String institutionCode;
 
     private Long supervisorId;
     private String supervisorName;

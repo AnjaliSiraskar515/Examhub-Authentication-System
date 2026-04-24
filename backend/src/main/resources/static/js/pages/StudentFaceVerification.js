@@ -180,7 +180,7 @@ export const StudentFaceVerification = {
             resultBox.classList.add('hidden');
 
             try {
-                const response = await fetch('http://localhost:8080/api/student-profile/verify', {
+                const response = await fetch('/api/student-profile/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

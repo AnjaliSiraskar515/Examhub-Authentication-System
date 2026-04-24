@@ -109,7 +109,7 @@ function renderStaffTable() {
     }
 
     const html = staffList.map(staff => {
-        const photoUrl = staff.photoPath ? `http://localhost:8080/${staff.photoPath}` : null;
+        const photoUrl = staff.photoPath ? `/${staff.photoPath}` : null;
         const avatarHtml = photoUrl
             ? `<img src="${photoUrl}" alt="${staff.name}" class="w-8 h-8 rounded-full object-cover border border-gray-200" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 justify-center items-center font-bold uppercase text-xs hidden">${(staff.name || 'U').substring(0, 2)}</div>`

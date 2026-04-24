@@ -3,7 +3,7 @@ console.log("✅ script.js loaded successfully!");
 // ===========================================================
 //  GLOBAL CONSTANTS
 // ===========================================================
-const BACKEND_BASE = "http://localhost:8080/api";
+const BACKEND_BASE = "/api";
 
 let emailVerified = false;
 let phoneVerified = false;
