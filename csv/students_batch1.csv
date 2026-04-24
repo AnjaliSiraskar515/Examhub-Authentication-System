@@ -1,7 +1,7 @@
-prn,name,email,course,department,semester
-270204C,Ashita Siraskar,studentexamhub01@gmail.com,B.Tech,Computer Science,6
-270301A,Rohit Deshmukh,rohit.deshmukh@college.edu.in,B.Tech,Computer Science,4
-270302B,Anjali Tiwari,anjali.tiwari@college.edu.in,B.Tech,Mechanical Engineering,2
-270303C,Karan Verma,karan.verma@college.edu.in,B.Tech,Civil Engineering,8
-270304D,Meera Nair,meera.nair@college.edu.in,B.Tech,Electronics Engineering,6
-270305E,Suraj Pawar,suraj.pawar@college.edu.in,B.Tech,Information Technology,4
+prn,name,email,course,department,semester,backlogs
+270204C,Ashita Siraskar,studentexamhub01@gmail.com,B.Tech,Computer Science,6,CS101-3;MT101-1
+270301A,Rohit Deshmukh,rohit.deshmukh@college.edu.in,B.Tech,Computer Science,4,
+270302B,Anjali Tiwari,anjali.tiwari@college.edu.in,B.Tech,Mechanical Engineering,2,
+270303C,Karan Verma,karan.verma@college.edu.in,B.Tech,Civil Engineering,8,CE201-5
+270304D,Meera Nair,meera.nair@college.edu.in,B.Tech,Electronics Engineering,6,
+270305E,Suraj Pawar,suraj.pawar@college.edu.in,B.Tech,Information Technology,4,IT301-3

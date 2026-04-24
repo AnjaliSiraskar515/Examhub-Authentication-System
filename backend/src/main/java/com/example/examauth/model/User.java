@@ -25,6 +25,9 @@ public class User {
     private String role;
     private String status;
 
+    @Column(nullable = false, columnDefinition = "varchar(20) default 'REGULAR'")
+    private String studentType = "REGULAR";
+
     // Eligibility & Billing
     @Column(nullable = false, columnDefinition = "boolean default false")
     private Boolean feesPaid = false;
@@ -150,6 +153,7 @@ public class User {
     // ===========================================================
     // Supervisor Profile Fields (Added)
     // ===========================================================
+    private String supervisorType; // "HEAD" or "EXAM"
     private String universityName;
     private String collegeName;
 
@@ -166,6 +170,14 @@ public class User {
     private String designation; // e.g. Chief Supervisor, Room Invigilator
     private String employeeId;
     private String appointmentLetterPath;
+
+    public String getSupervisorType() {
+        return supervisorType;
+    }
+
+    public void setSupervisorType(String supervisorType) {
+        this.supervisorType = supervisorType;
+    }
 
     public String getUniversityLogoPath() {
         return universityLogoPath;
@@ -306,6 +318,14 @@ public class User {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getStudentType() {
+        return studentType;
+    }
+
+    public void setStudentType(String studentType) {
+        this.studentType = studentType;
     }
 
     public void setBiometricHash(String h) {

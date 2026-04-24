@@ -1,11 +1,11 @@
-prn,name,email,course,department,semester
-280101A,Pooja Kulkarni,pooja.kulkarni@college.edu.in,B.Tech,Computer Science,2
-280102B,Akash Raut,akash.raut@college.edu.in,B.Tech,Mechanical Engineering,4
-280103C,Divya Joshi,divya.joshi@college.edu.in,B.Tech,Civil Engineering,6
-280104D,Nikhil Patil,nikhil.patil@college.edu.in,B.Tech,Electronics Engineering,8
-280105E,Sakshi Sharma,sakshi.sharma@college.edu.in,B.Tech,Information Technology,2
-280106F,Aditya Mehta,aditya.mehta@college.edu.in,B.Tech,Computer Science,4
-280107G,Priyanka Rane,priyanka.rane@college.edu.in,B.Tech,Mechanical Engineering,6
-280108H,Rahul Sawant,rahul.sawant@college.edu.in,B.Tech,Civil Engineering,8
-280109I,Kavya Iyer,kavya.iyer@college.edu.in,B.Tech,Electronics Engineering,2
-280110J,Saurabh Bhosale,saurabh.bhosale@college.edu.in,B.Tech,Information Technology,4
+prn,name,email,course,department,semester,backlogs
+280101A,Pooja Kulkarni,pooja.kulkarni@college.edu.in,B.Tech,Computer Science,2,
+280102B,Akash Raut,akash.raut@college.edu.in,B.Tech,Mechanical Engineering,4,ME101-2
+280103C,Divya Joshi,divya.joshi@college.edu.in,B.Tech,Civil Engineering,6,
+280104D,Nikhil Patil,nikhil.patil@college.edu.in,B.Tech,Electronics Engineering,8,
+280105E,Sakshi Sharma,sakshi.sharma@college.edu.in,B.Tech,Information Technology,2,IT101-1;IT102-1
+280106F,Aditya Mehta,aditya.mehta@college.edu.in,B.Tech,Computer Science,4,
+280107G,Priyanka Rane,priyanka.rane@college.edu.in,B.Tech,Mechanical Engineering,6,ME202-4
+280108H,Rahul Sawant,rahul.sawant@college.edu.in,B.Tech,Civil Engineering,8,
+280109I,Kavya Iyer,kavya.iyer@college.edu.in,B.Tech,Electronics Engineering,2,
+280110J,Saurabh Bhosale,saurabh.bhosale@college.edu.in,B.Tech,Information Technology,4,

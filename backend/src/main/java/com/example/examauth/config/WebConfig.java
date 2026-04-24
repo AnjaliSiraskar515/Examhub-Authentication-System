@@ -12,7 +12,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve profile/document uploads
+        // Serve profile/document uploads from the runtime uploads/ folder
         String baseUploadDir = new java.io.File(System.getProperty("user.dir"), uploadDir).getAbsolutePath();
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + baseUploadDir + "/");
@@ -21,12 +21,9 @@ public class WebConfig implements WebMvcConfigurer {
         String logoDir = new java.io.File(System.getProperty("user.dir"), "uploads/logo").getAbsolutePath();
         registry.addResourceHandler("/uploads/logo/**")
                 .addResourceLocations("file:" + logoDir + "/");
-    }
 
-    @Override
-    public void addCorsMappings(org.springframework.web.servlet.config.annotation.CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("*")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
+        // NOTE: Frontend HTML/CSS/JS files are served automatically by Spring Boot
+        // from src/main/resources/static/ — no custom handler needed here.
     }
 }
+

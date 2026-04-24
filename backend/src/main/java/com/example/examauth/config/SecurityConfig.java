@@ -29,11 +29,26 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
+                        // ── Static frontend assets (served from /static/) ──────────
+                        .requestMatchers(
+                                "/",
+                                "/*.html",
+                                "/*.css",
+                                "/*.js",
+                                "/*.png",
+                                "/*.jpg",
+                                "/*.ico",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**"
+                        ).permitAll()
+                        // ── Public API endpoints ───────────────────────────────────
                         .requestMatchers("/api/otp/**", "/api/auth/**", "/api/test/**", "/api/debug/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/admit-card/**").permitAll()
                         .requestMatchers("/api/university/**", "/api/stats/**").permitAll()
                         .requestMatchers("/api/student/registrations").permitAll()
+                        // ── Role-protected API endpoints ───────────────────────────
                         .requestMatchers("/api/student/**").hasAnyRole("STUDENT", "SUPERADMIN")
                         .requestMatchers("/api/supervisor/**", "/api/biometric/**").hasAnyRole("SUPERVISOR", "SUPERADMIN")
                         .requestMatchers("/api/admin/**").hasAnyRole("UNIVERSITY_ADMIN", "SUPERADMIN")
@@ -47,7 +62,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5500", "http://127.0.0.1:5500"));
+        // Dev only: VS Code Live Server (port 5500). Same-origin (8080) needs no CORS.
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5500",
+                "http://127.0.0.1:5500"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
@@ -62,3 +81,4 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
+

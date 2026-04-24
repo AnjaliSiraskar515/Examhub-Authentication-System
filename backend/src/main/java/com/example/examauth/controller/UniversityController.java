@@ -81,6 +81,7 @@ public class UniversityController {
     public ResponseEntity<?> createExam(@PathVariable Long id, @RequestBody Map<String, Object> request) {
         try {
             Exam exam = new Exam();
+            exam.setCollegeId(id);
             exam.setExamName((String) request.get("examName"));
             // Use provided institution or default
             exam.setInstitutionName((String) request.getOrDefault("institutionName", "University"));

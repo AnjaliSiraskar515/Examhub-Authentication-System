@@ -19,6 +19,7 @@ public class Exam {
     private ExamType type;
 
     private String semester;
+    private Long collegeId;
 
     private String institutionName;
     private LocalDate date;
@@ -30,6 +31,9 @@ public class Exam {
 
     private Long supervisorId;
     private String supervisorName;
+
+    @ElementCollection
+    private java.util.List<Long> supervisorIds = new java.util.ArrayList<>();
 
     // Getters and setters
     public Long getExamId() {
@@ -142,5 +146,21 @@ public class Exam {
 
     public void setSemester(String semester) {
         this.semester = semester;
+    }
+
+    public java.util.List<Long> getSupervisorIds() {
+        return supervisorIds;
+    }
+
+    public void setSupervisorIds(java.util.List<Long> supervisorIds) {
+        this.supervisorIds = supervisorIds;
+    }
+
+    public Long getCollegeId() {
+        return collegeId;
+    }
+
+    public void setCollegeId(Long collegeId) {
+        this.collegeId = collegeId;
     }
 }

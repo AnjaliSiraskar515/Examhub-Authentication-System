@@ -167,9 +167,10 @@ public class AdminStudentController {
                 String course = row[3];
                 String department = row[4];
                 String semester = row[5];
+                String backlogsStr = row.length > 6 ? row[6] : "";
 
                 try {
-                    userManagementService.createStudent(prn, name, email, course, department, semester, collegeId);
+                    userManagementService.createStudent(prn, name, email, course, department, semester, backlogsStr, collegeId);
                     processedCount++;
                 } catch (IllegalArgumentException e) {
                     // Skip or log users failing validation
@@ -203,19 +204,36 @@ public class AdminStudentController {
 
     @GetMapping("/{id}/backlogs")
     public ResponseEntity<?> getStudentBacklogs(@PathVariable Long id) {
-        List<StudentBacklog> backlogs = backlogRepository.findByStudentIdAndCleared(id, false);
+        List<StudentBacklog> backlogs = backlogRepository.findByStudentId(id);
         if (backlogs.isEmpty()) {
             return ResponseEntity.ok(new ArrayList<>());
         }
-        List<Long> subjectIds = backlogs.stream().map(StudentBacklog::getSubjectId).collect(Collectors.toList());
-        List<Subject> subjects = subjectRepository.findAllById(subjectIds);
 
-        List<java.util.Map<String, Object>> backlogDetails = subjects.stream().map(s -> {
+        List<java.util.Map<String, Object>> backlogDetails = backlogs.stream().map(b -> {
             java.util.Map<String, Object> map = new java.util.HashMap<>();
-            map.put("subjectId", s.getId());
-            map.put("subjectName", s.getName());
-            map.put("subjectCode", s.getCode());
-            map.put("semester", s.getSemester());
+            map.put("id", b.getId());
+            
+            // Resolve subject name
+            String subjName = b.getSubjectName();
+            if ((subjName == null || subjName.isEmpty()) && b.getSubjectId() != null) {
+                Subject s = subjectRepository.findById(b.getSubjectId()).orElse(null);
+                if (s != null) {
+                    subjName = s.getName();
+                }
+            }
+            map.put("subject", subjName != null ? subjName : "Unknown Subject");
+            
+            // Resolve semester
+            String sem = b.getSemester();
+            if ((sem == null || sem.isEmpty()) && b.getSubjectId() != null) {
+                Subject s = subjectRepository.findById(b.getSubjectId()).orElse(null);
+                if (s != null && s.getSemester() != null) {
+                    sem = String.valueOf(s.getSemester());
+                }
+            }
+            map.put("semester", sem != null ? sem : "N/A");
+            
+            map.put("status", b.getStatus());
             return map;
         }).collect(Collectors.toList());
 

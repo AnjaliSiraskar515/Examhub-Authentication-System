@@ -3,9 +3,14 @@ package com.example.examauth.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "subjects", indexes = {
-    @Index(name = "idx_subject_code", columnList = "code")
-})
+@Table(name = "subjects", 
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames={"code", "semester", "department_id", "course"})
+    },
+    indexes = {
+        @Index(name = "idx_subject_code", columnList = "code")
+    }
+)
 public class Subject {
 
     @Id
@@ -15,11 +20,19 @@ public class Subject {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String code;
 
     @Column(nullable = false)
-    private String semester;
+    private Integer semester;
+
+    @Column(nullable = false)
+    private String course;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Department departmentEntity;
 
     public Long getId() {
         return id;
@@ -45,11 +58,27 @@ public class Subject {
         this.code = code;
     }
 
-    public String getSemester() {
+    public Integer getSemester() {
         return semester;
     }
 
-    public void setSemester(String semester) {
+    public void setSemester(Integer semester) {
         this.semester = semester;
+    }
+
+    public String getCourse() {
+        return course;
+    }
+
+    public void setCourse(String course) {
+        this.course = course;
+    }
+
+    public Department getDepartmentEntity() {
+        return departmentEntity;
+    }
+
+    public void setDepartmentEntity(Department departmentEntity) {
+        this.departmentEntity = departmentEntity;
     }
 }
