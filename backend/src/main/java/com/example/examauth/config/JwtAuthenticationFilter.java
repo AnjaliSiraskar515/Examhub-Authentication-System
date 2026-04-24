@@ -51,6 +51,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             User user = userRepository.findFirstByEmail(username).orElse(null);
 
             if (user != null && jwtUtil.validateToken(jwt, user.getEmail())) {
+                int jwtVersion = jwtUtil.extractTokenVersion(jwt);
+                if (jwtVersion != user.getTokenVersion()) {
+                    chain.doFilter(request, response);
+                    return;
+                }
                 String role = user.getRole() != null ? user.getRole().toUpperCase() : "";
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         user.getEmail(), null,

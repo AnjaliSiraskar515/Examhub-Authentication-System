@@ -13,4 +13,6 @@ public interface InstitutionRepository extends JpaRepository<Institution, Long> 
     Optional<Institution> findFirstByContactEmail(String email);
 
     Optional<Institution> findFirstByAdminEmail(String email);
+
+    long countByStatusIgnoreCase(String status);
 }

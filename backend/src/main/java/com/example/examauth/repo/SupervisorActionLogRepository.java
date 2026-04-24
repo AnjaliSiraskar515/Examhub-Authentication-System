@@ -8,4 +8,6 @@ public interface SupervisorActionLogRepository extends JpaRepository<SupervisorA
     List<SupervisorActionLog> findByExamId(Long examId);
 
     List<SupervisorActionLog> findBySupervisorId(Long supervisorId);
+
+    List<SupervisorActionLog> findTop100ByOrderByTimestampDesc();
 }

@@ -3,7 +3,10 @@ package com.example.examauth.config;
 import com.example.examauth.model.User;
 import com.example.examauth.repo.UserRepository;
 import com.example.examauth.repo.ExamRepository;
+import com.example.examauth.repo.InstitutionRepository;
 import com.example.examauth.model.Exam;
+import com.example.examauth.student_exam.university.model.UniversityExam;
+import com.example.examauth.student_exam.university.repo.UniversityExamRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +15,58 @@ import java.util.List;
 
 @Configuration
 public class DataSeeder {
+
+    @Bean(name = "backfillUniversityExamInstitution")
+    public CommandLineRunner backfillUniversityExamInstitution(
+            UniversityExamRepository universityExamRepo,
+            UserRepository userRepo,
+            InstitutionRepository institutionRepo) {
+        return args -> {
+            List<UniversityExam> nullCodeExams = universityExamRepo.findAll().stream()
+                    .filter(e -> e.getInstitutionCode() == null || e.getInstitutionCode().isEmpty())
+                    .toList();
+            if (nullCodeExams.isEmpty()) return;
+
+            // Build a map: supervisorId → institutionCode (via supervisor user → institution lookup)
+            java.util.Map<Long, String> supervisorToInstitutionCode = new java.util.HashMap<>();
+            userRepo.findAll().stream()
+                    .filter(u -> u.getUserId() != null)
+                    .forEach(u -> {
+                        com.example.examauth.model.Institution inst = null;
+                        if (u.getInstitutionCode() != null && !u.getInstitutionCode().isEmpty()) {
+                            inst = institutionRepo.findFirstByInstitutionCode(u.getInstitutionCode()).orElse(null);
+                        }
+                        if (inst == null) {
+                            inst = institutionRepo.findFirstByAdminEmail(u.getEmail()).orElse(null);
+                        }
+                        if (inst == null) {
+                            inst = institutionRepo.findFirstByContactEmail(u.getEmail()).orElse(null);
+                        }
+                        if (inst != null && inst.getInstitutionCode() != null) {
+                            supervisorToInstitutionCode.put(u.getUserId(), inst.getInstitutionCode());
+                        }
+                    });
+
+            boolean anyUpdated = false;
+            for (UniversityExam exam : nullCodeExams) {
+                String code = null;
+                if (exam.getSupervisorId() != null) {
+                    code = supervisorToInstitutionCode.get(exam.getSupervisorId());
+                }
+                if (code == null) {
+                    // Fallback removed: we should not aggressively reassign exams to random institutions.
+                }
+                if (code != null) {
+                    exam.setInstitutionCode(code);
+                    universityExamRepo.save(exam);
+                    anyUpdated = true;
+                }
+            }
+            if (anyUpdated) {
+                System.out.println("✅ Backfilled institutionCode on existing UniversityExam records.");
+            }
+        };
+    }
 
     @Bean
     public CommandLineRunner initData(UserRepository userRepository,
@@ -145,6 +200,7 @@ public class DataSeeder {
                 admin.setAadharPath("/documents/aadhar_placeholder.pdf");
                 admin.setMarks10Path("/documents/marks10.pdf");
                 admin.setMarks12Path("/documents/marks12.pdf");
+                admin.setPrn("SUPERADMIN001"); // Setting dummy PRN to avoid null constraint
 
                 userRepository.save(admin);
                 System.out.println("✅ Super Admin Seeded: admin@examhub.com / admin123");

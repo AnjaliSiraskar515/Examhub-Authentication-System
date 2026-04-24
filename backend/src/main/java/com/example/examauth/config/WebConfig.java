@@ -12,10 +12,17 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve profile/document uploads from the runtime uploads/ folder
-        String baseUploadDir = new java.io.File(System.getProperty("user.dir"), uploadDir).getAbsolutePath();
+        // Serve profile/document uploads
+        java.io.File uploadsDir = new java.io.File(uploadDir);
+        if (!uploadsDir.isAbsolute()) {
+            uploadsDir = new java.io.File(System.getProperty("user.dir"), uploadDir);
+        }
+        String uploadsAbsolute = uploadsDir.getAbsolutePath();
+        if (!uploadsAbsolute.endsWith("/") && !uploadsAbsolute.endsWith("\\")) {
+            uploadsAbsolute = uploadsAbsolute + java.io.File.separator;
+        }
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + baseUploadDir + "/");
+                .addResourceLocations("file:" + uploadsAbsolute);
 
         // Serve university logo uploads (stored in uploads/logo/ under working dir)
         String logoDir = new java.io.File(System.getProperty("user.dir"), "uploads/logo").getAbsolutePath();

@@ -8,4 +8,8 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     List<Alert> findByExamIdOrderByTimestampDesc(Long examId);
 
     List<Alert> findByExamIdAndIsReadFalse(Long examId);
+
+    long countByIsReadFalse();
+
+    List<Alert> findTop10ByOrderByTimestampDesc();
 }
