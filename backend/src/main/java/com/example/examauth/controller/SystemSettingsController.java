@@ -97,7 +97,7 @@ public class SystemSettingsController {
             if (token != null && token.startsWith("Bearer ")) {
                 String email = jwtUtil.extractUsername(token.substring(7));
                 updatedBy = email;
-                actorId = userRepository.findByEmail(email).map(u -> u.getUserId()).orElse(null);
+                actorId = userRepository.findFirstByEmail(email).map(u -> u.getUserId()).orElse(null);
             }
 
             settingsService.updateSettings(settings, updatedBy);

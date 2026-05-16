@@ -1,26 +1,18 @@
 package com.example.examauth.config;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-@Configuration
+/**
+ * CORS is configured centrally in {@link SecurityConfig#corsConfigurationSource()}.
+ *
+ * Allowed origins:
+ *   - http://localhost:8080  (same-origin when frontend is served by Spring Boot)
+ *   - http://127.0.0.1:8080 (same-origin alias)
+ *   - http://localhost:5500  (VS Code Live Server — local development only)
+ *   - http://127.0.0.1:5500 (VS Code Live Server alias)
+ *
+ * In production, only the 8080 origins apply because frontend files are bundled
+ * inside the JAR under src/main/resources/static/.
+ */
 public class CorsConfig {
-
-    @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins(
-                            "http://127.0.0.1:5500",
-                            "http://localhost:5500"
-                        )
-                        .allowedMethods("*")
-                        .allowCredentials(true);
-            }
-        };
-    }
+    // No beans here — see SecurityConfig.corsConfigurationSource()
 }
+

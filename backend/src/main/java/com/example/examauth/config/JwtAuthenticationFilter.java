@@ -48,23 +48,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepository.findFirstByEmail(username).orElse(null);
+            String tokenRole = jwtUtil.extractRole(jwt);
+            Long userId = jwtUtil.extractUserId(jwt);
+            User user = null;
+
+            if (userId != null) {
+                user = userRepository.findById(userId).orElse(null);
+            } else if (tokenRole != null && !tokenRole.isEmpty()) {
+                // Fallback: match both email AND role to avoid returning wrong-role duplicate accounts
+                user = userRepository.findFirstByEmailAndRole(username, tokenRole).orElse(null);
+            } else {
+                // Fallback for older tokens that don't have role claim
+                user = userRepository.findFirstByEmail(username).orElse(null);
+            }
 
             if (user != null && jwtUtil.validateToken(jwt, user.getEmail())) {
-                // ─── Token Version Check ──────────────────────────────────────────────────
-                // If the tokenVersion embedded in the JWT doesn't match the DB value,
-                // the token has been invalidated (e.g. after a password/email change).
                 int jwtVersion = jwtUtil.extractTokenVersion(jwt);
                 if (jwtVersion != user.getTokenVersion()) {
-                    // Token is stale — do NOT authenticate; chain continues unauthenticated
                     chain.doFilter(request, response);
                     return;
                 }
-                // ─────────────────────────────────────────────────────────────────────────
-
+                String role = user.getRole() != null ? user.getRole().toUpperCase() : "";
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         user.getEmail(), null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole())));
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)));
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }

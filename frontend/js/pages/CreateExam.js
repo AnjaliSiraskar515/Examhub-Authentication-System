@@ -19,6 +19,34 @@ export default function CreateExam(passedExamId = null) {
         return fetch(url, { ...options, headers });
     };
 
+    /**
+     * Helper to parse source-prefixed IDs (e.g. UNIV_1003, LEGACY_4)
+     * and route to the correct API endpoint.
+     */
+    const resolveExamApi = (id) => {
+        if (!id) return null;
+        const idStr = String(id);
+        if (idStr.startsWith('LEGACY_')) {
+            return {
+                source: 'LEGACY',
+                numericId: idStr.substring(7),
+                url: `http://localhost:8080/api/exam/${idStr.substring(7)}`
+            };
+        } else if (idStr.startsWith('UNIV_')) {
+            return {
+                source: 'UNIVERSITY',
+                numericId: idStr.substring(5),
+                url: `http://localhost:8080/api/university/exams/${idStr.substring(5)}`
+            };
+        }
+        // Fallback for plain IDs (assumed University context in this wizard)
+        return {
+            source: 'UNIVERSITY',
+            numericId: idStr,
+            url: `http://localhost:8080/api/university/exams/${idStr}`
+        };
+    };
+
     const render = () => {
         app.innerHTML = `
             <div class="p-6 max-w-5xl mx-auto animate-fade-in-up">
@@ -118,9 +146,11 @@ export default function CreateExam(passedExamId = null) {
                                 <select id="course" name="course" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5" required>
                                     <option value="">Select Course</option>
                                     <option value="B.Tech">B.Tech</option>
+                                    <option value="B.E">B.E</option>
                                     <option value="M.Tech">M.Tech</option>
                                     <option value="BCA">BCA</option>
                                     <option value="MCA">MCA</option>
+                                    <option value="MBA">MBA</option>
                                     <option value="B.Sc">B.Sc</option>
                                 </select>
                             </div>
@@ -128,10 +158,7 @@ export default function CreateExam(passedExamId = null) {
                                 <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Department <span class="text-red-500">*</span></label>
                                 <select id="department" name="department" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5" required>
                                     <option value="">Select Department</option>
-                                    <option value="Computer Science">Computer Science</option>
-                                    <option value="Information Technology">Information Technology</option>
-                                    <option value="Electronics & Communication">Electronics</option>
-                                    <option value="Mechanical Engineering">Mechanical</option>
+                                    <!-- Dynamic API options -->
                                 </select>
                             </div>
                             <div>
@@ -149,11 +176,18 @@ export default function CreateExam(passedExamId = null) {
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Assign Supervisor <span class="text-red-500">*</span></label>
-                                <select id="supervisorId" name="supervisorId" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5" required>
-                                    <option value="">Select Supervisor</option>
-                                    <!-- Dynamic API options -->
-                                </select>
+                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Assign Supervisor(s) <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <div id="supDropdownBtn" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 flex justify-between items-center cursor-pointer">
+                                        <span id="supDropdownText" class="truncate">Select Supervisor(s)</span>
+                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                    <div id="supDropdownMenu" class="hidden absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                                        <div id="supervisorIdsContainer">
+                                            <!-- Dynamic API options as checkboxes -->
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -318,43 +352,62 @@ export default function CreateExam(passedExamId = null) {
         addSubjectRow(); // Default row
         updateStepUI();
         loadSupervisors(); // Fetch supervisors
+        loadDepartments(); // Fetch departments dynamically
     };
 
-    const addSubjectRow = () => {
+    const addSubjectRow = (subjectData = null, isCompulsory = false) => {
         subjectsCount++;
         const id = Date.now() + Math.random().toString(36).substr(2, 5);
 
+        const subName = subjectData ? subjectData.name : '';
+        const subCode = subjectData ? subjectData.code : '';
+        const isBacklogRow = subjectData && !isCompulsory;
+        
+        let headerHtml = '';
+        if (isBacklogRow) {
+            headerHtml = `
+            <div class="w-full flex justify-between items-center bg-gray-100 dark:bg-gray-700/50 p-2 rounded-t-lg mb-4 border-b border-gray-200 dark:border-gray-600">
+                <label class="flex items-center space-x-3 cursor-pointer font-bold text-indigo-700 dark:text-indigo-400 w-full">
+                    <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 backlog-subject-toggle">
+                    <span>Include Backlog Subject: ${subName}</span>
+                </label>
+            </div>
+            `;
+        }
+
         const html = `
-            <div class="subject-row bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-600 rounded-xl p-5 flex flex-wrap lg:flex-nowrap gap-4 relative transition-all hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm hover:shadow group animate-fade-in-up" data-id="${id}">
-                <div class="flex-grow w-full lg:w-auto">
+            <div class="subject-row ${isBacklogRow ? 'opacity-60 ring-2 ring-transparent transition-all' : ''} bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-600 rounded-xl p-5 flex flex-wrap lg:flex-nowrap gap-4 relative transition-all shadow-sm hover:shadow group animate-fade-in-up" data-id="${id}" data-db-id="${subjectData ? subjectData.id : ''}">
+                ${headerHtml}
+                <div class="flex-grow w-full lg:w-auto ${isBacklogRow ? '' : 'mt-2'}">
                     <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Subject Name *</label>
-                    <input type="text" class="sub-name w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5" required placeholder="e.g. Data Structures">
+                    <input type="text" class="sub-name w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5" required placeholder="e.g. Data Structures" value="${subName}" ${isCompulsory ? 'readonly' : ''}>
                 </div>
-                <div class="w-full sm:w-1/2 lg:w-32">
+                <div class="w-full sm:w-1/2 lg:w-32 ${isBacklogRow ? '' : 'mt-2'}">
                     <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Code *</label>
-                    <input type="text" class="sub-code w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 font-mono" required placeholder="CS201">
+                    <input type="text" class="sub-code w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 font-mono" required placeholder="CS201" value="${subCode}" ${isCompulsory ? 'readonly' : ''}>
                 </div>
-                <div class="w-full sm:w-1/2 lg:w-32">
+                <div class="w-full sm:w-1/2 lg:w-32 ${isBacklogRow ? '' : 'mt-2'}">
                     <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Paper *</label>
-                    <input type="text" class="sub-paper w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 font-mono" required placeholder="P201">
+                    <input type="text" class="sub-paper w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 font-mono" required placeholder="P201" value="${subCode ? 'P'+subCode : ''}">
                 </div>
-                <div class="w-1/3 sm:w-1/4 lg:w-24">
+                <div class="w-1/3 sm:w-1/4 lg:w-24 ${isBacklogRow ? '' : 'mt-2'}">
                     <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Total *</label>
                     <input type="number" class="sub-total w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 text-center" required value="100">
                 </div>
-                <div class="w-1/3 sm:w-1/4 lg:w-24">
+                <div class="w-1/3 sm:w-1/4 lg:w-24 ${isBacklogRow ? '' : 'mt-2'}">
                     <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Pass *</label>
                     <input type="number" class="sub-pass w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 text-center" required value="40">
                 </div>
-                <div class="w-1/3 sm:w-1/4 lg:w-28">
+                <div class="w-1/3 sm:w-1/4 lg:w-28 ${isBacklogRow ? '' : 'mt-2'}">
                     <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Mins *</label>
                     <input type="number" class="sub-dur w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 text-center" required value="180">
                 </div>
                 
-                <!-- Remove Button overlay -->
+                ${!subjectData ? `
                 <button type="button" class="remove-sub-btn absolute -top-3 -right-3 w-8 h-8 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm border border-red-200">
                     <i class="fas fa-times"></i>
                 </button>
+                ` : `<div class="absolute -top-3 -right-3 w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center shadow-sm border border-green-200" title="Auto Fetched from DB"><i class="fas fa-check"></i></div>`}
             </div>
         `;
 
@@ -422,12 +475,25 @@ export default function CreateExam(passedExamId = null) {
             addSubjectRow();
         });
 
-        // Subject Removal (Delegated)
+        // Subject Removal and Toggle (Delegated)
         document.getElementById('subjectsContainer').addEventListener('click', (e) => {
             const btn = e.target.closest('.remove-sub-btn');
             if (btn) {
                 const row = btn.closest('.subject-row');
                 row.remove();
+            }
+        });
+
+        document.getElementById('subjectsContainer').addEventListener('change', (e) => {
+            if (e.target.classList.contains('backlog-subject-toggle')) {
+                const row = e.target.closest('.subject-row');
+                if (e.target.checked) {
+                    row.classList.remove('opacity-60');
+                    row.classList.add('ring-indigo-400');
+                } else {
+                    row.classList.add('opacity-60');
+                    row.classList.remove('ring-indigo-400');
+                }
             }
         });
 
@@ -437,6 +503,45 @@ export default function CreateExam(passedExamId = null) {
             input.addEventListener('input', () => {
                 input.classList.remove('border-red-500');
             });
+        });
+
+        // Subject auto-load when Course + Department + Semester all have values
+        const triggerSubjectLoad = async () => {
+            const course = document.getElementById('course')?.value?.trim();
+            const deptId = document.getElementById('department')?.value?.trim();
+            const semester = document.getElementById('semester')?.value?.trim();
+            const examType = document.getElementById('examType')?.value?.trim();
+            const container = document.getElementById('subjectsContainer');
+            if (!container) return;
+
+            if (course && deptId && semester && examType) {
+                container.innerHTML = '<div class="text-center p-6"><i class="fas fa-spinner fa-spin text-indigo-500 mr-2"></i> Fetching Subjects...</div>';
+                try {
+                    let url = `http://localhost:8080/api/admin/subjects${examType === 'BACKLOG' ? '/backlogged' : ''}?course=${encodeURIComponent(course)}&semester=${semester}`;
+                    if (deptId) url += `&departmentId=${deptId}`;
+                    const res = await authFetch(url);
+                    const subjects = res.ok ? await res.json() : [];
+
+                    container.innerHTML = '';
+
+                    if (subjects.length === 0) {
+                        document.getElementById('noSubjectWarning').classList.remove('hidden');
+                        document.getElementById('noSubjectWarning').innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> No structured subjects found for this combination. Please add manual subjects or configure them in Manage Subjects.';
+                    } else {
+                        document.getElementById('noSubjectWarning').classList.add('hidden');
+                        const isCompulsory = examType === 'REGULAR' || examType === 'BOTH';
+                        subjects.forEach(s => {
+                            addSubjectRow(s, isCompulsory);
+                        });
+                    }
+                } catch (e) {
+                    container.innerHTML = '<div class="text-red-500 font-bold p-4 text-center">Failed to load subjects from the server.</div>';
+                }
+            }
+        };
+
+        ['course', 'department', 'semester', 'examType'].forEach(id => {
+            document.getElementById(id)?.addEventListener('change', triggerSubjectLoad);
         });
     };
 
@@ -450,6 +555,10 @@ export default function CreateExam(passedExamId = null) {
             // Check required fields
             const requiredFields = currentStepEl.querySelectorAll('input[required], select[required]');
             requiredFields.forEach(field => {
+                // Skip validation if inside an unchecked backlog row
+                const toggle = field.closest('.subject-row')?.querySelector('.backlog-subject-toggle');
+                if (toggle && !toggle.checked) return;
+
                 if (!field.value.trim()) {
                     field.classList.add('border-red-500');
                     isValid = false;
@@ -460,9 +569,27 @@ export default function CreateExam(passedExamId = null) {
 
             // Special logic for Subjects Step
             if (stepNumber === 2) {
+                const examType = document.getElementById('examType')?.value;
                 const rows = document.querySelectorAll('.subject-row');
-                if (rows.length === 0) {
+                
+                let selectedSubjects = [];
+                rows.forEach(r => {
+                    const toggle = r.querySelector('.backlog-subject-toggle');
+                    if (toggle) {
+                        if (toggle.checked) selectedSubjects.push(r);
+                    } else {
+                        selectedSubjects.push(r);
+                    }
+                });
+
+                if (examType === 'REGULAR' && rows.length === 0) {
+                    showToast("No subjects available to create a REGULAR exam.", false);
                     document.getElementById('noSubjectWarning').classList.remove('hidden');
+                    isValid = false;
+                } else if (examType === 'BACKLOG' && selectedSubjects.length === 0) {
+                    showToast("Select at least one backlog subject to create a BACKLOG exam.", false);
+                    document.getElementById('noSubjectWarning').classList.remove('hidden');
+                    document.getElementById('noSubjectWarning').innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> Please select at least one backlog subject.';
                     isValid = false;
                 }
             }
@@ -576,15 +703,24 @@ export default function CreateExam(passedExamId = null) {
     const buildPayload = (status) => {
         // Build Subjects Array
         const subjectRows = document.querySelectorAll('.subject-row');
-        const subjectsArr = Array.from(subjectRows).map(row => {
-            return {
+        const subjectsArr = [];
+        const subjectIds = [];
+
+        Array.from(subjectRows).forEach(row => {
+            const toggle = row.querySelector('.backlog-subject-toggle');
+            if (toggle && !toggle.checked) return;
+
+            const dbId = row.getAttribute('data-db-id');
+            if (dbId) subjectIds.push(parseInt(dbId));
+
+            subjectsArr.push({
                 subjectName: row.querySelector('.sub-name').value,
                 subjectCode: row.querySelector('.sub-code').value,
                 paperCode: row.querySelector('.sub-paper').value,
                 totalMarks: parseInt(row.querySelector('.sub-total').value) || 100,
                 passingMarks: parseInt(row.querySelector('.sub-pass').value) || 40,
                 duration: parseInt(row.querySelector('.sub-dur').value) || 180
-            };
+            });
         });
 
         // Retrieve values securely handling optional/empty inputs
@@ -599,12 +735,17 @@ export default function CreateExam(passedExamId = null) {
             examType: getVal('examType'),
             mode: getVal('mode'),
             course: getVal('course'),
-            department: getVal('department'),
+            department: document.getElementById('department') && document.getElementById('department').selectedIndex > 0 ? document.getElementById('department').options[document.getElementById('department').selectedIndex].text : null,
             semester: getVal('semester'),
-            
-            supervisorId: getVal('supervisorId') ? getInt('supervisorId') : null,
-            supervisorName: document.getElementById('supervisorId') && document.getElementById('supervisorId').selectedIndex > 0 ? document.getElementById('supervisorId').options[document.getElementById('supervisorId').selectedIndex].text : null,
+            collegeId: window.CollegeContext?.selectedCollegeId || null,
 
+            supervisorId: Array.from(document.querySelectorAll('input[name="supervisorIds[]"]:checked')).length > 0 ? parseInt(Array.from(document.querySelectorAll('input[name="supervisorIds[]"]:checked'))[0].value) : null,
+            supervisorName: Array.from(document.querySelectorAll('input[name="supervisorIds[]"]:checked')).length > 0 ? Array.from(document.querySelectorAll('input[name="supervisorIds[]"]:checked'))[0].getAttribute('data-text') : null,
+            supervisorIds: Array.from(document.querySelectorAll('input[name="supervisorIds[]"]:checked')).map(cb => parseInt(cb.value)),
+
+            // No examSubjectId needed, mapping handled via subjects array directly
+
+            subjectIds: subjectIds,
             subjects: subjectsArr,
 
             registrationWindow: {
@@ -640,23 +781,24 @@ export default function CreateExam(passedExamId = null) {
         showLoading(true);
 
         try {
-            let url = 'http://localhost:8081/api/university/exams';
+            let url = 'http://localhost:8080/api/university/exams';
             let method = 'POST';
 
             if (examId) {
+                const api = resolveExamApi(examId);
                 // Update specific REST requirement
                 if (statusOverride === 'OPEN') {
                     // Update exact details first
-                    await authFetch(`${url}/${examId}`, {
+                    await authFetch(api.url, {
                         method: 'PUT',
                         body: JSON.stringify(payload)
                     });
 
                     // Then Patch Publish
-                    url = `${url}/${examId}/publish`;
+                    url = `${api.url}/publish`;
                     method = 'PATCH';
                 } else {
-                    url = `${url}/${examId}`;
+                    url = api.url;
                     method = 'PUT';
                 }
             }
@@ -699,8 +841,9 @@ export default function CreateExam(passedExamId = null) {
         if (!examId) return;
         showLoading(true);
         try {
-            const res = await authFetch(`http://localhost:8081/api/university/exams/${examId}`);
-            if (!res.ok) throw new Error("Failed to fetch exam");
+            const api = resolveExamApi(examId);
+            const res = await authFetch(api.url);
+            if (!res.ok) throw new Error(`Failed to fetch exam (${res.status})`);
             const data = await res.json();
 
             const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== null) el.value = val; };
@@ -713,10 +856,19 @@ export default function CreateExam(passedExamId = null) {
             setVal('course', data.course);
             setVal('department', data.department);
             setVal('semester', data.semester);
-            
-            if (data.supervisorId) {
-                // Ensure options are loaded or set it statically if not loaded yet
-                setTimeout(() => setVal('supervisorId', data.supervisorId), 500);
+
+            if (data.supervisorIds && data.supervisorIds.length > 0) {
+                setTimeout(() => {
+                    data.supervisorIds.forEach(id => {
+                        const cb = document.getElementById('sup_' + id);
+                        if (cb) { cb.checked = true; cb.dispatchEvent(new Event('change')); }
+                    });
+                }, 500);
+            } else if (data.supervisorId) {
+                setTimeout(() => {
+                    const cb = document.getElementById('sup_' + data.supervisorId);
+                    if (cb) { cb.checked = true; cb.dispatchEvent(new Event('change')); }
+                }, 500);
             }
 
             if (data.registrationWindow) {
@@ -766,21 +918,90 @@ export default function CreateExam(passedExamId = null) {
 
     const loadSupervisors = async () => {
         try {
-            // Assume university ID 1 for now or fetch from context
-            const res = await authFetch(`http://localhost:8081/api/university/1/staff`);
+            let collegeId = window.CollegeContext?.selectedCollegeId || sessionStorage.getItem('selectedCollegeId') || 1;
+            const res = await authFetch(`/api/university/${collegeId}/staff`);
             if (res.ok) {
                 const staff = await res.json();
-                const dropdown = document.getElementById('supervisorId');
-                // Assume staff contains both supervisors and others, we just list all or filter if role==SUPERVISOR
-                staff.forEach(person => {
-                    const opt = document.createElement('option');
-                    opt.value = person.staffId || person.id || person.userId; // Depending on API response
-                    opt.textContent = person.name;
-                    dropdown.appendChild(opt);
-                });
+                const container = document.getElementById('supervisorIdsContainer');
+                if (container) {
+                    container.innerHTML = '';
+                    staff.forEach(person => {
+                        const val = person.staffId || person.id || person.userId;
+                        const labelText = person.name + (person.supervisorType ? ` (${person.supervisorType})` : '');
+                        const div = document.createElement('div');
+                        div.className = "flex items-center mb-2";
+                        div.innerHTML = `
+                            <input type="checkbox" id="sup_${val}" name="supervisorIds[]" value="${val}" data-text="${labelText}" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 sup-checkbox">
+                            <label for="sup_${val}" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer w-full">${labelText}</label>
+                        `;
+                        container.appendChild(div);
+                    });
+                    
+                    const updateText = () => {
+                        const checked = Array.from(document.querySelectorAll('.sup-checkbox:checked'));
+                        const textSpan = document.getElementById('supDropdownText');
+                        if (textSpan) {
+                            if (checked.length === 0) textSpan.textContent = 'Select Supervisor(s)';
+                            else if (checked.length === 1) textSpan.textContent = checked[0].getAttribute('data-text');
+                            else textSpan.textContent = `${checked.length} selected`;
+                        }
+                    };
+                    document.querySelectorAll('.sup-checkbox').forEach(cb => cb.addEventListener('change', updateText));
+                    
+                    const btn = document.getElementById('supDropdownBtn');
+                    const menu = document.getElementById('supDropdownMenu');
+                    if (btn && menu) {
+                        const newBtn = btn.cloneNode(true);
+                        btn.parentNode.replaceChild(newBtn, btn);
+                        
+                        newBtn.addEventListener('click', (e) => {
+                            menu.classList.toggle('hidden');
+                            e.stopPropagation();
+                        });
+                        
+                        document.addEventListener('click', (e) => {
+                            if (!newBtn.contains(e.target) && !menu.contains(e.target)) {
+                                menu.classList.add('hidden');
+                            }
+                        });
+                    }
+                }
             }
         } catch (e) {
             console.error('Failed to load supervisors', e);
+        }
+    };
+
+    const loadDepartments = async () => {
+        try {
+            const collegeId = window.CollegeContext?.selectedCollegeId || sessionStorage.getItem('selectedCollegeId') || 1;
+            if (!collegeId) return;
+            const res = await authFetch(`/api/admin/departments?collegeId=${collegeId}`);
+            if (res.ok) {
+                const depts = await res.json();
+                const dropdown = document.getElementById('department');
+                dropdown.innerHTML = '<option value="">Select Department</option>';
+                
+                if (depts.length === 0) {
+                    // Fallback to default departments if DB is empty
+                    const defaults = ['Computer Science', 'Information Technology', 'Electronics & Communication', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering'];
+                    defaults.forEach((name, index) => {
+                        const opt = document.createElement('option');
+                        opt.value = index + 1; // Arbitrary ID, as payload uses text
+                        opt.textContent = name;
+                        dropdown.appendChild(opt);
+                    });
+                } else {
+                    depts.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = d.name;
+                        dropdown.appendChild(opt);
+                    });
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load departments', e);
         }
     };
 

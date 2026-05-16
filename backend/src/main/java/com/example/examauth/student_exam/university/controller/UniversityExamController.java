@@ -2,12 +2,11 @@ package com.example.examauth.student_exam.university.controller;
 
 import com.example.examauth.student_exam.university.model.UniversityExam;
 import com.example.examauth.student_exam.university.service.UniversityExamService;
-import com.example.examauth.repo.UserRepository;
-import com.example.examauth.repo.InstitutionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.example.examauth.repo.UserRepository;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -19,49 +18,35 @@ public class UniversityExamController {
 
     private final UniversityExamService service;
     private final UserRepository userRepository;
-    private final InstitutionRepository institutionRepository;
+
+    private String getCurrentAdminInstitutionCode() {
+        if (SecurityContextHolder.getContext().getAuthentication() == null) return null;
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        String roleStr = SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority();
+        String role = roleStr.replace("ROLE_", "");
+        com.example.examauth.model.User admin = userRepository.findFirstByEmailAndRole(email, role).orElse(null);
+        if (admin != null && "UNIVERSITY_ADMIN".equals(admin.getRole())) {
+            String c = admin.getInstitutionCode(); return c != null ? c.trim() : null;
+        }
+        return null;
+    }
 
     @PostMapping({ "", "/" })
-    public ResponseEntity<UniversityExam> createExam(
-            @RequestBody UniversityExam request,
-            Authentication authentication) {
-        // Populate institutionCode from the authenticated university admin
-        if (authentication != null && authentication.getName() != null) {
-            userRepository.findFirstByEmail(authentication.getName()).ifPresent(user -> {
-                String instCode = user.getInstitutionCode();
-                if (instCode != null && !instCode.isEmpty()) {
-                    request.setInstitutionCode(instCode);
-                } else {
-                    // Fallback: look up by email in institutions table
-                    institutionRepository.findFirstByAdminEmail(user.getEmail())
-                            .ifPresent(inst -> request.setInstitutionCode(inst.getInstitutionCode()));
-                    if (request.getInstitutionCode() == null) {
-                        institutionRepository.findFirstByContactEmail(user.getEmail())
-                                .ifPresent(inst -> request.setInstitutionCode(inst.getInstitutionCode()));
-                    }
-                }
-            });
+    public ResponseEntity<?> createExam(@RequestBody UniversityExam request) {
+        if (request.getSubjectIds() == null || request.getSubjectIds().isEmpty()) {
+            return ResponseEntity.badRequest().body("Subject IDs are mandatory for exam creation.");
         }
+        
+        String myInstCode = getCurrentAdminInstitutionCode();
+        if (myInstCode != null) {
+            request.setInstitutionCode(myInstCode);
+        }
+
         return ResponseEntity.ok(service.createExam(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UniversityExam> updateExam(
-            @PathVariable Long id,
-            @RequestBody UniversityExam request,
-            Authentication authentication) {
-        // Preserve institutionCode if not already set
-        if (authentication != null && authentication.getName() != null && request.getInstitutionCode() == null) {
-            userRepository.findFirstByEmail(authentication.getName()).ifPresent(user -> {
-                String instCode = user.getInstitutionCode();
-                if (instCode != null && !instCode.isEmpty()) {
-                    request.setInstitutionCode(instCode);
-                } else {
-                    institutionRepository.findFirstByAdminEmail(user.getEmail())
-                            .ifPresent(inst -> request.setInstitutionCode(inst.getInstitutionCode()));
-                }
-            });
-        }
+    public ResponseEntity<UniversityExam> updateExam(@PathVariable Long id, @RequestBody UniversityExam request) {
         return ResponseEntity.ok(service.updateExam(id, request));
     }
 
@@ -72,6 +57,28 @@ public class UniversityExamController {
 
     @GetMapping({ "", "/" })
     public ResponseEntity<List<UniversityExam>> getAllExams() {
+        String myInstCode = getCurrentAdminInstitutionCode();
+        List<UniversityExam> all = service.getAllExams();
+        
+        System.out.println("====== EXAM DEBUG ======");
+        System.out.println("My Inst Code: " + myInstCode);
+        System.out.println("Total Exams in DB: " + all.size());
+
+        if (myInstCode != null && !myInstCode.isEmpty()) {
+            all = all.stream()
+                .filter(e -> myInstCode.equalsIgnoreCase(e.getInstitutionCode()) 
+                          || e.getInstitutionCode() == null 
+                          || e.getInstitutionCode().trim().isEmpty())
+                .collect(java.util.stream.Collectors.toList());
+        }
+        
+        System.out.println("Returning Exams: " + all.size());
+        
+        return ResponseEntity.ok(all);
+    }
+
+    @GetMapping("/debug-all")
+    public ResponseEntity<List<UniversityExam>> getDebugAllExams() {
         return ResponseEntity.ok(service.getAllExams());
     }
 

@@ -66,12 +66,12 @@ export const Navbar = {
                     <div class="h-8 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
 
                     <!-- Profile Status -->
-                    <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+                    <div id="nav-verif-container" class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
                          <div class="hidden md:block text-right">
-                             <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">Pending</p>
-                             <p class="text-[10px] text-orange-500 font-bold tracking-wide uppercase">Verification</p>
+                             <p id="nav-verif-title" class="text-xs font-semibold text-gray-700 dark:text-gray-200">Pending</p>
+                             <p id="nav-verif-subtitle" class="text-[10px] text-orange-500 font-bold tracking-wide uppercase">Verification</p>
                          </div>
-                         <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                         <div id="nav-verif-dot" class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
                     </div>
                 </div>
             </div>
@@ -281,6 +281,34 @@ export const Navbar = {
             } else {
                 dot.classList.add('hidden');
                 if (unreadLabel) unreadLabel.textContent = 'All caught up!';
+            }
+        });
+
+        // Verification Status Listener
+        window.addEventListener('verification-status', (e) => {
+            const verified = e.detail.verified;
+            const title = document.getElementById('nav-verif-title');
+            const subtitle = document.getElementById('nav-verif-subtitle');
+            const verifDot = document.getElementById('nav-verif-dot');
+            
+            if (verified) {
+                if (title) title.textContent = 'Status';
+                if (subtitle) {
+                    subtitle.textContent = 'Verified';
+                    subtitle.className = 'text-[10px] text-green-500 font-bold tracking-wide uppercase';
+                }
+                if (verifDot) {
+                    verifDot.className = 'w-2 h-2 rounded-full bg-green-500';
+                }
+            } else {
+                if (title) title.textContent = 'Pending';
+                if (subtitle) {
+                    subtitle.textContent = 'Verification';
+                    subtitle.className = 'text-[10px] text-orange-500 font-bold tracking-wide uppercase';
+                }
+                if (verifDot) {
+                    verifDot.className = 'w-2 h-2 rounded-full bg-orange-500 animate-pulse';
+                }
             }
         });
 

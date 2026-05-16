@@ -1,0 +1,251 @@
+Code,Name,Semester,DepartmentId,Course
+CS101,C Programming,1,1,B.Tech
+CS102,Engineering Math I,1,1,B.Tech
+CS103,Physics I,1,1,B.Tech
+CS104,Basic Electrical,1,1,B.Tech
+CS105,Engg Graphics,1,1,B.Tech
+CS201,Data Structures,2,1,B.Tech
+CS202,Engineering Math II,2,1,B.Tech
+CS203,Physics II,2,1,B.Tech
+CS204,Digital Electronics,2,1,B.Tech
+CS205,Workshop,2,1,B.Tech
+CS301,Object Oriented Prog,3,1,B.Tech
+CS302,Discrete Math,3,1,B.Tech
+CS303,Computer Organization,3,1,B.Tech
+CS304,Software Engineering,3,1,B.Tech
+CS305,Microprocessors,3,1,B.Tech
+CS401,Design and Analysis of Algos,4,1,B.Tech
+CS402,Database Systems,4,1,B.Tech
+CS403,Operating Systems,4,1,B.Tech
+CS404,Computer Networks,4,1,B.Tech
+CS405,Automata Theory,4,1,B.Tech
+CS501,Web Technologies,5,1,B.Tech
+CS502,Theory of Computation,5,1,B.Tech
+CS503,Microcontrollers,5,1,B.Tech
+CS504,System Software,5,1,B.Tech
+CS505,AI,5,1,B.Tech
+CS601,Artificial Intelligence,6,1,B.Tech
+CS602,Compiler Design,6,1,B.Tech
+CS603,Computer Graphics,6,1,B.Tech
+CS604,Machine Learning,6,1,B.Tech
+CS605,Data Mining,6,1,B.Tech
+CS701,Cloud Computing,7,1,B.Tech
+CS702,Cryptography,7,1,B.Tech
+CS703,Big Data Analytics,7,1,B.Tech
+CS704,NLP,7,1,B.Tech
+CS705,Cyber Security,7,1,B.Tech
+CS801,Project I,8,1,B.Tech
+CS802,Internet of Things,8,1,B.Tech
+CS803,Blockchain,8,1,B.Tech
+CS804,Deep Learning,8,1,B.Tech
+CS805,Quantum Computing,8,1,B.Tech
+ME101,Engineering Graphics,1,2,B.Tech
+ME102,Mechanics I,1,2,B.Tech
+ME103,Math I,1,2,B.Tech
+ME104,Physics I,1,2,B.Tech
+ME105,Basic Electrical,1,2,B.Tech
+ME201,Thermodynamics,2,2,B.Tech
+ME202,Mechanics II,2,2,B.Tech
+ME203,Math II,2,2,B.Tech
+ME204,Physics II,2,2,B.Tech
+ME205,Basic Civil,2,2,B.Tech
+ME301,Fluid Mechanics,3,2,B.Tech
+ME302,Material Science,3,2,B.Tech
+ME303,Kinematics,3,2,B.Tech
+ME304,Manufacturing,3,2,B.Tech
+ME305,Strength of Materials,3,2,B.Tech
+ME401,Heat Transfer,4,2,B.Tech
+ME402,Dynamics of Machinery,4,2,B.Tech
+ME403,Machine Design I,4,2,B.Tech
+ME404,IC Engines,4,2,B.Tech
+ME405,Mechatronics,4,2,B.Tech
+ME501,Machine Design II,5,2,B.Tech
+ME502,CAD/CAM,5,2,B.Tech
+ME503,Turbo Machines,5,2,B.Tech
+ME504,Fluid Machinery,5,2,B.Tech
+ME505,Metrology,5,2,B.Tech
+ME601,Refrigeration,6,2,B.Tech
+ME602,Finite Element Analysis,6,2,B.Tech
+ME603,Operations Research,6,2,B.Tech
+ME604,Automobile Engg,6,2,B.Tech
+ME605,Robotics,6,2,B.Tech
+ME701,Power Plant Engg,7,2,B.Tech
+ME702,Automation,7,2,B.Tech
+ME703,Plant Layout,7,2,B.Tech
+ME704,Supply Chain,7,2,B.Tech
+ME705,Industrial Automation,7,2,B.Tech
+ME801,Project I,8,2,B.Tech
+ME802,Industrial Safety,8,2,B.Tech
+ME803,Energy Mgmt,8,2,B.Tech
+ME804,Reliability Engg,8,2,B.Tech
+ME805,Total Quality Mgmt,8,2,B.Tech
+CE101,Building Materials,1,3,B.Tech
+CE102,Math I,1,3,B.Tech
+CE103,Mechanics I,1,3,B.Tech
+CE104,Physics I,1,3,B.Tech
+CE105,English,1,3,B.Tech
+CE201,Surveying I,2,3,B.Tech
+CE202,Math II,2,3,B.Tech
+CE203,Mechanics II,2,3,B.Tech
+CE204,Physics II,2,3,B.Tech
+CE205,Chemistry,2,3,B.Tech
+CE301,Fluid Mechanics,3,3,B.Tech
+CE302,Surveying II,3,3,B.Tech
+CE303,Concrete Tech,3,3,B.Tech
+CE304,Building Construction,3,3,B.Tech
+CE305,Solid Mechanics,3,3,B.Tech
+CE401,Structural Analysis I,4,3,B.Tech
+CE402,Soil Mechanics,4,3,B.Tech
+CE403,Environmental Engg I,4,3,B.Tech
+CE404,Transportation I,4,3,B.Tech
+CE405,Geo Tech,4,3,B.Tech
+CE501,Structural Analysis II,5,3,B.Tech
+CE502,Foundation Engg,5,3,B.Tech
+CE503,Environmental Engg II,5,3,B.Tech
+CE504,Transportation II,5,3,B.Tech
+CE505,Hydrology,5,3,B.Tech
+CE601,Design of Steel Struct,6,3,B.Tech
+CE602,Irrigation Engg,6,3,B.Tech
+CE603,Water Resources,6,3,B.Tech
+CE604,Estimation,6,3,B.Tech
+CE605,Advanced Surveying,6,3,B.Tech
+CE701,Design of Concrete Struct,7,3,B.Tech
+CE702,Town Planning,7,3,B.Tech
+CE703,Traffic Engg,7,3,B.Tech
+CE704,Construction Mgmt,7,3,B.Tech
+CE705,Earthquake Engg,7,3,B.Tech
+CE801,Project I,8,3,B.Tech
+CE802,Bridge Engg,8,3,B.Tech
+CE803,Pavement Design,8,3,B.Tech
+CE804,Ground Improvement,8,3,B.Tech
+CE805,Remote Sensing,8,3,B.Tech
+IT101,Intro to IT,1,4,B.Sc
+IT102,Maths I,1,4,B.Sc
+IT103,C Prog,1,4,B.Sc
+IT104,Comm Skills,1,4,B.Sc
+IT201,Data Structures,2,4,B.Sc
+IT202,Maths II,2,4,B.Sc
+IT203,Logic Design,2,4,B.Sc
+IT204,Web Dev,2,4,B.Sc
+IT301,Java Prog,3,4,B.Sc
+IT302,DBMS,3,4,B.Sc
+IT303,OS,3,4,B.Sc
+IT304,Networking,3,4,B.Sc
+IT401,Python Prog,4,4,B.Sc
+IT402,Software Engg,4,4,B.Sc
+IT403,Linux,4,4,B.Sc
+IT404,E-Commerce,4,4,B.Sc
+IT501,Cloud Computing,5,4,B.Sc
+IT502,Data Science,5,4,B.Sc
+IT503,Mobile Dev,5,4,B.Sc
+IT504,IoT,5,4,B.Sc
+IT601,Project I,6,4,B.Sc
+IT602,AI Basics,6,4,B.Sc
+IT603,Cyber Security,6,4,B.Sc
+IT604,Machine Learning,6,4,B.Sc
+EE101,Basic Electrical,1,5,B.Tech
+EE102,Math I,1,5,B.Tech
+EE103,Physics I,1,5,B.Tech
+EE104,Mechanics I,1,5,B.Tech
+EE201,Circuit Theory,2,5,B.Tech
+EE202,Math II,2,5,B.Tech
+EE203,Electronic Devices,2,5,B.Tech
+EE204,Physics II,2,5,B.Tech
+EE301,Digital Circuits,3,5,B.Tech
+EE302,Signals & Systems,3,5,B.Tech
+EE303,Measurements,3,5,B.Tech
+EE304,Transformers,3,5,B.Tech
+EE401,Microprocessors,4,5,B.Tech
+EE402,Control Systems,4,5,B.Tech
+EE403,Power Systems I,4,5,B.Tech
+EE404,Machines I,4,5,B.Tech
+EE501,Power Electronics,5,5,B.Tech
+EE502,Power Systems II,5,5,B.Tech
+EE503,Machines II,5,5,B.Tech
+EE504,DSP,5,5,B.Tech
+EE601,High Voltage Engg,6,5,B.Tech
+EE602,Switchgear,6,5,B.Tech
+EE603,Renewable Energy,6,5,B.Tech
+EE604,Embedded Systems,6,5,B.Tech
+EE701,Electric Drives,7,5,B.Tech
+EE702,Smart Grids,7,5,B.Tech
+EE703,Power Quality,7,5,B.Tech
+EE704,Energy Auditing,7,5,B.Tech
+EE801,Project I,8,5,B.Tech
+EE802,HVDC,8,5,B.Tech
+EE803,FACTS,8,5,B.Tech
+EE804,Illumination Engg,8,5,B.Tech
+MBA101,Org Behavior,1,6,MBA
+MBA102,Managerial Econ,1,6,MBA
+MBA103,Accounting,1,6,MBA
+MBA104,Bus. Comm,1,6,MBA
+MBA105,Quantitative Tech,1,6,MBA
+MBA201,Marketing Mgmt,2,6,MBA
+MBA202,Financial Mgmt,2,6,MBA
+MBA203,HR Mgmt,2,6,MBA
+MBA204,Operations Mgmt,2,6,MBA
+MBA205,Supply Chain Mgmt,2,6,MBA
+MBA301,Strategic Mgmt,3,6,MBA
+MBA302,Bus. Research,3,6,MBA
+MBA303,Info Systems,3,6,MBA
+MBA304,Consulting,3,6,MBA
+MBA305,Project Management,3,6,MBA
+MBA401,Project I,4,6,MBA
+MBA402,Entrepreneurship,4,6,MBA
+MBA403,Business Law,4,6,MBA
+MBA404,Global Business,4,6,MBA
+MBA405,Change Management,4,6,MBA
+BE101,Engg Physics,1,7,B.E
+BE102,Engg Math I,1,7,B.E
+BE103,Basic Mech,1,7,B.E
+BE104,Basic Civil,1,7,B.E
+BE105,Engg Graphics,1,7,B.E
+BE201,Engg Chem,2,7,B.E
+BE202,Engg Math II,2,7,B.E
+BE203,Basic Elec,2,7,B.E
+BE204,Engg Graphics II,2,7,B.E
+BE205,Workshop,2,7,B.E
+BE301,Data Structures,3,7,B.E
+BE302,Analog Circuits,3,7,B.E
+BE303,Network Theory,3,7,B.E
+BE304,Math III,3,7,B.E
+BE305,Material Science,3,7,B.E
+BE401,Control Systems,4,7,B.E
+BE402,Signals,4,7,B.E
+BE403,Microcontrollers,4,7,B.E
+BE404,Electromagnetics,4,7,B.E
+BE405,Linear Algebra,4,7,B.E
+BE501,Comm Systems,5,7,B.E
+BE502,DSP,5,7,B.E
+BE503,VLSI,5,7,B.E
+BE504,Power Electronics,5,7,B.E
+BE505,Microprocessors,5,7,B.E
+BE601,Antennas,6,7,B.E
+BE602,Computer Networks,6,7,B.E
+BE603,Optical Comm,6,7,B.E
+BE604,Embedded Systems,6,7,B.E
+BE605,Digital Logic,6,7,B.E
+BE701,Wireless Comm,7,7,B.E
+BE702,Microwave Engg,7,7,B.E
+BE703,IoT,7,7,B.E
+BE704,Information Theory,7,7,B.E
+BE705,Cyber Security,7,7,B.E
+BE801,Project I,8,7,B.E
+BE802,Radar Systems,8,7,B.E
+BE803,Satellite Comm,8,7,B.E
+BE804,Machine Learning,8,7,B.E
+BE805,Big Data,8,7,B.E
+
+CS-BE-101,C Programming (B.E),1,1,B.E
+CS-BE-201,Data Structures (B.E),2,1,B.E
+CS-BE-301,OOP (B.E),3,1,B.E
+CS-BE-401,OS (B.E),4,1,B.E
+CS-BE-501,AI (B.E),5,1,B.E
+CS-BE-601,ML (B.E),6,1,B.E
+CS-BE-701,Cloud Computing (B.E),7,1,B.E
+CS-BE-801,Project I (B.E),8,1,B.E
+
+CS-BE-802,High Performance Computing,8,1,B.E
+CS-BE-803,Distributed Systems,8,1,B.E
+CS-BE-804,Information Security,8,1,B.E
+CS-BE-805,Data Science,8,1,B.E

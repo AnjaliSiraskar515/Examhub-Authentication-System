@@ -36,7 +36,7 @@ public class StudentRegistrationController {
             email = authentication.getName();
         }
 
-        com.example.examauth.model.User user = userRepository.findByEmail(email)
+        com.example.examauth.model.User user = userRepository.findFirstByEmailAndRole(email, authentication != null ? authentication.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "") : "STUDENT")
                 .orElse(null);
 
         if (user == null) {
@@ -81,13 +81,18 @@ public class StudentRegistrationController {
             @RequestParam(required = false) Long studentId,
             org.springframework.security.core.Authentication authentication) {
 
-        Long actualStudentId = studentId != null ? studentId : 1L;
+        Long actualStudentId = studentId;
 
-        if (authentication != null && authentication.isAuthenticated()) {
-            com.example.examauth.model.User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (actualStudentId == null && authentication != null && authentication.isAuthenticated()) {
+            String role = authentication.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+            com.example.examauth.model.User user = userRepository.findFirstByEmailAndRole(authentication.getName(), role).orElse(null);
             if (user != null) {
                 actualStudentId = user.getUserId();
             }
+        }
+        
+        if (actualStudentId == null) {
+            return ResponseEntity.status(401).build();
         }
 
         return ResponseEntity.ok(examRegistrationService.getRegistrationsByStudentId(actualStudentId));

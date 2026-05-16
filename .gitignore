@@ -1,16 +1,14 @@
 # Maven / Java build files
 backend/target/
 target/
+build/
+uploads/
+uploaded_documents/
 
 # ===== Java / Spring Boot =====
 *.class
 *.jar
 *.war
-
-# Maven / Gradle build output
-/target
-/backend/target/
-build/
 
 # ===== IDE files =====
 .idea/
@@ -41,3 +39,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log**.zip
 .vscode/
+*.zip
+DumpDB.java
+missing_columns.txt

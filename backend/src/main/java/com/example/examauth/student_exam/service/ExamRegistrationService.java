@@ -6,7 +6,6 @@ import com.example.examauth.student_exam.exception.AlreadyRegisteredException;
 import com.example.examauth.student_exam.exception.ExamNotFoundException;
 import com.example.examauth.student_exam.model.ExamRegistration;
 import com.example.examauth.student_exam.repo.ExamRegistrationRepository;
-import com.example.examauth.service.SettingsService;
 import com.example.examauth.service.AiVerificationClientService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +25,6 @@ public class ExamRegistrationService {
     private final ExamRegistrationRepository examRegistrationRepository;
     private final com.example.examauth.student_exam.service.NotificationService notificationService;
     private final AiVerificationClientService aiVerificationClientService;
-    private final SettingsService settingsService;
 
     private final com.example.examauth.student_exam.university.repo.UniversityExamRepository universityExamRepository;
     private final com.example.examauth.student_exam.university.repo.ExamEligibleStudentRepository examEligibleStudentRepository;
@@ -48,6 +46,14 @@ public class ExamRegistrationService {
                 .findById(request.getExamId())
                 .orElseThrow(() -> new ExamNotFoundException("Exam not found with ID: " + request.getExamId()));
         examName = exam.getExamName();
+
+        // ========== VALIDATION 1.5: Max Students Capacity Check ==========
+        if (exam.getControls() != null && exam.getControls().getMaxStudents() != null) {
+            long currentRegistrations = examRegistrationRepository.countByExamId(request.getExamId());
+            if (currentRegistrations >= exam.getControls().getMaxStudents()) {
+                throw new IllegalStateException("Registration is closed: Maximum student capacity (" + exam.getControls().getMaxStudents() + ") has been reached for this exam.");
+            }
+        }
 
         // ========== VALIDATION 2: Eligible Subjects Check ==========
         if (request.getSelectedSubjects() != null && !request.getSelectedSubjects().isEmpty()) {
@@ -85,14 +91,6 @@ public class ExamRegistrationService {
                 examRegistrationRepository.existsByPrnAndExamId(request.getPrn(), request.getExamId())) {
             throw new AlreadyRegisteredException("Already registered: PRN " + request.getPrn()
                     + " is already registered for this exam.");
-        }
-
-        // ========== VALIDATION 4: Configurable Capacity Check ==========
-        int maxStudents = settingsService.getIntSetting(SettingsService.KEY_MAX_STUDENTS_PER_EXAM, 500);
-        long currentRegistrations = examRegistrationRepository.countByExamId(request.getExamId());
-        if (currentRegistrations >= maxStudents) {
-            throw new IllegalArgumentException(
-                    "Registration limit reached. Max students allowed for this exam is " + maxStudents + ".");
         }
 
         // 4. Save Registration
@@ -195,10 +193,15 @@ public class ExamRegistrationService {
         dto.setSelectedSubjects(registration.getSelectedSubjects());
         dto.setTotalFee(registration.getTotalFee());
         dto.setPaymentStatus(
-                registration.getPaymentStatus() != null ? registration.getPaymentStatus().name() : "PENDING");
+                registration.getRegistrationStatus() == ExamRegistration.RegistrationStatus.APPROVED 
+                ? "PAID" 
+                : (registration.getPaymentStatus() != null ? registration.getPaymentStatus().name() : "PENDING")
+        );
         dto.setExamType(registration.getExamType());
-        dto.setRegistrationStatus(registration.getRegistrationStatus().name());
+        dto.setRegistrationStatus(
+                registration.getRegistrationStatus() != null ? registration.getRegistrationStatus().name() : "APPLIED");
         dto.setAppliedDate(registration.getAppliedDate() != null ? registration.getAppliedDate().toString() : null);
+        dto.setHallTicketReleased(registration.getHallTicketReleased());
         return dto;
     }
 

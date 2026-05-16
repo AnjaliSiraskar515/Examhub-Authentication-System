@@ -87,7 +87,7 @@ export const Profile = {
         // Use passportPhotoPath (uploaded) or photoPath (Google/Auth), else avatar generator
         const avatarPath = data.passportPhotoPath || data.photoPath;
         const avatarUrl = avatarPath
-            ? `http://localhost:8081/uploads/${avatarPath}`
+            ? `/uploads/${avatarPath}`
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'User')}&background=random&size=150`;
 
         return `
@@ -302,7 +302,7 @@ export const Profile = {
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Full Name</label>
-                                        <input type="text" id="editName" class="form-control rounded-3" value="${data.name || ''}" placeholder="Your full name">
+                                        <input type="text" id="editName" class="form-control rounded-3 ${data.name ? 'bg-light text-muted' : ''}" value="${data.name || ''}" placeholder="Your full name" ${data.name ? 'readonly' : ''}>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Phone Number</label>
@@ -326,15 +326,15 @@ export const Profile = {
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Course / Degree</label>
-                                        <input type="text" id="editCourse" class="form-control rounded-3" value="${data.course || ''}" placeholder="e.g. B.Tech, B.E.">
+                                        <input type="text" id="editCourse" class="form-control rounded-3 ${data.course ? 'bg-light text-muted' : ''}" value="${data.course || ''}" placeholder="e.g. B.Tech, B.E." ${data.course ? 'readonly' : ''}>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Branch / Department</label>
-                                        <input type="text" id="editBranch" class="form-control rounded-3" value="${data.branch || ''}" placeholder="e.g. Computer Engineering">
+                                        <input type="text" id="editBranch" class="form-control rounded-3 ${data.branch ? 'bg-light text-muted' : ''}" value="${data.branch || ''}" placeholder="e.g. Computer Engineering" ${data.branch ? 'readonly' : ''}>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Year</label>
-                                        <select id="editYear" class="form-select rounded-3">
+                                        <select id="editYear" class="form-select rounded-3 ${data.year ? 'bg-light text-muted' : ''}" ${data.year ? 'disabled' : ''}>
                                             <option value="" ${!data.year ? 'selected' : ''}>-- Select Year --</option>
                                             <option value="First Year" ${data.year === 'First Year' ? 'selected' : ''}>1st Year</option>
                                             <option value="Second Year" ${data.year === 'Second Year' ? 'selected' : ''}>2nd Year</option>
@@ -344,18 +344,18 @@ export const Profile = {
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Current Semester</label>
-                                        <select id="editSemester" class="form-select rounded-3">
+                                        <select id="editSemester" class="form-select rounded-3 ${data.semester ? 'bg-light text-muted' : ''}" ${data.semester ? 'disabled' : ''}>
                                             <option value="" ${!data.semester ? 'selected' : ''}>-- Select Semester --</option>
                                             ${[1, 2, 3, 4, 5, 6, 7, 8].map(n => `<option value="Semester ${n}" ${data.semester === `Semester ${n}` ? 'selected' : ''}>${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'} Semester</option>`).join('')}
                                         </select>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Enrollment No</label>
-                                        <input type="text" id="editEnrollmentNo" class="form-control rounded-3" value="${data.enrollmentNo || ''}" placeholder="Your enrollment number">
+                                        <input type="text" id="editEnrollmentNo" class="form-control rounded-3 ${data.enrollmentNo ? 'bg-light text-muted' : ''}" value="${data.enrollmentNo || ''}" placeholder="Your enrollment number" ${data.enrollmentNo ? 'readonly' : ''}>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">CGPA</label>
-                                        <input type="number" id="editCgpa" class="form-control rounded-3" min="0" max="10" step="0.1" value="${data.cgpa || ''}" placeholder="e.g. 8.5">
+                                        <input type="number" id="editCgpa" class="form-control rounded-3 ${data.cgpa ? 'bg-light text-muted' : ''}" min="0" max="10" step="0.1" value="${data.cgpa || ''}" placeholder="e.g. 8.5" ${data.cgpa ? 'readonly' : ''}>
                                     </div>
                                 </div>
                             </div>

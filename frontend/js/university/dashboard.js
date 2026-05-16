@@ -1,6 +1,6 @@
 // Global Config
-const API_BASE_URL = 'http://localhost:8081/api/university';
-const ADMIN_API_BASE_URL = 'http://localhost:8081/api/admin';
+const API_BASE_URL = '/api/university';
+const ADMIN_API_BASE_URL = '/api/admin';
 const UNIVERSITY_ID = 1; // Hardcoded for demo
 
 // Auth-aware fetch helper – attaches JWT token from localStorage
@@ -26,9 +26,7 @@ const DashboardState = {
     exams: [],
     registrations: [],
     notifications: [],
-    adminProfile: null,
-    communicationPoller: null,
-    selectedCommunicationMessage: null
+    adminProfile: null
 };
 
 // Initialization
@@ -42,10 +40,27 @@ async function initDashboard() {
     await loadStats();
     await updateExamStats(); // Load exam stats on init
 
-    // Default load
+    // ── College Context (must come before loadStudents/loadStaff) ────────────
+    if (typeof window.initCollegeContext === 'function') {
+        await window.initCollegeContext();
+    }
+
+    // Wire up context-bar dropdown
+    const globalCollegeSelect = document.getElementById('global-college-select');
+    if (globalCollegeSelect) {
+        globalCollegeSelect.addEventListener('change', (e) => {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const id = e.target.value;
+            const name = id ? selectedOption.text.replace(/\s*\(.*?\)\s*$/, '').trim() : null;
+            window.setSelectedCollege(id || null, name);
+        });
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+    // Default load (will show placeholder if no college selected)
     loadExams();
-    await loadCommunicationInbox();
-    startCommunicationPolling();
+    if (typeof window.loadStudents === 'function') window.loadStudents();
+    if (typeof window.loadStaff === 'function') window.loadStaff();
 
     // Admin profile + security (should not block existing dashboard features)
     loadAdminProfile();
@@ -67,14 +82,29 @@ function setupNavigation() {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             document.getElementById(targetId).classList.remove('hidden');
 
+            // Toggle Global College Context Bar visibility
+            const contextBar = document.getElementById('global-college-context-bar');
+            if (contextBar) {
+                if (targetId === 'students-section' || targetId === 'staff-section') {
+                    contextBar.classList.remove('hidden');
+                } else {
+                    contextBar.classList.add('hidden');
+                }
+            }
+
             // Data Load based on tab
             if (targetId === 'exams-section') {
                 loadExams();
                 updateExamStats(); // Update stats when switching to exams tab
             }
+            if (targetId === 'students-section' && typeof window.loadStudents === 'function') {
+                window.loadStudents();
+            }
+            if (targetId === 'staff-section' && typeof window.loadStaff === 'function') {
+                window.loadStaff();
+            }
             if (targetId === 'registrations-section') loadRegistrations();
             if (targetId === 'analytics-section') loadAnalytics();
-            if (targetId === 'communication-section') loadCommunicationInbox();
         });
     });
 }
@@ -128,7 +158,7 @@ function renderStats() {
 // New function to update exam-specific stats
 async function updateExamStats() {
     try {
-        const response = await authFetch(`${API_BASE_URL}/exams/`);
+        const response = await authFetch(`${API_BASE_URL}/${UNIVERSITY_ID}/exam`);
         const exams = await response.json();
 
         if (exams && exams.length > 0) {
@@ -235,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else {
                     // Update preview to use the real server URL (avoids large data URLs)
-                    if (data.logoUrl) _showLogoPreview('http://localhost:8081' + data.logoUrl);
+                    if (data.logoUrl) _showLogoPreview('' + data.logoUrl);
                     if (msgEl) {
                         msgEl.innerText = '✅ Logo saved to server!';
                         msgEl.className = 'mt-3 p-3 rounded-xl text-sm text-green-700 bg-green-50';
@@ -417,7 +447,7 @@ function renderAdminProfile(profile) {
 
     // Load university logo from DB (stored as filename in uploads/logo/)
     if (profile?.universityLogoPath) {
-        _showLogoPreview('http://localhost:8081/uploads/logo/' + profile.universityLogoPath);
+        _showLogoPreview('/uploads/logo/' + profile.universityLogoPath);
     }
 }
 
@@ -439,298 +469,6 @@ function setMessage(el, message, type) {
     } else if (type === 'error') {
         el.classList.add('text-red-600', 'bg-red-50');
     }
-}
-
-function unwrapApiResponse(payload) {
-    if (payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, 'success')) {
-        return payload.data;
-    }
-    return payload;
-}
-
-function communicationPriorityBadge(priority) {
-    const p = String(priority || 'NORMAL').toUpperCase();
-    if (p === 'URGENT') return 'bg-red-100 text-red-700';
-    if (p === 'LOW') return 'bg-gray-100 text-gray-700';
-    return 'bg-blue-100 text-blue-700';
-}
-
-async function loadCommunicationInbox() {
-    const tbody = document.getElementById('communication-inbox-body');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading inbox...</td></tr>';
-
-    try {
-        const response = await authFetch(`${API_BASE_URL}/communication/inbox`);
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || payload.success === false) {
-            throw new Error(payload.message || payload.error || 'Failed to fetch communication inbox');
-        }
-
-        const messages = unwrapApiResponse(payload) || [];
-        if (!messages.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No communication messages yet.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = '';
-        messages.forEach((msg) => {
-            const tr = document.createElement('tr');
-            tr.className = 'border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer';
-            const createdAt = msg.createdAt ? new Date(msg.createdAt) : null;
-            const status = String(msg.status || 'SENT').toUpperCase();
-            const statusClass = status === 'READ' ? 'text-green-600' : 'text-gray-500';
-            const msgType = String(msg.type || 'GENERAL').toUpperCase();
-            const typeTagClass = msgType === 'WARNING' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : msgType === 'BROADCAST' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-            tr.innerHTML = `
-                <td class="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">${msg.subject || '-'}</td>
-                <td class="px-6 py-4"><span class="px-2 py-1 rounded text-[10px] font-semibold ${typeTagClass}">${msgType}</span></td>
-                <td class="px-6 py-4">SUPER_ADMIN</td>
-                <td class="px-6 py-4 text-xs">${createdAt ? createdAt.toLocaleString() : '-'}</td>
-                <td class="px-6 py-4"><span class="px-2 py-1 rounded text-[10px] font-semibold ${communicationPriorityBadge(msg.priority)}">${String(msg.priority || 'NORMAL').toUpperCase()}</span></td>
-                <td class="px-6 py-4"><span class="${statusClass} text-xs font-semibold">${status}</span></td>
-            `;
-            tr.addEventListener('click', () => openCommunicationMessage(msg));
-            tbody.appendChild(tr);
-        });
-
-        // Keep selected message in sync with fresh data
-        if (DashboardState.selectedCommunicationMessage?.id) {
-            const latest = messages.find(m => m.id === DashboardState.selectedCommunicationMessage.id);
-            if (latest) {
-                renderCommunicationCard(latest);
-            }
-        }
-    } catch (error) {
-        console.error('Communication inbox load error', error);
-        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Failed to load inbox.</td></tr>';
-    }
-}
-
-async function openCommunicationMessage(message) {
-    renderCommunicationCard(message);
-    if (String(message.status || '').toUpperCase() !== 'SENT' || !message.id) return;
-    try {
-        const response = await authFetch(`${API_BASE_URL}/communication/mark-read`, {
-            method: 'POST',
-            body: JSON.stringify({ id: message.id })
-        });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || payload.success === false) {
-            throw new Error(payload.message || 'Failed to mark message as read');
-        }
-        await loadCommunicationInbox();
-    } catch (error) {
-        console.error('Mark read failed', error);
-    }
-}
-
-function statusColor(status) {
-    const s = String(status || '').toUpperCase();
-    if (s === 'APPROVED') return 'text-green-600';
-    if (s === 'REJECTED') return 'text-red-600';
-    if (s === 'REQUESTED') return 'text-orange-600';
-    if (s === 'READ') return 'text-blue-600';
-    return 'text-gray-600';
-}
-
-function communicationTypeTagClass(type) {
-    const t = String(type || 'GENERAL').toUpperCase();
-    if (t === 'WARNING') return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-    if (t === 'BROADCAST') return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
-    return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-}
-
-function renderCommunicationCard(message) {
-    DashboardState.selectedCommunicationMessage = message;
-    const empty = document.getElementById('comm-card-empty');
-    const content = document.getElementById('comm-card-content');
-    const statusEl = document.getElementById('comm-card-status');
-    const typeEl = document.getElementById('comm-card-type');
-    const subjectEl = document.getElementById('comm-card-subject');
-    const senderEl = document.getElementById('comm-card-sender');
-    const dateEl = document.getElementById('comm-card-date');
-    const messageEl = document.getElementById('comm-card-message');
-    const actionsEl = document.getElementById('comm-card-actions');
-    const replyText = document.getElementById('comm-reply-text');
-
-    if (!empty || !content || !statusEl || !subjectEl || !senderEl || !dateEl || !messageEl || !actionsEl || !replyText) return;
-    empty.classList.add('hidden');
-    content.classList.remove('hidden');
-
-    const status = String(message.status || 'SENT').toUpperCase();
-    const msgType = String(message.type || 'GENERAL').toUpperCase();
-    statusEl.className = `font-semibold ${statusColor(status)}`;
-    statusEl.textContent = status;
-    if (typeEl) {
-        typeEl.className = `font-semibold px-2 py-0.5 rounded text-xs ${communicationTypeTagClass(msgType)}`;
-        typeEl.textContent = msgType;
-    }
-    subjectEl.textContent = message.subject || '-';
-    senderEl.textContent = message.senderRole || 'SUPER_ADMIN';
-    dateEl.textContent = message.createdAt ? new Date(message.createdAt).toLocaleString() : '-';
-    messageEl.textContent = message.message || '';
-
-    actionsEl.innerHTML = '';
-    replyText.classList.add('hidden');
-    replyText.value = '';
-
-    // GENERAL: Allow reply, approval workflow applies
-    if (msgType === 'GENERAL') {
-        if (status === 'READ') {
-            const btn = document.createElement('button');
-            btn.className = 'px-3 py-2 rounded-lg text-sm bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400';
-            btn.textContent = 'Request Reply Permission';
-            btn.addEventListener('click', () => requestReplyPermission(message.id));
-            actionsEl.appendChild(btn);
-        }
-        if (status === 'REQUESTED') {
-            const hint = document.createElement('span');
-            hint.className = 'text-xs text-orange-600 dark:text-orange-400';
-            hint.textContent = 'Reply request pending approval.';
-            actionsEl.appendChild(hint);
-        }
-        if (Boolean(message.replyAllowed) || status === 'APPROVED') {
-            const replyBtn = document.createElement('button');
-            replyBtn.className = 'px-3 py-2 rounded-lg text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400';
-            replyBtn.textContent = 'Reply';
-            replyBtn.addEventListener('click', () => {
-                replyText.classList.remove('hidden');
-                renderReplySendButton(message.id, actionsEl, replyText);
-            });
-            actionsEl.appendChild(replyBtn);
-        }
-        if (!Boolean(message.replyAllowed) && status !== 'READ' && status !== 'REQUESTED' && status !== 'APPROVED') {
-            const denied = document.createElement('span');
-            denied.className = 'text-xs text-gray-500 dark:text-gray-400';
-            denied.textContent = 'Reply not allowed.';
-            actionsEl.appendChild(denied);
-        }
-    }
-
-    // WARNING: Acknowledge button only
-    if (msgType === 'WARNING') {
-        if (!Boolean(message.acknowledged)) {
-            const ackBtn = document.createElement('button');
-            ackBtn.className = 'px-3 py-2 rounded-lg text-sm bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400';
-            ackBtn.textContent = 'Acknowledge';
-            ackBtn.addEventListener('click', () => acknowledgeMessage(message.id));
-            actionsEl.appendChild(ackBtn);
-        } else {
-            const acked = document.createElement('span');
-            acked.className = 'text-xs text-green-600 dark:text-green-400 flex items-center gap-1';
-            acked.innerHTML = '<i class="fas fa-check-circle"></i> Acknowledged';
-            actionsEl.appendChild(acked);
-        }
-    }
-
-    // BROADCAST: No actions (read-only)
-
-    // Delete button (all message types)
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'px-3 py-2 rounded-lg text-sm border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 ml-auto';
-    deleteBtn.innerHTML = '<i class="fas fa-trash mr-1"></i>Delete';
-    deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        deleteCommunicationMessage(message.id);
-    });
-    actionsEl.appendChild(deleteBtn);
-}
-
-function renderReplySendButton(messageId, actionsEl, replyTextEl) {
-    let sendBtn = actionsEl.querySelector('[data-role="send-reply-btn"]');
-    if (sendBtn) return;
-    sendBtn = document.createElement('button');
-    sendBtn.dataset.role = 'send-reply-btn';
-    sendBtn.className = 'px-3 py-2 rounded-lg text-sm bg-green-100 text-green-700 hover:bg-green-200';
-    sendBtn.textContent = 'Send Reply';
-    sendBtn.addEventListener('click', () => sendReply(messageId, replyTextEl.value));
-    actionsEl.appendChild(sendBtn);
-}
-
-async function requestReplyPermission(messageId) {
-    try {
-        const response = await authFetch('http://localhost:8081/api/messages/request-reply', {
-            method: 'POST',
-            body: JSON.stringify({ id: messageId })
-        });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || payload.success === false) {
-            throw new Error(payload.message || 'Failed to request reply permission');
-        }
-        await loadCommunicationInbox();
-    } catch (error) {
-        alert(error.message || 'Failed to request reply permission');
-    }
-}
-
-async function deleteCommunicationMessage(id) {
-    if (!confirm('Delete this message?')) return;
-    try {
-        const response = await authFetch(`${ADMIN_API_BASE_URL}/communication/${id}`, { method: 'DELETE' });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || payload.success === false) {
-            throw new Error(payload.message || 'Failed to delete message');
-        }
-        DashboardState.selectedCommunicationMessage = null;
-        const content = document.getElementById('comm-card-content');
-        const empty = document.getElementById('comm-card-empty');
-        if (content) content.classList.add('hidden');
-        if (empty) empty.classList.remove('hidden');
-        await loadCommunicationInbox();
-    } catch (error) {
-        alert(error.message || 'Failed to delete message');
-    }
-}
-
-async function acknowledgeMessage(messageId) {
-    try {
-        const response = await authFetch(`${API_BASE_URL}/communication/acknowledge`, {
-            method: 'POST',
-            body: JSON.stringify({ id: messageId })
-        });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || payload.success === false) {
-            throw new Error(payload.message || 'Failed to acknowledge message');
-        }
-        await loadCommunicationInbox();
-    } catch (error) {
-        alert(error.message || 'Failed to acknowledge message');
-    }
-}
-
-async function sendReply(parentMessageId, messageText) {
-    const cleanMessage = (messageText || '').trim();
-    if (!cleanMessage) {
-        alert('Reply message cannot be empty.');
-        return;
-    }
-    try {
-        const response = await authFetch('http://localhost:8081/api/messages/reply', {
-            method: 'POST',
-            body: JSON.stringify({
-                parentMessageId,
-                message: cleanMessage
-            })
-        });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || payload.success === false) {
-            throw new Error(payload.message || 'Reply not allowed');
-        }
-        await loadCommunicationInbox();
-        alert(payload.message || 'Reply sent successfully');
-    } catch (error) {
-        alert(error.message || 'Reply not allowed');
-    }
-}
-
-function startCommunicationPolling() {
-    if (DashboardState.communicationPoller) {
-        clearInterval(DashboardState.communicationPoller);
-    }
-    DashboardState.communicationPoller = setInterval(() => {
-        loadCommunicationInbox();
-    }, 10000);
 }
 
 function setupProfileAndSecurityHandlers() {

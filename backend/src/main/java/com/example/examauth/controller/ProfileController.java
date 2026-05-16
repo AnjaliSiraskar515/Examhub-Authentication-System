@@ -5,9 +5,9 @@ import com.example.examauth.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,9 +39,15 @@ public class ProfileController {
         }
 
         String jwt = token.substring(7);
-        String email = jwtUtil.extractUsername(jwt);
-
-        User user = userRepository.findByEmail(email).orElse(null);
+        Long userId = jwtUtil.extractUserId(jwt);
+        
+        User user = null;
+        if (userId != null) {
+            user = userRepository.findById(userId).orElse(null);
+        } else {
+            String email = jwtUtil.extractUsername(jwt);
+            user = userRepository.findFirstByEmailAndRole(email, jwtUtil.extractRole(jwt)).orElse(null);
+        }
         if (user == null) {
             return ResponseEntity.status(404).body(Map.of("error", "User not found"));
         }
@@ -55,18 +61,25 @@ public class ProfileController {
         profile.put("prn", user.getPrn()); // PRN — unique per student, read-only
 
         // Mapped Fields for Frontend
-        profile.put("rollNumber", user.getUsername());
+        // Generate a cleaner pattern for student roll number instead of just repeating the PRN
+        String deptPrefix = (user.getDepartment() != null && user.getDepartment().length() >= 2) 
+                            ? user.getDepartment().substring(0, 2).toUpperCase() 
+                            : "GN";
+        String niceRollNumber = String.format("%s-%04d", deptPrefix, user.getUserId() != null ? user.getUserId() : 0);
+        profile.put("rollNumber", niceRollNumber);
         profile.put("course", user.getMajor());
         profile.put("branch", user.getDepartment());
         profile.put("year", user.getYear());
         profile.put("semester", user.getSemester());
         profile.put("enrollmentNo", user.getEnrollmentNo());
         profile.put("cgpa", user.getCgpa());
+        profile.put("firstLogin", user.getFirstLogin() != null ? user.getFirstLogin() : false);
         profile.put("dob", user.getDob());
         profile.put("gender", user.getGender());
         profile.put("regNumber", "REG" + user.getUserId());
         profile.put("academicStatus", "Regular");
         profile.put("university", "Pune University (SPPU)");
+        profile.put("collegeName", user.getCollege() != null ? user.getCollege().getName() : (user.getCollegeName() != null ? user.getCollegeName() : "N/A"));
 
         profile.put("photoPath", user.getPhotoPath());
         profile.put("profilePhoto", user.getPhotoPath());
@@ -99,8 +112,9 @@ public class ProfileController {
                 return ResponseEntity.status(401).body(Map.of("error", "Missing or invalid Authorization header"));
             }
             String jwt = token.substring(7);
-            String email = jwtUtil.extractUsername(jwt);
-            User user = userRepository.findByEmail(email).orElse(null);
+            Long userId = jwtUtil.extractUserId(jwt);
+            User user = userId != null ? userRepository.findById(userId).orElse(null) : userRepository.findFirstByEmailAndRole(jwtUtil.extractUsername(jwt), jwtUtil.extractRole(jwt)).orElse(null);
+            String email = user != null ? user.getEmail() : jwtUtil.extractUsername(jwt);
             if (user == null) {
                 return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             }
@@ -145,29 +159,19 @@ public class ProfileController {
     @Autowired
     private com.example.examauth.repo.SupervisorActionLogRepository auditLogRepository;
 
-    // ── private audit helper ─────────────────────────────────────────────────
     private void writeAuditLog(Long userId, String action, String details) {
         try {
-            com.example.examauth.model.SupervisorActionLog entry =
-                    new com.example.examauth.model.SupervisorActionLog();
-            entry.setSupervisorId(userId);  // reuse supervisorId field for actor
+            com.example.examauth.model.SupervisorActionLog entry = new com.example.examauth.model.SupervisorActionLog();
+            entry.setSupervisorId(userId);
             entry.setAction(action);
             entry.setDetails(details);
             entry.setTimestamp(java.time.LocalDateTime.now());
             auditLogRepository.save(entry);
         } catch (Exception ex) {
-            // Audit failure must never break the main operation
             System.err.println("[AUDIT] Failed to write audit log: " + ex.getMessage());
         }
     }
 
-    // =========================================================
-    // CHANGE PASSWORD — POST /api/profile/change-password
-    // Restricted to SUPER_ADMIN role via @PreAuthorize
-    // Body: { "currentPassword": "...", "newPassword": "..." }
-    // On success: increments tokenVersion → all existing JWTs rejected
-    // =========================================================
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SUPERADMIN')")
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(
             @RequestHeader(value = "Authorization", required = false) String token,
@@ -176,26 +180,19 @@ public class ProfileController {
             if (token == null || !token.startsWith("Bearer ")) {
                 return ResponseEntity.status(401).body(Map.of("error", "Missing or invalid Authorization header"));
             }
-
             String jwt = token.substring(7);
-            String email = jwtUtil.extractUsername(jwt);
-
-            User user = userRepository.findByEmail(email).orElse(null);
+            Long userId = jwtUtil.extractUserId(jwt); User user = userId != null ? userRepository.findById(userId).orElse(null) : userRepository.findFirstByEmailAndRole(jwtUtil.extractUsername(jwt), jwtUtil.extractRole(jwt)).orElse(null); String email = user != null ? user.getEmail() : jwtUtil.extractUsername(jwt);
             if (user == null) {
                 return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             }
-
             String currentPassword = body.get("currentPassword");
             String newPassword = body.get("newPassword");
-
             if (currentPassword == null || currentPassword.isBlank()) {
                 return ResponseEntity.status(400).body(Map.of("error", "Current password is required"));
             }
             if (newPassword == null || newPassword.length() < 6) {
                 return ResponseEntity.status(400).body(Map.of("error", "New password must be at least 6 characters"));
             }
-
-            // Validate current password (supports both BCrypt and legacy plain-text)
             String dbPassword = user.getPassword();
             boolean valid = false;
             if (dbPassword != null && dbPassword.startsWith("$2a$")) {
@@ -203,42 +200,22 @@ public class ProfileController {
             } else if (dbPassword != null) {
                 valid = dbPassword.equals(currentPassword);
             }
-
             if (!valid) {
                 return ResponseEntity.status(401).body(Map.of("error", "Current password is incorrect"));
             }
-
-            // Encode and persist new password
             user.setPassword(passwordEncoder.encode(newPassword));
-
-            // Increment tokenVersion → all previous JWTs are now invalid
             user.setTokenVersion(user.getTokenVersion() + 1);
-
+            user.setFirstLogin(false); // Clear firstLogin flag
             userRepository.save(user);
-
-            // ── Audit Log ──────────────────────────────────────────────────
-            writeAuditLog(
-                user.getUserId(),
-                "SUPER_ADMIN_PASSWORD_CHANGE",
-                "Super Admin (" + email + ") changed their password successfully. IP: implicit."
-            );
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Password updated successfully. Please login again."));
-
+            writeAuditLog(user.getUserId(), "USER_PASSWORD_CHANGE",
+                    user.getRole() + " (" + email + ") changed their password successfully.");
+            return ResponseEntity.ok(Map.of("success", true, "message", "Password updated successfully. Please login again."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Password update failed: " + e.getMessage()));
         }
     }
 
-    // =========================================================
-    // UPDATE EMAIL — POST /api/profile/update-email
-    // Restricted to SUPER_ADMIN role via @PreAuthorize
-    // Body: { "newEmail": "..." }
-    // On success: increments tokenVersion → force re-login
-    // =========================================================
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SUPERADMIN')")
     @PostMapping("/update-email")
     public ResponseEntity<?> updateEmail(
@@ -248,49 +225,29 @@ public class ProfileController {
             if (token == null || !token.startsWith("Bearer ")) {
                 return ResponseEntity.status(401).body(Map.of("error", "Missing or invalid Authorization header"));
             }
-
             String jwt = token.substring(7);
-            String currentEmail = jwtUtil.extractUsername(jwt);
-
-            User user = userRepository.findByEmail(currentEmail).orElse(null);
+            Long userId = jwtUtil.extractUserId(jwt);
+            User user = userId != null ? userRepository.findById(userId).orElse(null) : userRepository.findFirstByEmailAndRole(jwtUtil.extractUsername(jwt), jwtUtil.extractRole(jwt)).orElse(null);
+            String currentEmail = user != null ? user.getEmail() : jwtUtil.extractUsername(jwt);
             if (user == null) {
                 return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             }
-
             String newEmail = body.get("newEmail");
             if (newEmail == null || newEmail.isBlank()) {
                 return ResponseEntity.status(400).body(Map.of("error", "New email is required"));
             }
-
-            // Basic email format validation
             if (!newEmail.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
                 return ResponseEntity.status(400).body(Map.of("error", "Invalid email format"));
             }
-
-            // Check uniqueness
-            if (userRepository.findByEmail(newEmail).isPresent()
-                    && !newEmail.equalsIgnoreCase(currentEmail)) {
+            if (userRepository.findFirstByEmailAndRole(newEmail, user.getRole()).isPresent() && !newEmail.equalsIgnoreCase(currentEmail)) {
                 return ResponseEntity.status(400).body(Map.of("error", "Email already in use by another account"));
             }
-
             user.setEmail(newEmail);
-
-            // Increment tokenVersion → all previous JWTs are now invalid
             user.setTokenVersion(user.getTokenVersion() + 1);
-
             userRepository.save(user);
-
-            // ── Audit Log ──────────────────────────────────────────────────
-            writeAuditLog(
-                user.getUserId(),
-                "SUPER_ADMIN_EMAIL_CHANGE",
-                "Super Admin changed email from [" + currentEmail + "] to [" + newEmail + "]."
-            );
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Email updated successfully. Please login again."));
-
+            writeAuditLog(user.getUserId(), "SUPER_ADMIN_EMAIL_CHANGE",
+                    "Super Admin changed email from [" + currentEmail + "] to [" + newEmail + "].");
+            return ResponseEntity.ok(Map.of("success", true, "message", "Email updated successfully. Please login again."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Email update failed: " + e.getMessage()));
@@ -319,9 +276,7 @@ public class ProfileController {
             }
 
             String jwt = token.substring(7);
-            String email = jwtUtil.extractUsername(jwt);
-
-            User user = userRepository.findByEmail(email).orElse(null);
+            Long userId = jwtUtil.extractUserId(jwt); User user = userId != null ? userRepository.findById(userId).orElse(null) : userRepository.findFirstByEmailAndRole(jwtUtil.extractUsername(jwt), jwtUtil.extractRole(jwt)).orElse(null); String email = user != null ? user.getEmail() : jwtUtil.extractUsername(jwt);
             if (user == null) {
                 return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             }
@@ -411,6 +366,9 @@ public class ProfileController {
                 user.setSem8MarksheetPath(path);
             }
             if (passportPhoto != null) {
+                if (user.getPassportPhotoPath() != null && !user.getPassportPhotoPath().isEmpty()) {
+                    return ResponseEntity.status(400).body(Map.of("error", "Profile photo can only be changed once."));
+                }
                 String path = timestamp + "_" + passportPhoto.getOriginalFilename();
                 passportPhoto.transferTo(new File(dir, path));
                 user.setPassportPhotoPath(path);
@@ -435,9 +393,7 @@ public class ProfileController {
             }
 
             String jwt = token.substring(7);
-            String email = jwtUtil.extractUsername(jwt);
-
-            User user = userRepository.findByEmail(email).orElse(null);
+            Long userId = jwtUtil.extractUserId(jwt); User user = userId != null ? userRepository.findById(userId).orElse(null) : userRepository.findFirstByEmailAndRole(jwtUtil.extractUsername(jwt), jwtUtil.extractRole(jwt)).orElse(null); String email = user != null ? user.getEmail() : jwtUtil.extractUsername(jwt);
             if (user == null) {
                 return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             }
@@ -486,8 +442,7 @@ public class ProfileController {
                 return ResponseEntity.status(401).body(Map.of("error", "Missing or invalid Authorization header"));
             }
             String jwt = token.substring(7);
-            String email = jwtUtil.extractUsername(jwt);
-            User user = userRepository.findByEmail(email).orElse(null);
+            Long userId = jwtUtil.extractUserId(jwt); User user = userId != null ? userRepository.findById(userId).orElse(null) : userRepository.findFirstByEmailAndRole(jwtUtil.extractUsername(jwt), jwtUtil.extractRole(jwt)).orElse(null); String email = user != null ? user.getEmail() : jwtUtil.extractUsername(jwt);
             if (user == null) {
                 return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             }
@@ -541,3 +496,4 @@ public class ProfileController {
         }
     }
 }
+

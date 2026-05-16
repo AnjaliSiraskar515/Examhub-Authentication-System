@@ -50,7 +50,13 @@ public class AdminController {
     private com.example.examauth.service.PdfService pdfService;
 
     @Autowired
+    private com.example.examauth.repo.CollegeRepository collegeRepo;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private com.example.examauth.service.AlertNotificationService alertNotificationService;
 
     @Value("${file.upload-dir:uploads/profile}")
     private String baseUploadDir;
@@ -202,16 +208,73 @@ public class AdminController {
     }
 
     @GetMapping("/supervisors")
-    public ResponseEntity<?> getSupervisors() {
+    public ResponseEntity<?> getSupervisors(
+            @RequestParam(required = false) Long collegeId,
+            @RequestParam(required = false) String department) {
+        
+        String __email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        com.example.examauth.model.User __admin = userRepo.findFirstByEmailAndRole(__email, org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority().replace("ROLE_", "")).orElse(null);
+        String __myUniv = (__admin != null && "UNIVERSITY_ADMIN".equals(__admin.getRole())) ? __admin.getUniversityName() : null;
+
+        // Resolve college name for legacy fallback matching
+        final String resolvedCollegeName = (collegeId != null)
+                ? collegeRepo.findById(collegeId).map(c -> c.getName()).orElse(null)
+                : null;
+
         List<Map<String, Object>> s = userRepo.findAll().stream()
-                .filter(u -> "SUPERVISOR".equalsIgnoreCase(u.getRole()))
+                .filter(u -> {
+                    String r = u.getRole() != null ? u.getRole().trim().toLowerCase() : "";
+                    // Support legacy or custom roles like "supervisor A" or "chief supervisor"
+                    return r.contains("supervisor") || r.contains("staff") || r.contains("faculty") || u.getSupervisorType() != null;
+                })
+                .filter(u -> __myUniv == null || __myUniv.isEmpty() || __myUniv.equalsIgnoreCase(u.getUniversityName()) || (u.getCollege() != null && __myUniv.equalsIgnoreCase(u.getCollege().getUniversityName())))
+                .filter(u -> {
+                    // If collegeId filter provided, restrict to that college only
+                    if (collegeId != null) {
+                        boolean match = false;
+                        if (u.getCollege() != null && collegeId.equals(u.getCollege().getId())) {
+                            match = true;
+                        }
+                        if (u.getInstitutionCode() != null && u.getInstitutionCode().trim().equals(collegeId.toString())) {
+                            match = true;
+                        }
+                        if (!match && resolvedCollegeName != null) {
+                            String cName = u.getCollegeName() != null ? u.getCollegeName().trim().toLowerCase() : "";
+                            String uName = u.getUniversityName() != null ? u.getUniversityName().trim().toLowerCase() : "";
+                            String resName = resolvedCollegeName.trim().toLowerCase();
+                            
+                            if (!cName.isEmpty() && (cName.contains(resName) || resName.contains(cName))) match = true;
+                            if (!uName.isEmpty() && (uName.contains(resName) || resName.contains(uName))) match = true;
+                        }
+                        if (!match) return false;
+                    }
+                    // If department filter provided
+                    String userDept = u.getDepartmentEntity() != null ? u.getDepartmentEntity().getName() : u.getDepartment();
+                    if ("Computer Engineering".equalsIgnoreCase(userDept)) {
+                        userDept = "Computer Science";
+                    }
+
+                    if (department != null && !department.trim().isEmpty() && !department.equals("All Departments")) {
+                        if (userDept == null || !userDept.trim().equalsIgnoreCase(department.trim())) return false;
+                    }
+                    return true;
+                })
                 .map(u -> {
                     Map<String, Object> map = new java.util.HashMap<>();
+                    
+                    String displayDept = u.getDepartmentEntity() != null ? u.getDepartmentEntity().getName() : u.getDepartment();
+                    if ("Computer Engineering".equalsIgnoreCase(displayDept)) displayDept = "Computer Science";
+
                     map.put("userId", u.getUserId());
                     map.put("name", u.getName());
                     map.put("email", u.getEmail());
                     map.put("status", u.getStatus());
                     map.put("role", u.getRole());
+                    map.put("department", displayDept); // Expose mapped department
+                    map.put("collegeName", (u.getCollege() != null && u.getCollege().getName() != null) ? u.getCollege().getName() : u.getCollegeName());
+                    map.put("supervisorType", u.getSupervisorType() != null ? u.getSupervisorType() : "EXAM");
+                    map.put("collegeId", u.getCollege() != null ? u.getCollege().getId() : null);
+                    map.put("photoPath", u.getPhotoPath()); // Profile photo
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -222,7 +285,7 @@ public class AdminController {
     public ResponseEntity<?> assignSupervisor(@RequestBody Map<String, Object> body) {
         String email = (String) body.get("email");
         // create or find supervisor user
-        User sup = userRepo.findByEmail(email).orElseGet(() -> {
+        User sup = userRepo.findFirstByEmailAndRole(email, "SUPERVISOR").orElseGet(() -> {
             User u = new User();
             u.setEmail(email);
             u.setName(email.split("@")[0]);
@@ -243,6 +306,34 @@ public class AdminController {
         u.setStatus(status);
         userRepo.save(u);
         return ResponseEntity.ok(Map.of("message", "status updated"));
+    }
+
+    @PatchMapping("/supervisors/{id}/department")
+    public ResponseEntity<?> updateSupervisorDepartment(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String department = body.get("department");
+        User u = userRepo.findById(id).orElse(null);
+        if (u == null) return ResponseEntity.notFound().build();
+        u.setDepartment(department);
+        userRepo.save(u);
+        return ResponseEntity.ok(Map.of("message", "Department updated", "department", department));
+    }
+
+    @DeleteMapping("/supervisors/{id}")
+    public ResponseEntity<?> deleteSupervisor(@PathVariable Long id) {
+        User u = userRepo.findById(id).orElse(null);
+        if (u == null) return ResponseEntity.status(404).body(Map.of("error", "Supervisor not found"));
+        if (!"SUPERVISOR".equalsIgnoreCase(u.getRole())) {
+            return ResponseEntity.status(403).body(Map.of("error", "User is not a supervisor"));
+        }
+        // Send deactivation email before deleting
+        try {
+            String universityName = u.getUniversityName() != null ? u.getUniversityName()
+                : (u.getCollege() != null && u.getCollege().getUniversityName() != null
+                    ? u.getCollege().getUniversityName() : "your university");
+            alertNotificationService.sendAccessRemovedEmail(u.getEmail(), u.getName(), u.getRole(), universityName);
+        } catch (Exception ignored) {}
+        userRepo.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Supervisor deleted successfully"));
     }
 
     @GetMapping("/users/{role}")

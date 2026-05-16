@@ -47,12 +47,18 @@ public class ExamRegistration {
 
     // ========== NEW PROFESSIONAL FIELDS ==========
 
+    @Column(name = "hall_ticket_released")
+    private Boolean hallTicketReleased = false;
+
+    @Column(name = "qr_code", columnDefinition = "TEXT")
+    private String qrCode;
+
     /**
      * List of subjects selected by student for this exam
      * Stored as JSON in database
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "selected_subjects", columnDefinition = "json")
+    @Column(name = "selected_subjects", columnDefinition = "json", updatable = false)
     private List<String> selectedSubjects = new ArrayList<>();
 
     /**
@@ -123,7 +129,7 @@ public class ExamRegistration {
      */
     public enum PaymentStatus {
         PENDING, // Payment not yet completed
-        SUCCESS // Payment successfully processed
+        PAID // Payment successfully processed
     }
 
     /**

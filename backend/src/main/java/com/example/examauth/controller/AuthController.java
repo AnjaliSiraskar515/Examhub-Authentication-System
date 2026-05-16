@@ -165,7 +165,9 @@ public class AuthController {
                 }
 
                 // Check if user exists in User table to generate token
-                Optional<User> userOpt = authService.findByEmail(identifier);
+                // Use findFirstByEmailAndRole to precisely identify the UNIVERSITY_ADMIN
+                // account
+                Optional<User> userOpt = userRepository.findFirstByEmailAndRole(identifier, "UNIVERSITY_ADMIN");
                 User user;
                 if (userOpt.isEmpty()) {
                     // Create minimal User record if it doesn't exist for Auth context
@@ -209,13 +211,13 @@ public class AuthController {
                 // Consume OTP so it cannot be reused
                 otpService.clearVerifiedEmailOtp(identifier);
 
-                // ✅ Successful login response
+                // Successful login response
                 Map<String, Object> resp = new HashMap<>();
                 resp.put("message", "Institution Admin Login successful");
                 resp.put("role", user.getRole());
                 resp.put("userId", user.getUserId());
                 resp.put("institutionId", institution.getInstitutionId());
-                resp.put("token", jwtUtil.generateToken(user.getEmail(), user.getTokenVersion()));
+                resp.put("token", jwtUtil.generateToken(user.getEmail(), user.getTokenVersion(), user.getRole(), user.getUserId(), user.getPrn()));
 
                 return ResponseEntity.ok(resp);
             }
@@ -228,17 +230,21 @@ public class AuthController {
             }
 
             // Unified identity resolution: email + role to avoid non-unique results
-            Optional<User> userOpt = userRepository.findFirstByEmailAndRole(identifier, role);
+            Optional<User> userOpt = Optional.empty();
+            
+            if ("STUDENT".equalsIgnoreCase(role) && request.get("prn") != null && !request.get("prn").trim().isEmpty()) {
+                userOpt = userRepository.findByPrn(request.get("prn").trim());
+            } else {
+                userOpt = userRepository.findFirstByEmailAndRole(identifier, role);
+            }
 
-            // Fallback: case-insensitive search for SUPERADMIN (handles role casing mismatches in DB)
+            // Fallback: case-insensitive search for SUPERADMIN (handles role casing
+            // mismatches in DB)
             if (userOpt.isEmpty() && (role.equalsIgnoreCase("SUPERADMIN") || role.equalsIgnoreCase("SUPER_ADMIN"))) {
-                userOpt = userRepository.findByEmail(identifier).filter(u ->
-                    u.getRole() != null && (
-                        u.getRole().equalsIgnoreCase("SUPERADMIN") ||
-                        u.getRole().equalsIgnoreCase("SUPER_ADMIN") ||
-                        u.getRole().equalsIgnoreCase("super admin")
-                    )
-                );
+                userOpt = userRepository.findFirstByEmail(identifier)
+                        .filter(u -> u.getRole() != null && (u.getRole().equalsIgnoreCase("SUPERADMIN") ||
+                                u.getRole().equalsIgnoreCase("SUPER_ADMIN") ||
+                                u.getRole().equalsIgnoreCase("super admin")));
             }
 
             if (userOpt.isEmpty()) {
@@ -290,12 +296,12 @@ public class AuthController {
             user.setLastLogin(java.time.LocalDateTime.now());
             userRepository.save(user);
 
-            // ✅ Successful login response
+            // Successful login response
             Map<String, Object> resp = new HashMap<>();
             resp.put("message", "Login successful");
             resp.put("role", user.getRole());
             resp.put("userId", user.getUserId());
-            resp.put("token", jwtUtil.generateToken(user.getEmail(), user.getTokenVersion()));
+            resp.put("token", jwtUtil.generateToken(user.getEmail(), user.getTokenVersion(), user.getRole(), user.getUserId(), user.getPrn()));
 
             return ResponseEntity.ok(resp);
 

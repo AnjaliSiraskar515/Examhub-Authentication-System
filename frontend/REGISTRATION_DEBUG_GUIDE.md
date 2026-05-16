@@ -26,7 +26,7 @@ You'll see detailed logs like:
 [REGISTRATION] Token found: Yes (length: 245)
 [REGISTRATION] PRN: REG2022001
 [REGISTRATION] Exam Session: Semester End 2026
-[REGISTRATION] Calling eligibility API: http://localhost:8081/api/student/check-exam-eligibility?prnNumber=REG2022001&examSession=Semester%20End%202026
+[REGISTRATION] Calling eligibility API: http://localhost:8080/api/student/check-exam-eligibility?prnNumber=REG2022001&examSession=Semester%20End%202026
 [REGISTRATION] Eligibility API response status: 200
 [REGISTRATION] Eligibility response: {eligible: true, message: "..."}
 [REGISTRATION] Student is eligible - showing registration form
@@ -43,7 +43,7 @@ More logs will appear:
 [SUBMIT] Exam Session: Semester End 2026
 [SUBMIT] Form data to send: {examId: 1, prn: "REG2022001", fullName: "John Student", ...}
 [SUBMIT] Token found: Yes
-[SUBMIT] Calling registration API: http://localhost:8081/api/student/registrations
+[SUBMIT] Calling registration API: http://localhost:8080/api/student/registrations
 [SUBMIT] Registration API response status: 200
 [SUBMIT] Registration successful: {...}
 ```
@@ -83,7 +83,7 @@ More logs will appear:
 **Reason:** Backend server is not running or CORS issue.
 **Fix:** 
 - Start backend: `cd backend && mvn spring-boot:run`
-- Check if running on `http://localhost:8081`
+- Check if running on `http://localhost:8080`
 
 ### Error 5: "Exam session mismatch"
 **Console shows:**
@@ -99,7 +99,7 @@ More logs will appear:
 ## 🔧 Quick Test Checklist
 
 ### Before Testing:
-- [ ] Backend is running (`http://localhost:8081`)
+- [ ] Backend is running (`http://localhost:8080`)
 - [ ] Student is logged in (check localStorage for `jwtToken`)
 - [ ] Student exists in `exam_eligible_students` table
 - [ ] Exam session in database matches frontend format exactly
@@ -119,7 +119,7 @@ More logs will appear:
 
 ### 1. Eligibility Check
 ```
-GET http://localhost:8081/api/student/check-exam-eligibility
+GET http://localhost:8080/api/student/check-exam-eligibility
 Parameters: 
   - prnNumber: REG2022001
   - examSession: Semester End 2026
@@ -129,7 +129,7 @@ Headers:
 
 ### 2. Registration Submission
 ```
-POST http://localhost:8081/api/student/registrations
+POST http://localhost:8080/api/student/registrations
 Body:
 {
   "examId": 1,

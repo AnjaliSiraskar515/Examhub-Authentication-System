@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
 import java.util.List;
-
+import java.util.ArrayList;
 @Entity
 @Table(name = "new_university_exams")
 @Data
@@ -23,11 +23,17 @@ public class UniversityExam {
     private String course;
     private String department;
     private String semester;
+    @ElementCollection
+    private List<Long> subjectIds = new ArrayList<>();
     private String status;
+    private Long collegeId;
+    private String institutionCode;
 
     private Long supervisorId;
     private String supervisorName;
-    private String institutionCode; // set from the authenticated university admin's institution
+
+    @ElementCollection
+    private List<Long> supervisorIds = new ArrayList<>();
 
     @OneToMany(mappedBy = "universityExam", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UniversityExamSubject> subjects;

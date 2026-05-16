@@ -85,6 +85,7 @@ public class QrVerificationResponse {
         private String aadharMasked;
         private String hallNo;
         private String seatNo;
+        private String courseInfo;
 
         public StudentDetail(String name, String rollNo, String photoUrl, String aadharMasked) {
             this.id = null;
@@ -142,6 +143,14 @@ public class QrVerificationResponse {
 
         public String getSeatNo() {
             return seatNo;
+        }
+
+        public String getCourseInfo() {
+            return courseInfo;
+        }
+
+        public void setCourseInfo(String courseInfo) {
+            this.courseInfo = courseInfo;
         }
     }
 

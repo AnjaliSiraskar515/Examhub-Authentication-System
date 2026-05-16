@@ -24,6 +24,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // ✅ NEW: List students by role
     java.util.List<User> findByRole(String role);
 
+    @org.springframework.data.jpa.repository.Query("SELECT u FROM User u LEFT JOIN FETCH u.college WHERE u.role = :role")
+    java.util.List<User> findByRoleWithCollege(@org.springframework.data.repository.query.Param("role") String role);
+
     // ✅ NEW: Count by biometric verification status
     long countByBiometricVerified(Boolean verified);
 
@@ -38,4 +41,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // ✅ NEW: Find user by username
     Optional<User> findByUsername(String username);
+
+    // ✅ Communication Hub: Find supervisors by institution code and role
+    java.util.List<User> findByInstitutionCodeAndRole(String institutionCode, String role);
+
+    // ✅ Communication Hub: Find HEAD supervisors by institution code
+    java.util.List<User> findByInstitutionCodeAndRoleAndSupervisorType(String institutionCode, String role, String supervisorType);
 }

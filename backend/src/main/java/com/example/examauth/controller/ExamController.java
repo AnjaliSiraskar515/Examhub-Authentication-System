@@ -2,6 +2,8 @@ package com.example.examauth.controller;
 
 import com.example.examauth.model.Exam;
 import com.example.examauth.service.ExamService;
+import com.example.examauth.student_exam.university.repo.UniversityExamRepository;
+import com.example.examauth.student_exam.university.model.UniversityExam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,9 @@ public class ExamController {
 
     @Autowired
     private ExamService examService;
+
+    @Autowired
+    private UniversityExamRepository universityExamRepository;
 
     @PostMapping("/create")
     public ResponseEntity<?> createExam(@RequestBody Map<String, Object> request) {
@@ -62,6 +67,35 @@ public class ExamController {
             return ResponseEntity.ok(Map.of("message", "Supervisor assigned successfully"));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", "Failed to assign supervisor"));
+        }
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateExamStatus(@PathVariable String id, @RequestBody Map<String, String> request) {
+        try {
+            String status = request.get("status");
+            if (id.startsWith("LEGACY_")) {
+                Long examId = Long.parseLong(id.substring(7));
+                Optional<Exam> optExam = examService.getExamById(examId);
+                if (optExam.isPresent()) {
+                    Exam exam = optExam.get();
+                    exam.setStatus(status);
+                    examService.createExam(exam);
+                    return ResponseEntity.ok(Map.of("message", "Legacy exam status updated"));
+                }
+            } else if (id.startsWith("UNIV_")) {
+                Long univId = Long.parseLong(id.substring(5));
+                Optional<UniversityExam> optExam = universityExamRepository.findById(univId);
+                if (optExam.isPresent()) {
+                    UniversityExam exam = optExam.get();
+                    exam.setStatus(status);
+                    universityExamRepository.save(exam);
+                    return ResponseEntity.ok(Map.of("message", "University exam status updated"));
+                }
+            }
+            return ResponseEntity.status(404).body(Map.of("error", "Exam not found or invalid ID format"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to update exam status"));
         }
     }
 }

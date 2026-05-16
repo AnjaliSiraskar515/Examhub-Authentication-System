@@ -31,12 +31,36 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/otp/**", "/api/auth/**", "/api/test/**").permitAll()
+                        // ── Static frontend assets (served from /static/) ──────────
+                        .requestMatchers(
+                                "/",
+                                "/*.html",
+                                "/*.css",
+                                "/*.js",
+                                "/*.png",
+                                "/*.jpg",
+                                "/*.ico",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**"
+                        ).permitAll()
+                        // ── Public API endpoints ───────────────────────────────────
+                        .requestMatchers("/api/otp/**", "/api/auth/**", "/api/test/**", "/api/debug/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/api/student/**").hasAnyRole("STUDENT", "SUPERADMIN")
-                        .requestMatchers("/api/supervisor/**", "/api/biometric/**").hasAnyRole("SUPERVISOR", "SUPERADMIN")
-                        .requestMatchers("/api/admin/**").hasAnyRole("UNIVERSITY_ADMIN", "SUPERADMIN")
-                        .requestMatchers("/api/institution/**").hasAnyRole("UNIVERSITY_ADMIN", "SUPERADMIN")
+                        .requestMatchers("/api/admit-card/**").permitAll()
+                        .requestMatchers("/api/university/**", "/api/stats/**").permitAll()
+                        .requestMatchers("/api/student/registrations").permitAll()
+                        .requestMatchers("/api/student/exams/register").hasAnyRole("STUDENT", "SUPER_ADMIN")
+                        .requestMatchers("/api/student/registrations/upload").hasAnyRole("STUDENT", "SUPER_ADMIN")
+                        // Institution onboarding is public — no login exists yet at this stage
+                        .requestMatchers("/api/institution/register").permitAll()
+                        // ── Role-protected API endpoints ───────────────────────────
+                        .requestMatchers("/api/profile/**").authenticated()
+                        .requestMatchers("/api/student/**").hasAnyRole("STUDENT", "SUPER_ADMIN")
+                        .requestMatchers("/api/supervisor/**", "/api/biometric/**").hasAnyRole("SUPERVISOR", "HEAD_SUPERVISOR", "SUPER_ADMIN")
+                        .requestMatchers("/api/head-supervisor/**").hasAnyRole("HEAD_SUPERVISOR", "SUPERVISOR", "SUPER_ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("UNIVERSITY_ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/institution/**").hasAnyRole("UNIVERSITY_ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);
@@ -46,7 +70,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5500", "http://127.0.0.1:5500"));
+        // Dev only: Allow all origins so it works across different live servers, ports, or "Run" buttons
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
@@ -61,3 +86,4 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
+

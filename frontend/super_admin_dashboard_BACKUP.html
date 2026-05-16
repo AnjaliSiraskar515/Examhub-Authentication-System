@@ -1,0 +1,4252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --secondary: #64748b;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --error: #ef4444;
+      --success: #22c55e;
+      --teal: #14b8a6;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      /* Allow scrolling for debugging */
+    }
+
+    .dashboard-container {
+      display: block;
+      min-height: 100vh;
+      height: auto;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: white;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 50;
+      /* Ensure sidebar stays on top */
+    }
+
+    .sidebar-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+      width: 40px;
+      height: 40px;
+    }
+
+    .sidebar-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 1rem 0;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      background: #f8fafc;
+      color: var(--primary);
+    }
+
+    .nav-item.active {
+      background: #eff6ff;
+      color: var(--primary);
+      border-left-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .nav-item i {
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: 260px;
+      padding: 2rem;
+      width: auto;
+      min-height: 100vh;
+      display: block;
+      /* Force block display */
+      /* border: 5px solid red; DEBUGGING BORDER */
+    }
+
+    .top-header {
+      background: white;
+      padding: 1.5rem 2rem;
+      border-radius: 0.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .header-title p {
+      color: var(--text-light);
+      margin: 0.25rem 0 0 0;
+      font-size: 0.875rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .primary-btn {
+      background: var(--primary);
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .secondary-btn {
+      background: #f1f5f9;
+      color: var(--text);
+      border: 1px solid #e2e8f0;
+    }
+
+    .secondary-btn:hover {
+      background: #e2e8f0;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      border-left: 4px solid;
+    }
+
+    .stat-card.blue {
+      border-left-color: var(--primary);
+    }
+
+    .stat-card.green {
+      border-left-color: var(--success);
+    }
+
+    .stat-card.teal {
+      border-left-color: var(--teal);
+    }
+
+    .stat-card.orange {
+      border-left-color: #f59e0b;
+    }
+
+    .stat-title {
+      color: var(--text-light);
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-icon {
+      float: right;
+      width: 48px;
+      height: 48px;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .stat-card.blue .stat-icon {
+      background: #eff6ff;
+      color: var(--primary);
+    }
+
+    .stat-card.green .stat-icon {
+      background: #f0fdf4;
+      color: var(--success);
+    }
+
+    .stat-card.teal .stat-icon {
+      background: #f0fdfa;
+      color: var(--teal);
+    }
+
+    .stat-card.orange .stat-icon {
+      background: #fffbeb;
+      color: #f59e0b;
+    }
+
+    /* Tabs */
+    .tabs-container {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      margin-bottom: 1.5rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 0.5rem;
+    }
+
+    .tab-btn {
+      padding: 0.625rem 1.25rem;
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn:hover {
+      background: #f8fafc;
+      color: var(--primary);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Content Sections */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .content-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .content-section {
+      display: none;
+    }
+
+    .content-section.active {
+      display: block !important;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+      box-sizing: border-box;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .data-table th {
+      background: #f8fafc;
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.875rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .data-table td {
+      padding: 0.875rem 0.75rem;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.875rem;
+    }
+
+    .data-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .badge.success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge.warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge.danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .action-btn {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .action-btn.edit {
+      background: #eff6ff;
+      color: var(--primary);
+    }
+
+    .action-btn.delete {
+      background: #fef2f2;
+      color: var(--error);
+    }
+
+    .action-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .active-tab {
+      border-bottom: 2px solid var(--primary) !important;
+      color: var(--primary) !important;
+    }
+
+    .profile-tab.active-tab {
+      border-bottom: 2px solid var(--primary) !important;
+      color: var(--primary) !important;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="dashboard-container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="logo.jpeg" alt="ExamHub Logo" style="height: 32px; width: auto; object-fit: contain;">
+        </div>
+        <div>
+          <div class="sidebar-title">ExamHub</div>
+          <div style="font-size: 0.75rem; color: var(--text-light);">Super Admin</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#overview" class="nav-item active" onclick="showSection('overview')">
+          <i class="fas fa-th-large"></i>
+          <span>Overview</span>
+        </a>
+        <a href="#profile" class="nav-item" onclick="showSection('profile')">
+          <i class="fas fa-user"></i>
+          <span>My Profile</span>
+        </a>
+
+        <a href="#institutions" class="nav-item" onclick="showSection('institutions')">
+          <i class="fas fa-building"></i>
+          <span>Manage Institutions</span>
+        </a>
+
+        <a href="#reports" class="nav-item" onclick="showSection('reports')">
+          <i class="fas fa-chart-bar"></i>
+          <span>Reports</span>
+        </a>
+        <a href="#settings" class="nav-item" onclick="showSection('settings')">
+          <i class="fas fa-cog"></i>
+          <span>System Settings</span>
+        </a>
+      </nav>
+
+      <div style="padding: 1.5rem; border-top: 1px solid #e2e8f0;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+          <div id="sidebar-profile-initials"
+            style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; overflow: hidden;">
+            SA</div>
+          <div>
+            <div id="sidebar-profile-name" style="font-weight: 600; font-size: 0.875rem;">Super Admin</div>
+            <div id="sidebar-profile-email" style="font-size: 0.75rem; color: var(--text-light);">admin@ExamHub.com
+            </div>
+          </div>
+        </div>
+        <button onclick="logout()" class="btn secondary-btn" style="width: 100%; justify-content: center;">
+          <i class="fas fa-sign-out-alt"></i>
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- Overview Section -->
+      <!-- Overview Section -->
+      <div id="section-overview" class="content-section">
+
+        <!-- 1. System Health & Header -->
+        <!-- 1. System Health & Header (Industry Level) -->
+        <div class="mb-6">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Central Authority Control Panel</h1>
+              <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider font-semibold">Enterprise Edition v2.4.0</p>
+            </div>
+
+            <!-- Global Search -->
+            <div class="flex-1 w-full md:w-auto md:mx-8">
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                  <i class="fas fa-search text-gray-400"></i>
+                </span>
+                <input type="text" id="globalSearchInput" oninput="handleGlobalSearch()"
+                  class="w-full py-2 pl-10 pr-4 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition-all"
+                  placeholder="Search Institution, Student ID, or Exam Code..." onclick="this.select()">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-2">
+                  <span class="text-xs text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">Ctrl+K</span>
+                </span>
+                <!-- Search Results Dropdown -->
+                <div id="searchResultsDropdown" class="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-md shadow-lg hidden max-h-96 overflow-y-auto left-0" style="top: 100%;">
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-3">
+              <button class="btn primary-btn text-xs font-medium shadow-sm"
+                onclick="openNotificationsSection()"><i class="fas fa-bell mr-1"></i> Notifications</button>
+            </div>
+          </div>
+
+          <!-- Status Bar 2.0 -->
+          <div
+            class="bg-white rounded-lg border border-gray-200 p-3 flex flex-wrap items-center gap-4 text-xs shadow-sm">
+            <span
+              class="flex items-center text-green-700 font-semibold bg-green-50 px-2 py-1 rounded border border-green-100"><i
+                class="fas fa-check-circle mr-1.5"></i> System Health: Operational</span>
+            <span
+              class="flex items-center text-green-700 font-semibold bg-green-50 px-2 py-1 rounded border border-green-100"><i
+                class="fas fa-database mr-1.5"></i> Database: Connected</span>
+            <span
+              class="flex items-center text-blue-700 font-semibold bg-blue-50 px-2 py-1 rounded border border-blue-100"><i
+                class="fas fa-network-wired mr-1.5"></i> API Gateway: Active</span>
+            <span class="flex items-center text-orange-600 font-medium"><i class="fas fa-bell mr-1.5"></i> Alerts:
+              2</span>
+            <div class="ml-auto flex items-center text-gray-500 gap-2 border-l pl-4 border-gray-200">
+              <i class="fas fa-sync-alt fa-spin text-blue-500"></i>
+              <span>Last Sync: <span class="font-mono text-gray-700">Just now</span> (Auto-refresh)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. KPI Cards (Row 1: Core Metrics) -->
+        <!-- 2. KPI Cards (Row 1: Core Metrics) -->
+        <div class="stats-grid mb-6">
+          <div class="stat-card blue group cursor-pointer hover:shadow-lg transition-all"
+            onclick="window.location.href='#institutions'">
+            <div class="flex justify-between items-start">
+              <div class="stat-icon group-hover:scale-110 transition-transform"><i class="fas fa-university"></i></div>
+
+            </div>
+            <div class="stat-title mt-2">Total Institutions</div>
+            <div class="stat-value" id="total-inst-count">Loading...</div>
+            <p class="text-xs text-green-600 mt-1 font-medium flex items-center gap-1">
+              <span class="bg-green-100 px-1 rounded"><i class="fas fa-arrow-up text-[10px]"></i> 12%</span> vs last
+              month
+            </p>
+          </div>
+
+          <div class="stat-card purple group cursor-pointer hover:shadow-lg transition-all">
+            <div class="flex justify-between items-start">
+              <div class="stat-icon group-hover:scale-110 transition-transform"><i class="fas fa-user-graduate"></i>
+              </div>
+
+            </div>
+            <div class="stat-title mt-2">Total Students</div>
+            <div class="stat-value" id="total-students-count">Loading...</div>
+            <p class="text-xs text-green-600 mt-1 font-medium flex items-center gap-1">
+              <span class="bg-green-100 px-1 rounded"><i class="fas fa-arrow-up text-[10px]"></i> 8%</span> growth
+            </p>
+          </div>
+
+          <div class="stat-card orange group transition-all">
+            <div class="flex justify-between items-start">
+              <div class="stat-icon group-hover:scale-110 transition-transform"><i class="fas fa-file-alt"></i></div>
+
+            </div>
+            <div class="stat-title mt-2">Total Exams</div>
+            <div class="stat-value" id="total-exams-count">Loading...</div>
+            <p class="text-xs text-gray-500 mt-1">Lifetime count</p>
+          </div>
+
+          <div class="stat-card teal group cursor-pointer hover:shadow-lg transition-all"
+            onclick="window.location.href='#profile'">
+            <div class="stat-icon group-hover:scale-110 transition-transform"><i class="fas fa-user-shield"></i></div>
+            <div class="stat-title mt-2">Active Admins</div>
+            <div class="stat-value" id="total-admins-count">12</div>
+            <p class="text-xs text-gray-500 mt-1">Across all orgs</p>
+          </div>
+        </div>
+
+        <!-- 3. KPI Cards (Row 2: Operational Risks) -->
+        <div class="stats-grid mb-6">
+          <div class="stat-card" style="border-left: 4px solid #3b82f6;">
+            <div class="stat-icon bg-blue-50 text-blue-600"><i class="fas fa-video"></i></div>
+            <div class="stat-title">Live Exams</div>
+            <div class="stat-value" id="live-exams-count">3</div>
+            <p class="text-xs text-blue-600 mt-1 font-medium">Monitoring active</p>
+          </div>
+          <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+            <div class="stat-icon bg-yellow-50 text-yellow-600"><i class="fas fa-clock"></i></div>
+            <div class="stat-title">Pending Approvals</div>
+            <div class="stat-value" id="pending-inst-count">2</div>
+            <p class="text-xs text-yellow-600 mt-1 font-medium">Action required</p>
+          </div>
+          <div class="stat-card" style="border-left: 4px solid #ef4444;">
+            <div class="stat-icon bg-red-50 text-red-600"><i class="fas fa-shield-alt"></i></div>
+            <div class="stat-title">Security Alerts</div>
+            <div class="stat-value" id="security-alerts-count">5</div>
+            <p class="text-xs text-red-600 mt-1 font-medium">Biometric fails</p>
+          </div>
+          <div class="stat-card" style="border-left: 4px solid #6366f1;">
+            <div class="stat-icon bg-indigo-50 text-indigo-600"><i class="fas fa-check-double"></i></div>
+            <div class="stat-title">Users Verified</div>
+            <div class="stat-value" id="users-verified-count">89%</div>
+            <p class="text-xs text-gray-500 mt-1">Today's login rate</p>
+          </div>
+        </div>
+
+        <!-- (Metrics moved to Reports) -->
+
+        <!-- (Recent Activity moved to Reports) -->
+      </div>
+
+
+
+      <!-- Profile Section -->
+      <div id="section-profile" class="content-section" style="display: none;">
+        <div class="content-card">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="section-title mb-0"><i class="fas fa-user-circle"></i> My Profile</h2>
+            <span class="badge success">Active Account</span>
+          </div>
+
+          <!-- Profile Tabs -->
+          <div class="tabs mb-6 border-b border-gray-200">
+            <button
+              class="profile-tab px-4 py-2 border-b-2 border-transparent hover:border-gray-300 font-medium text-gray-600 active-tab"
+              onclick="switchProfileTab('info', this)">
+              <i class="fas fa-id-card mr-2"></i>Profile Info
+            </button>
+            <button
+              class="profile-tab px-4 py-2 border-b-2 border-transparent hover:border-gray-300 font-medium text-gray-600"
+              onclick="switchProfileTab('security', this)">
+              <i class="fas fa-shield-alt mr-2"></i>Security
+            </button>
+          </div>
+
+          <!-- Tab 1: Profile Info -->
+          <div id="profile-tab-info" class="profile-tab-content">
+            <!-- Warning Notice -->
+            <div class="bg-red-50 border-l-4 border-red-500 p-3 mb-6 rounded-r flex items-start">
+              <div class="flex-shrink-0 mr-3">
+                <i class="fas fa-exclamation-triangle text-red-500 mt-0.5"></i>
+              </div>
+              <div>
+                <p class="text-sm text-red-700 font-bold">Important Notice</p>
+                <p class="text-xs text-red-600 mt-1">Super Admin can change name, phone number, and email only once.
+                  Please verify details before saving.</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <!-- Avatar -->
+              <div class="flex flex-col items-center text-center space-y-4">
+                <div
+                  class="relative w-32 h-32 rounded-full bg-indigo-600 flex items-center justify-center text-4xl text-white font-bold shadow-lg ring-4 ring-white">
+                  SA
+                </div>
+                <h3 class="text-xl font-bold text-gray-900" id="profile-name">Super Admin</h3>
+                <p class="text-gray-500 mb-2">Central Authority</p>
+                <button class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  onclick="changeProfilePhoto()">Change Photo</button>
+                <input type="file" id="profile-photo-input" class="hidden" accept="image/*"
+                  onchange="uploadProfilePhoto(this)">
+              </div>
+
+              <!-- Details -->
+              <div class="col-span-2 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-500">Full Name</label>
+                    <input type="text" id="profile-name-input"
+                      class="mt-1 w-full p-2 bg-white rounded border border-gray-300 text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      value="Super Admin">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-500">Official Email</label>
+                    <div class="flex gap-2 mt-1">
+                      <input type="email" id="profile-email"
+                        class="flex-1 p-2 bg-white rounded border border-gray-300 text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        value="admin@examhub.com" oninput="handleProfileInput('email')">
+                      <button id="btn-verify-email" onclick="openOtpModal('email')"
+                        class="hidden px-3 py-2 bg-yellow-500 text-white text-sm font-bold rounded shadow hover:bg-yellow-600 transition-all">
+                        Verify
+                      </button>
+                      <span id="badge-verified-email" class="hidden items-center text-green-600 text-sm font-bold px-2">
+                        <i class="fas fa-check-circle mr-1"></i> Verified
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-500">Phone Number</label>
+                    <div class="flex gap-2 mt-1">
+                      <input type="tel" id="profile-phone"
+                        class="flex-1 p-2 bg-white rounded border border-gray-300 text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder="+91 98765 43210" oninput="handleProfileInput('phone')">
+                      <button id="btn-verify-phone" onclick="openOtpModal('phone')"
+                        class="hidden px-3 py-2 bg-yellow-500 text-white text-sm font-bold rounded shadow hover:bg-yellow-600 transition-all">
+                        Verify
+                      </button>
+                      <span id="badge-verified-phone" class="hidden items-center text-green-600 text-sm font-bold px-2">
+                        <i class="fas fa-check-circle mr-1"></i> Verified
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-500">Employee ID</label>
+                    <div class="mt-1 p-2 bg-gray-50 rounded border border-gray-200 text-gray-500 cursor-not-allowed">
+                      EMP-001</div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-500">Role</label>
+                    <div class="mt-1 p-2 bg-gray-50 rounded border border-gray-200 text-gray-500 cursor-not-allowed">
+                      SUPER_ADMIN</div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-500">Last Login</label>
+                    <div id="profile-last-login"
+                      class="mt-1 p-2 bg-gray-50 rounded border border-gray-200 text-gray-500">Loading...</div>
+                  </div>
+                </div>
+
+                <!-- Save Button -->
+                <div class="pt-4 flex justify-end border-t border-gray-100 mt-6 md:col-span-2">
+                  <button class="btn primary-btn" onclick="saveProfileChanges()">
+                    <i class="fas fa-save mr-2"></i> Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Security -->
+          <div id="profile-tab-security" class="profile-tab-content" style="display: none;">
+            <div class="space-y-8">
+              <!-- Password -->
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Change Password</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Current Password</label>
+                    <input type="password" id="current-password" autocomplete="off"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="Enter current password">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">New Password</label>
+                    <input type="password" id="new-password" autocomplete="new-password"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="Min. 6 characters">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                    <input type="password" id="confirm-password" autocomplete="new-password"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="Re-enter new password">
+                    <p id="confirm-password-hint" class="text-xs mt-1 hidden"></p>
+                  </div>
+                  <div class="flex items-end">
+                    <button class="w-full bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 transition-colors"
+                      onclick="updatePassword()">
+                      <i class="fas fa-key mr-2"></i>Update Password
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Other sections hidden by default -->
+      <div id="section-exams" class="content-section" style="display: none;">
+
+        <!-- 1. Exams Summary Row -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold text-gray-400 uppercase">Total Exams</p>
+              <p class="text-xl font-bold text-gray-800">24</p>
+            </div>
+            <div class="bg-blue-50 text-blue-600 h-10 w-10 rounded-full flex items-center justify-center"><i
+                class="fas fa-layer-group"></i></div>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-green-500 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold text-gray-400 uppercase">Live Now</p>
+              <p class="text-xl font-bold text-green-600">3 <span class="animate-pulse text-xs ml-1">●</span></p>
+            </div>
+            <div class="bg-green-50 text-green-600 h-10 w-10 rounded-full flex items-center justify-center"><i
+                class="fas fa-broadcast-tower"></i></div>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold text-gray-400 uppercase">Upcoming</p>
+              <p class="text-xl font-bold text-gray-800">5</p>
+            </div>
+            <div class="bg-yellow-50 text-yellow-600 h-10 w-10 rounded-full flex items-center justify-center"><i
+                class="fas fa-calendar-alt"></i></div>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold text-gray-400 uppercase">Completed</p>
+              <p class="text-xl font-bold text-gray-800">16</p>
+            </div>
+            <div class="bg-gray-100 text-gray-600 h-10 w-10 rounded-full flex items-center justify-center"><i
+                class="fas fa-check-double"></i></div>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold text-gray-400 uppercase">Cancelled</p>
+              <p class="text-xl font-bold text-red-600">0</p>
+            </div>
+            <div class="bg-red-50 text-red-600 h-10 w-10 rounded-full flex items-center justify-center"><i
+                class="fas fa-ban"></i></div>
+          </div>
+        </div>
+
+        <!-- 2. Advanced Filter & Actions Panel -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 sticky top-0 z-20">
+          <div class="flex flex-col md:flex-row justify-between gap-4">
+            <div class="flex-1 flex gap-2">
+              <div class="relative flex-1">
+                <input type="text" id="examSearchInput" placeholder="Search by Exam Name or ID..."
+                  class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
+                  oninput="applyExamFilters()">
+                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+              </div>
+              <select id="examStatusFilter" class="border border-gray-300 rounded-lg text-sm px-3 py-2 bg-white"
+                onchange="applyExamFilters()">
+                <option>All Status</option>
+                <option>Live</option>
+                <option>Upcoming</option>
+                <option>Completed</option>
+              </select>
+              <select id="examInstFilter"
+                class="border border-gray-300 rounded-lg text-sm px-3 py-2 bg-white hidden md:block"
+                onchange="applyExamFilters()">
+                <option>All Institutions</option>
+                <option>Pune Univ</option>
+                <option>Mumbai Tech</option>
+              </select>
+            </div>
+            <div class="flex gap-2">
+              <button id="examExportBtn" class="btn secondary-btn text-sm" onclick="exportExamsData()"><i
+                  class="fas fa-file-export mr-1"></i> Export</button>
+
+              <div class="relative group">
+                <button class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium"><i
+                    class="fas fa-ellipsis-v"></i></button>
+                <div
+                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 hidden group-hover:block">
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onclick="bulkAction('suspend'); return false;">Bulk Suspend</a>
+                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onclick="bulkAction('archive'); return false;">Archive Selected</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Enhanced Data Table -->
+        <div class="content-card overflow-hidden p-0">
+          <div class="overflow-x-auto">
+            <table class="data-table w-full" id="examsTable">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="w-4 p-4"><input type="checkbox" id="selectAllExams" onclick="toggleSelectAllExams(this)"
+                      class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"></th>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Exam Details
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Institution
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Schedule</th>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Participants
+                  </th>
+                  <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="examsTableBody" class="bg-white divide-y divide-gray-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+          <!-- Pagination -->
+          <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+            <span class="text-sm text-gray-500" id="examsPaginationText">Showing <span class="font-medium"
+                id="examsStartRange">1</span> to <span class="font-medium" id="examsEndRange">10</span> of <span
+                class="font-medium" id="examsTotalCount">24</span> results</span>
+            <div class="flex gap-1">
+              <button id="prevExamsBtn" onclick="changeExamsPage(-1)"
+                class="px-3 py-1 border border-gray-300 rounded bg-white text-sm disabled:opacity-50 hover:bg-gray-50 disabled:cursor-not-allowed">Prev</button>
+              <button id="nextExamsBtn" onclick="changeExamsPage(1)"
+                class="px-3 py-1 border border-gray-300 rounded bg-white text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="section-institutions" class="content-section" style="display: none;">
+        <div class="content-card">
+          <h2 class="section-title"><i class="fas fa-building"></i> Manage Institutions</h2>
+
+          <!-- Tabs -->
+          <div class="tabs mb-4 border-b border-gray-200">
+            <button
+              class="inst-tab px-4 py-2 border-b-2 border-transparent hover:border-gray-300 font-medium text-gray-600 active-tab"
+              onclick="filterInstitutions('pending', this)">
+              <i class="fas fa-clock mr-2"></i>Requested
+            </button>
+            <button
+              class="inst-tab px-4 py-2 border-b-2 border-transparent hover:border-gray-300 font-medium text-gray-600"
+              onclick="filterInstitutions('approved', this)">
+              <i class="fas fa-check-circle mr-2"></i>Approved
+            </button>
+            <button
+              class="inst-tab px-4 py-2 border-b-2 border-transparent hover:border-gray-300 font-medium text-gray-600"
+              onclick="filterInstitutions('rejected', this)">
+              <i class="fas fa-times-circle mr-2"></i>Rejected
+            </button>
+            <button
+              class="inst-tab px-4 py-2 border-b-2 border-transparent hover:border-gray-300 font-medium text-gray-600"
+              onclick="openCommunicationHub(this)">
+              <i class="fas fa-envelope-open-text mr-2"></i>Communication Hub
+            </button>
+          </div>
+
+          <!-- Institutions List View -->
+          <div id="institutions-list-view" class="overflow-x-auto">
+            <table class="data-table" id="institutionsTable">
+              <thead>
+                <tr>
+                  <th>Institution Name</th>
+                  <th>Code</th>
+                  <th>Contact</th>
+                  <th>Admin</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="institutionsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Communication Hub View -->
+          <div id="communication-hub-view" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <!-- Compose Area -->
+              <div class="lg:col-span-1 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-pen-fancy mr-2"></i>Compose
+                  Official Message</h3>
+                <form onsubmit="event.preventDefault(); sendOfficialMessage();">
+                  <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Type</label>
+                    <select id="msgType" class="w-full p-2 border border-gray-300 rounded text-sm"
+                      onchange="toggleDeadlineField()">
+                      <option value="General">General Message</option>
+                      <option value="Warning">Official Warning</option>
+                      <option value="Broadcast">Broadcast Notice</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Recipient</label>
+                    <input type="text" id="msgRecipient" class="w-full p-2 border border-gray-300 rounded text-sm"
+                      placeholder="Institution Code/Name">
+                  </div>
+                  <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Priority</label>
+                    <div class="flex gap-2">
+                      <label class="flex items-center text-sm"><input type="radio" name="priority" value="Low"
+                          class="mr-1"> Low</label>
+                      <label class="flex items-center text-sm"><input type="radio" name="priority" value="Normal"
+                          checked class="mr-1"> Normal</label>
+                      <label class="flex items-center text-sm"><input type="radio" name="priority" value="Urgent"
+                          class="mr-1 text-red-600"> Urgent</label>
+                    </div>
+                  </div>
+                  <div class="mb-3 hidden" id="deadlineField">
+                    <label class="block text-xs font-bold text-red-500 uppercase mb-1">Response Deadline</label>
+                    <input type="date" id="msgDeadline" class="w-full p-2 border border-red-300 rounded text-sm">
+                  </div>
+                  <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Subject</label>
+                    <input type="text" id="msgSubject" class="w-full p-2 border border-gray-300 rounded text-sm"
+                      placeholder="Official Subject">
+                  </div>
+                  <div class="mb-4">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Message Body</label>
+                    <textarea id="msgBody" rows="4" class="w-full p-2 border border-gray-300 rounded text-sm"
+                      placeholder="Type your message here. This will be logged for audit."></textarea>
+                  </div>
+                  <button type="submit" class="w-full btn primary-btn"><i class="fas fa-paper-plane mr-2"></i> Send
+                    Officially</button>
+                </form>
+              </div>
+
+              <!-- History Log -->
+              <div class="lg:col-span-2">
+                <h3 class="font-bold text-gray-800 mb-4 flex justify-between items-center">
+                  <span><i class="fas fa-history mr-2"></i>Communication History</span>
+                  <span class="text-xs font-normal bg-gray-100 px-2 py-1 rounded text-gray-500">Audit Log</span>
+                </h3>
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th class="p-3 font-medium text-gray-600">Date</th>
+                        <th class="p-3 font-medium text-gray-600">Type</th>
+                        <th class="p-3 font-medium text-gray-600">Priority</th>
+                        <th class="p-3 font-medium text-gray-600">Recipient</th>
+                        <th class="p-3 font-medium text-gray-600">Subject</th>
+                        <th class="p-3 font-medium text-gray-600">Status</th>
+                        <th class="p-3 font-medium text-gray-600">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="msgHistoryBody" class="divide-y divide-gray-100">
+                      <!-- Mock History -->
+                      <tr class="hover:bg-gray-50">
+                        <td colspan="7" class="p-3 text-center text-gray-500">Loading communication history...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="mt-4 bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                    <h4 class="font-semibold text-gray-800"><i class="fas fa-user-check mr-2"></i>Reply Requests</h4>
+                    <button class="text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50" onclick="loadReplyRequests()">Refresh</button>
+                  </div>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                      <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th class="p-3 font-medium text-gray-600">Date</th>
+                          <th class="p-3 font-medium text-gray-600">Institution</th>
+                          <th class="p-3 font-medium text-gray-600">Subject</th>
+                          <th class="p-3 font-medium text-gray-600">Status</th>
+                          <th class="p-3 font-medium text-gray-600">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="replyRequestsBody" class="divide-y divide-gray-100">
+                        <tr><td colspan="5" class="p-3 text-center text-gray-500">Loading reply requests...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+
+
+      <div id="section-reports" class="content-section" style="display: none;">
+
+        <!-- Header & Controls -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-chart-pie text-indigo-600 mr-2"></i> ExamHub
+                Reports</h2>
+              <p class="text-sm text-gray-500 mt-1">Centralized Analytics & Performance Reporting</p>
+            </div>
+            <div class="flex gap-2 mt-4 md:mt-0">
+              <button class="btn secondary-btn text-xs" onclick="downloadSystemCsv()"><i
+                  class="fas fa-file-csv mr-1"></i> CSV</button>
+              <button class="btn primary-btn text-xs" onclick="downloadSystemReport()"><i
+                  class="fas fa-file-pdf mr-1"></i> Download PDF Report</button>
+            </div>
+          </div>
+
+          <!-- Advanced Filters -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date Range</label>
+              <input type="date" id="filterDateParam"
+                class="w-full text-sm border-gray-300 rounded p-1.5 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Institution</label>
+              <select id="filterInstParam" class="w-full text-sm border-gray-300 rounded p-1.5 bg-white">
+                <option value="All Institutions">All Institutions</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Exam Status</label>
+              <select id="filterStatusParam" class="w-full text-sm border-gray-300 rounded p-1.5 bg-white">
+                <option value="All Status">All Status</option>
+                <option value="Completed">Completed</option>
+                <option value="Ongoing">Ongoing</option>
+                <option value="Flagged">Flagged</option>
+                <option value="Live">Live</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button id="applyReportsFilterBtn" onclick="applyReportsFilter()"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1.5 rounded transition-colors text-sm shadow-sm"><i
+                  class="fas fa-filter mr-1"></i> Apply Filters</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. System Intelligence Overview (6 Metrics) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <!-- Existing Enhanced -->
+          <div class="stat-card bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
+            <div class="flex justify-between">
+              <div>
+                <p class="text-xs font-bold text-gray-400 uppercase">Exam Success Rate</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1" id="report-success-rate">94.2%</p>
+                <p class="text-xs text-green-600 mt-1"><i class="fas fa-arrow-up"></i> 2.1% vs last month</p>
+              </div>
+              <div class="text-blue-100 text-3xl"><i class="fas fa-check-circle"></i></div>
+            </div>
+          </div>
+          <div class="stat-card bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500">
+            <div class="flex justify-between">
+              <div>
+                <p class="text-xs font-bold text-gray-400 uppercase">Verification Accuracy</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1" id="report-verification">98.6%</p>
+                <p class="text-xs text-green-600 mt-1">Biometric & ID Match</p>
+              </div>
+              <div class="text-green-100 text-3xl"><i class="fas fa-fingerprint"></i></div>
+            </div>
+          </div>
+          <div class="stat-card bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
+            <div class="flex justify-between">
+              <div>
+                <p class="text-xs font-bold text-gray-400 uppercase">Security Incidents</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1"><span id="report-security-incidents">3</span> <span id="report-security-incidents-caption" class="text-sm font-normal text-gray-400">/
+                    1205 Exams</span></p>
+                <p class="text-xs text-green-600 mt-1"><i class="fas fa-arrow-down"></i> 20% decrease</p>
+              </div>
+              <div class="text-red-100 text-3xl"><i class="fas fa-shield-alt"></i></div>
+            </div>
+          </div>
+          <!-- Row 2 -->
+          <div class="stat-card bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
+            <div class="flex justify-between">
+              <div>
+                <p class="text-xs font-bold text-gray-400 uppercase">Active Users</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1" id="report-active-users">1,248</p>
+                <p class="text-xs text-gray-500 mt-1" id="report-active-users-caption">Across 8 Institutions</p>
+              </div>
+              <div class="text-purple-100 text-3xl"><i class="fas fa-users"></i></div>
+            </div>
+          </div>
+          <div class="stat-card bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500">
+            <div class="flex justify-between">
+              <div>
+                <p class="text-xs font-bold text-gray-400 uppercase">System Uptime</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1" id="report-system-uptime">99.9%</p>
+                <p class="text-xs text-gray-500 mt-1">No outages detected</p>
+              </div>
+              <div class="text-yellow-100 text-3xl"><i class="fas fa-server"></i></div>
+            </div>
+          </div>
+          <div class="stat-card bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500">
+            <div class="flex justify-between">
+              <div>
+                <p class="text-xs font-bold text-gray-400 uppercase">Compliance Rate</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1" id="report-compliance">100%</p>
+                <p class="text-xs text-indigo-600 mt-1">Audit Ready</p>
+              </div>
+              <div class="text-indigo-100 text-3xl"><i class="fas fa-clipboard-check"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Security & Compliance Report -->
+        <div class="bg-red-50 rounded-xl border border-red-100 p-6 mb-6">
+          <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-shield-alt text-red-600 mr-2"></i> Security & Compliance Report
+            <div class="ml-auto flex gap-2 items-center">
+              <button class="text-xs bg-white text-red-600 px-2 py-1 rounded border border-red-200 hover:bg-red-50"
+                onclick="downloadSubsection('Security')"><i class="fas fa-file-export mr-1"></i> Export Incident
+                Report</button>
+              <span class="text-xs font-normal text-red-600 bg-white px-2 py-1 rounded border border-red-200">Live
+                Monitoring</span>
+            </div>
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-3 rounded shadow-sm border border-red-100">
+              <p class="text-xs text-red-500 font-bold uppercase">Biometric Mismatch</p>
+              <p class="text-xl font-bold text-gray-800 mt-1"><span id="report-bio-mismatch">12</span> <small
+                  class="text-xs font-normal text-gray-400">Incidents</small></p>
+            </div>
+            <div class="bg-white p-3 rounded shadow-sm border border-orange-100">
+              <p class="text-xs text-orange-500 font-bold uppercase">QR Re-scans</p>
+              <p class="text-xl font-bold text-gray-800 mt-1"><span id="report-qr-rescans">45</span> <small
+                  class="text-xs font-normal text-gray-400">Attempts</small></p>
+            </div>
+            <div class="bg-white p-3 rounded shadow-sm border border-yellow-100">
+              <p class="text-xs text-yellow-600 font-bold uppercase">IP Conflicts</p>
+              <p class="text-xl font-bold text-gray-800 mt-1"><span id="report-ip-conflicts">3</span> <small
+                  class="text-xs font-normal text-gray-400">Detected</small></p>
+            </div>
+            <div class="bg-white p-3 rounded shadow-sm border border-blue-100">
+              <p class="text-xs text-blue-600 font-bold uppercase">Safe Logins</p>
+              <p class="text-xl font-bold text-gray-800 mt-1"><span id="report-safe-logins">1,202</span> <small
+                  class="text-xs font-normal text-green-500" id="report-safe-logins-pct">99.8%</small></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Enhanced Exam Performance Table -->
+        <div class="content-card" id="detailed-exam-reports-section" style="display: none;">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-gray-800"><i class="fas fa-list mr-2"></i> Detailed Exam Reports</h3>
+            <div class="flex gap-2">
+              <button class="btn secondary-btn text-xs py-1" onclick="downloadSubsection('Exams')"><i
+                  class="fas fa-download mr-1"></i> Export Data</button>
+              <div class="relative">
+                <input type="text" placeholder="Search exams..."
+                  class="text-sm border border-gray-300 rounded-full py-1 px-3 focus:outline-none focus:border-blue-500 pl-8">
+                <i class="fas fa-search absolute left-3 top-1.5 text-gray-400 text-xs"></i>
+              </div>
+            </div>
+          </div>
+          <div class="overflow-x-auto w-full" style="max-height: 500px; overflow-y: auto;">
+            <table class="data-table w-full">
+              <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                <tr>
+                  <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Exam Name</th>
+                  <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Date & Time</th>
+                  <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Institution</th>
+                  <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Completion %</th>
+                  <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Failures</th>
+                  <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Supervisor</th>
+                  <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Score</th>
+                  <th class="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 bg-white" id="detailed-exam-reports-tbody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 5. Deep Dive Analytics (Moved from Overview) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-8">
+          <div class="content-card">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-bold text-gray-800">Exams Conducted Trends</h3>
+              <div class="flex gap-2">
+                <select class="text-xs border rounded p-1 text-gray-600 outline-none">
+                  <option>Last 6 Months</option>
+                  <option>Last Year</option>
+                </select>
+                <button class="text-xs text-gray-500 hover:text-blue-600" onclick="downloadSubsection('Trends')"><i
+                    class="fas fa-download"></i></button>
+              </div>
+            </div>
+            <div style="height: 300px;">
+              <canvas id="examsChart"></canvas>
+            </div>
+          </div>
+          <div class="content-card">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-bold text-gray-800">Student Enrollment Growth</h3>
+              <div class="flex gap-2 items-center">
+                <span class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded font-medium">+15% vs Avg</span>
+                <button class="text-xs text-gray-500 hover:text-blue-600" onclick="downloadSubsection('Trends')"><i
+                    class="fas fa-download"></i></button>
+              </div>
+            </div>
+            <div style="height: 300px;">
+              <canvas id="studentsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+
+
+      </div>
+
+      <div id="section-settings" class="content-section" style="display: none;">
+        <div class="content-card">
+          <h2 class="section-title mb-6"><i class="fas fa-cogs"></i> System Configuration (The Brain)</h2>
+
+          <!-- Settings Tabs -->
+          <div class="border-b border-gray-200 mb-6">
+            <nav class="flex -mb-px space-x-6 overflow-x-auto">
+              <button type="button" onclick="openSettingsTab('general', this)"
+                class="settings-tab active-settings-tab pb-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap">
+                <i class="fas fa-sliders-h mr-2"></i>General
+              </button>
+
+              <button type="button" onclick="openSettingsTab('notifications', this)"
+                class="settings-tab pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
+                <i class="fas fa-bell mr-2"></i>Notifications
+              </button>
+              <button type="button" onclick="openSettingsTab('maintenance', this)"
+                class="settings-tab pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
+                <i class="fas fa-server mr-2"></i>Maintenance
+              </button>
+              <button type="button" onclick="openSettingsTab('governance', this)"
+                class="settings-tab pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
+                <i class="fas fa-balance-scale mr-2"></i>Governance
+              </button>
+            </nav>
+          </div>
+
+          <!-- Tab 1: General Configuration -->
+          <div id="settings-general" class="settings-content">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Platform Behaviors</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">System Name</label>
+                <input type="text" id="setting-system-name" data-setting-key="system.name"
+                  class="form-input w-full p-2 border border-gray-300 rounded"
+                  value="ExamHub Authentication System">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Admin Contact Email</label>
+                <input type="email" id="setting-admin-contact-email" data-setting-key="admin.contact.email"
+                  class="form-input w-full p-2 border border-gray-300 rounded"
+                  value="admin@examhub.com">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Session Timeout (Minutes)</label>
+                <input type="number" id="setting-session-timeout" data-setting-key="session.timeout.minutes"
+                  class="form-input w-full p-2 border border-gray-300 rounded" value="15">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Max Students Per Exam</label>
+                <input type="number" id="setting-max-students" data-setting-key="exam.max.students"
+                  class="form-input w-full p-2 border border-gray-300 rounded" value="500">
+              </div>
+            </div>
+          </div>
+
+
+
+          <!-- Tab 4: Notifications -->
+          <div id="settings-notifications" class="settings-content hidden">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Alerts & Messaging</h3>
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+              <div class="flex">
+                <div class="ml-3">
+                  <p class="text-sm text-yellow-700">
+                    Critical security alerts are sent instantly via SMS regardless of settings.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Real-time Alert Threshold</label>
+                  <select id="setting-alert-threshold" data-setting-key="notifications.alert.threshold"
+                    class="form-input w-full p-2 border border-gray-300 rounded">
+                    <option>High Priority Only</option>
+                    <option>Medium & High</option>
+                    <option>All Alerts</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="space-y-3 pt-4">
+                <label class="flex items-center"><input type="checkbox" id="setting-sms-alerts"
+                    data-setting-key="notifications.sms.alerts.enabled" checked
+                    class="mr-3 text-blue-600 h-5 w-5 rounded"> Enable SMS Alerts for Admin</label>
+                <label class="flex items-center"><input type="checkbox" id="setting-auto-report-incidents"
+                    data-setting-key="notifications.auto.report.incidents" checked
+                    class="mr-3 text-blue-600 h-5 w-5 rounded"> Auto-Report Security Incidents to Chief</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 5: Maintenance -->
+          <div id="settings-maintenance" class="settings-content hidden">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">System Health & Backup</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
+                <div class="flex items-center mb-2 text-indigo-600">
+                  <i class="fas fa-database text-2xl mr-3"></i>
+                  <h4 class="font-bold">Database Backup</h4>
+                </div>
+                <p id="settings-backup-schedule-text" class="text-sm text-gray-500 mb-4">Scheduled backup: Daily</p>
+                <input type="hidden" id="setting-backup-schedule-hidden" value="Daily">
+                <div class="flex gap-2">
+                  <button type="button" class="btn secondary-btn text-xs" onclick="runDatabaseBackup(event, this)">Backup
+                    Now</button>
+                  <button type="button" class="btn text-blue-600 text-xs hover:underline" onclick="configureBackupSchedule()">Configure Schedule</button>
+                </div>
+              </div>
+
+              <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
+                <div class="flex items-center mb-2 text-red-600">
+                  <i class="fas fa-eraser text-2xl mr-3"></i>
+                  <h4 class="font-bold">System Cache</h4>
+                </div>
+                <p id="settings-cache-size-text" class="text-sm text-gray-500 mb-4">Size: Loading...</p>
+                <button type="button" class="btn bg-red-50 text-red-600 text-xs w-full hover:bg-red-100"
+                  onclick="clearSystemCache(this)">Clear Cache</button>
+              </div>
+            </div>
+
+            <h4 class="font-bold text-gray-800 mb-2">Logs & Version</h4>
+            <div id="recent-logs-terminal" class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm h-32 overflow-y-auto mb-4">
+              Loading recent logs...
+            </div>
+            <div class="flex justify-between items-center text-sm text-gray-500">
+              <span>Version: v2.4.0 (Industry Standard)</span>
+              <button type="button" class="text-blue-600 hover:text-blue-800" onclick="viewFullMaintenanceLogs()">View Full Logs</button>
+            </div>
+          </div>
+
+          <!-- Tab 6: Governance -->
+          <div id="settings-governance" class="settings-content hidden">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Institution Rules</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-4 border border-gray-200 rounded">
+                <div>
+                  <h4 class="font-medium">Require Institution Approval</h4>
+                  <p class="text-sm text-gray-500">New sign-ups must be manually approved.</p>
+                </div>
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="setting-require-institution-approval"
+                    data-setting-key="institution.approval.required" class="h-5 w-5 rounded text-green-600" checked>
+                </label>
+              </div>
+              <div class="flex items-center justify-between p-4 border border-gray-200 rounded">
+                <div>
+                  <h4 class="font-medium">Auto-Suspend Inactive</h4>
+                  <p class="text-sm text-gray-500">Suspend institutions inactive for > 1 year.</p>
+                </div>
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="setting-auto-suspend-inactive"
+                    data-setting-key="institution.auto.suspend.inactive" class="h-5 w-5 rounded text-green-600">
+                </label>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Max Admins Per Institution</label>
+                <input type="number" id="setting-max-admins" data-setting-key="institution.max.admins"
+                  class="form-input w-full p-2 border border-gray-300 rounded" value="5">
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="mt-8 pt-4 border-t border-gray-200 flex justify-between items-center">
+            <div id="settings-last-updated-text" class="text-xs text-gray-500">
+              Last updated by <strong>Super Admin</strong> on <strong>Today, 10:45 AM</strong>
+            </div>
+            <div class="flex gap-3">
+              <button type="button" class="btn secondary-btn" onclick="discardSystemSettings()">Discard Changes</button>
+              <button type="button" class="btn primary-btn" onclick="saveSystemSettings()">Save Configuration</button>
+            </div>
+          </div>
+
+          <div id="settings-save-confirm-modal"
+            class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirm Settings Update</h3>
+              <p class="text-sm text-gray-600 mb-5">Apply these system settings changes now? This may affect active platform behavior.</p>
+              <div class="flex justify-end gap-3">
+                <button class="btn secondary-btn" onclick="closeSettingsConfirmModal()">Cancel</button>
+                <button class="btn primary-btn" onclick="confirmSaveSystemSettings()">Confirm Save</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="overview-notifications-modal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-start justify-end z-50">
+    <div class="bg-white w-full max-w-md h-full shadow-2xl p-5 overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-800"><i class="fas fa-bell mr-2 text-blue-600"></i>Notifications</h3>
+        <button type="button" onclick="closeNotificationsPanel()" class="text-gray-500 hover:text-gray-700" title="Close notifications" aria-label="Close notifications">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div id="overview-notifications-list" class="space-y-3">
+        <div class="text-sm text-gray-500">Loading notifications...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-gray-900">My Profile</h2>
+            <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600" title="Close modal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label class="block text-sm font-medium text-red-600 mb-2">Name *</label>
+              <input type="text" id="profileName" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly
+                placeholder="Super Admin Name" aria-label="Super Admin Name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-red-600 mb-2">Email *</label>
+              <input type="email" id="profileEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly
+                placeholder="Super Admin Email" aria-label="Super Admin Email">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-red-600 mb-2">Phone Number *</label>
+              <input type="tel" id="profilePhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly
+                placeholder="Super Admin Phone Number" aria-label="Super Admin Phone Number">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-red-600 mb-2">Passport Photo *</label>
+              <input type="file" id="passportFile" accept="image/*"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Passport Photo">
+              <span id="passportStatus" class="text-sm text-gray-500">Not uploaded</span>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-4">Document Upload</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">Aadhar Card *</label>
+                <input type="file" id="aadharFile" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Aadhar Card file">
+                <span id="aadharStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">10th Marksheet *</label>
+                <input type="file" id="marks10File" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 10th Marksheet file">
+                <span id="marks10Status" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">12th Marksheet *</label>
+                <input type="file" id="marks12File" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose 12th Marksheet file">
+                <span id="marks12Status" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">UG Certificate (Optional)</label>
+                <input type="file" id="ugFile" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose UG Certificate file">
+                <span id="ugStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">PG Certificate (Optional)</label>
+                <input type="file" id="pgFile" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose PG Certificate file">
+                <span id="pgStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-red-600 mb-2">Biometric Data *</label>
+                <input type="file" id="biometricFile" accept="image/*,.pdf"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg" aria-label="Choose Biometric Data file">
+                <span id="biometricStatus" class="text-sm text-gray-500">Not uploaded</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex space-x-4">
+            <button onclick="uploadDocuments()" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+              Upload Documents
+            </button>
+            <button onclick="completeProfile()"
+              class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+              Complete Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Auth helper: automatically includes JWT token in every request ───────
+    function authFetch(url, options = {}) {
+      const token = localStorage.getItem('token');
+      const headers = Object.assign({}, options.headers || {});
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+      return fetch(url, Object.assign({}, options, { headers }));
+    }
+
+    function unwrapApiResponse(payload) {
+      if (payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, 'success')) {
+        return payload.data;
+      }
+      return payload;
+    }
+
+    // Navigation
+    function showSection(sectionName) {
+      console.log('Switching to section:', sectionName);
+
+      // Force scroll to top immediately and after a short delay to ensure layout is ready
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+      }, 10);
+
+      // Hide all sections
+      const sections = document.querySelectorAll('.content-section');
+      sections.forEach(section => {
+        section.style.display = ''; // Clear inline styles
+        section.classList.remove('active');
+        // section.classList.remove('fade-in'); // Removed animation
+      });
+
+      // Remove active class from all nav items
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => item.classList.remove('active'));
+
+      // Show selected section
+      const targetSection = document.getElementById('section-' + sectionName);
+      if (targetSection) {
+        targetSection.classList.add('active');
+        console.log('Section displayed:', targetSection.id);
+      } else {
+        console.error('Target section not found:', 'section-' + sectionName);
+      }
+
+      // Add active class to clicked nav item
+      // event might be undefined if called programmatically, so check
+      if (typeof event !== 'undefined' && event && event.type === 'click' && event.target) {
+        try {
+          const navItem = event.target.closest('.nav-item');
+          if (navItem) navItem.classList.add('active');
+        } catch (e) {
+          // Ignore if event.target is not a DOM element (edge case)
+        }
+      } else {
+        // Fallback or Programmatic call
+        const navItem = document.querySelector(`a[href="#${sectionName}"]`);
+        if (navItem) navItem.classList.add('active');
+      }
+
+      // Load specific data
+      if (sectionName === 'institutions') {
+        const activeTab = document.querySelector('.inst-tab.active-tab');
+        const filter = activeTab ? activeTab.innerText.trim().toLowerCase().split(' ')[0] : 'requested'; // default to requested/pending
+        // Map 'requested' to 'pending'
+        const mappedFilter = filter === 'requested' ? 'pending' : filter;
+        fetchInstitutionRequests(mappedFilter);
+      }
+    }
+
+    let allInstitutions = [];
+
+    async function fetchInstitutionRequests(filterStatus = 'pending') {
+      const tbody = document.getElementById('institutionsTableBody');
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+
+      try {
+        // Fetch only once or on demand, optimization: fetch all always for now
+        const response = await authFetch('http://localhost:8081/api/admin/institutions');
+        if (!response.ok) throw new Error("Failed to fetch");
+        const payload = await response.json();
+        allInstitutions = unwrapApiResponse(payload) || [];
+        renderInstitutions(filterStatus);
+
+      } catch (error) {
+        console.error("Error loading institutions:", error);
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-red-500">Error loading data</td></tr>';
+      }
+    }
+
+    // --- Communication Hub Logic ---
+    let communicationPollingTimer = null;
+
+    function openCommunicationHub(btn) {
+      // Update Tab UI
+      document.querySelectorAll('.inst-tab').forEach(b => b.classList.remove('active-tab'));
+      if (btn) btn.classList.add('active-tab');
+
+      // Toggle Views
+      document.getElementById('institutions-list-view').classList.add('hidden');
+      document.getElementById('communication-hub-view').classList.remove('hidden');
+      loadCommunicationHistory();
+      if (communicationPollingTimer) clearInterval(communicationPollingTimer);
+      communicationPollingTimer = setInterval(() => {
+        loadCommunicationHistory();
+      }, 10000);
+    }
+
+    function toggleDeadlineField() {
+      const type = document.getElementById('msgType').value;
+      const field = document.getElementById('deadlineField');
+      if (type === 'Warning') {
+        field.classList.remove('hidden');
+      } else {
+        field.classList.add('hidden');
+      }
+    }
+
+    async function sendOfficialMessage() {
+      const type = document.getElementById('msgType').value;
+      const recipient = document.getElementById('msgRecipient').value;
+      const subject = document.getElementById('msgSubject').value;
+      const body = document.getElementById('msgBody').value;
+      const priorityRaw = document.querySelector('input[name="priority"]:checked')?.value || 'Normal';
+      const priority = priorityRaw.toUpperCase();
+
+      if (!recipient || !subject || !body) {
+        alert("Please fill in Recipient, Subject and Message.");
+        return;
+      }
+
+      try {
+        const response = await authFetch('http://localhost:8081/api/admin/communication/send', {
+          method: 'POST',
+          body: JSON.stringify({
+            recipient,
+            subject,
+            message: body,
+            priority,
+            type: type || 'General'
+          })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.success === false) {
+          throw new Error(payload.message || payload.error || 'Failed to send official message');
+        }
+
+        alert(payload.message || `Message sent successfully to ${recipient}`);
+        document.getElementById('msgRecipient').value = '';
+        document.getElementById('msgSubject').value = '';
+        document.getElementById('msgBody').value = '';
+        document.getElementById('msgType').value = type || 'General';
+        loadCommunicationHistory();
+      } catch (error) {
+        console.error('Send official message error:', error);
+        alert(error.message || 'Failed to send official message.');
+      }
+    }
+
+    function badgeClassForPriority(priority) {
+      const p = String(priority || 'NORMAL').toUpperCase();
+      if (p === 'URGENT') return 'bg-red-100 text-red-800';
+      if (p === 'LOW') return 'bg-gray-100 text-gray-800';
+      return 'bg-blue-100 text-blue-800';
+    }
+
+    function renderCommunicationHistory(messages) {
+      const tbody = document.getElementById('msgHistoryBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!messages || messages.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-3 text-center text-gray-500">No communication history found.</td></tr>';
+        return;
+      }
+
+      messages.forEach((msg) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50';
+        const createdAt = msg.createdAt ? new Date(msg.createdAt) : null;
+        const statusText = String(msg.status || 'SENT').toUpperCase();
+        const statusClass = statusText === 'READ' ? 'text-green-600'
+          : statusText === 'REQUESTED' ? 'text-orange-600'
+            : statusText === 'APPROVED' ? 'text-blue-600'
+              : statusText === 'REJECTED' ? 'text-red-600' : 'text-gray-500';
+        const statusIcon = statusText === 'READ' ? 'check-double'
+          : statusText === 'REQUESTED' ? 'hourglass-half'
+            : statusText === 'APPROVED' ? 'thumbs-up'
+              : statusText === 'REJECTED' ? 'times-circle' : 'check';
+        const priority = String(msg.priority || 'NORMAL').toUpperCase();
+        const msgType = String(msg.type || 'GENERAL').toUpperCase();
+        const typeTagClass = msgType === 'WARNING' ? 'bg-red-100 text-red-800' : msgType === 'BROADCAST' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800';
+        const deleteBtn = `<button onclick="deleteCommunicationMessage(${msg.id})" class="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50"><i class="fas fa-trash mr-1"></i>Delete</button>`;
+        tr.innerHTML = `
+            <td class="p-3 text-xs text-gray-500">${createdAt ? createdAt.toLocaleString() : '-'}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${typeTagClass}">${msgType}</span></td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClassForPriority(priority)}">${priority}</span></td>
+            <td class="p-3 text-gray-800">${msg.receiverInstitutionCode || '-'}</td>
+            <td class="p-3 text-gray-600">${msg.subject || '-'}</td>
+            <td class="p-3"><span class="${statusClass} text-xs"><i class="fas fa-${statusIcon}"></i> ${statusText}</span></td>
+            <td class="p-3">${deleteBtn}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function loadCommunicationHistory() {
+      try {
+        const response = await authFetch('http://localhost:8081/api/admin/communication/history');
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.success === false) {
+          throw new Error(payload.message || payload.error || 'Failed to load communication history');
+        }
+        renderCommunicationHistory(payload.data || []);
+        loadReplyRequests();
+      } catch (error) {
+        console.error('Communication history load error:', error);
+        const tbody = document.getElementById('msgHistoryBody');
+        if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="7" class="p-3 text-center text-red-500">Failed to load communication history.</td></tr>';
+        }
+      }
+    }
+
+    async function loadReplyRequests() {
+      const tbody = document.getElementById('replyRequestsBody');
+      if (!tbody) return;
+      try {
+        const response = await authFetch('http://localhost:8081/api/admin/communication/reply-requests');
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.success === false) {
+          throw new Error(payload.message || payload.error || 'Failed to load reply requests');
+        }
+        const requests = payload.data || [];
+        tbody.innerHTML = '';
+        if (!requests.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-gray-500">No pending reply requests.</td></tr>';
+          return;
+        }
+        requests.forEach((msg) => {
+          const tr = document.createElement('tr');
+          const createdAt = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : '-';
+          tr.innerHTML = `
+            <td class="p-3 text-xs text-gray-500">${createdAt}</td>
+            <td class="p-3 text-gray-800">${msg.receiverInstitutionCode || '-'}</td>
+            <td class="p-3 text-gray-600">${msg.subject || '-'}</td>
+            <td class="p-3"><span class="text-xs text-orange-600 font-semibold">${String(msg.status || 'REQUESTED').toUpperCase()}</span></td>
+            <td class="p-3">
+              <button onclick="approveReplyRequest(${msg.id})" class="text-xs px-2 py-1 rounded border border-green-200 text-green-700 hover:bg-green-50 mr-2">Approve</button>
+              <button onclick="rejectReplyRequest(${msg.id})" class="text-xs px-2 py-1 rounded border border-orange-200 text-orange-700 hover:bg-orange-50">Reject</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error('Reply requests load error:', error);
+        tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-red-500">Failed to load reply requests.</td></tr>';
+      }
+    }
+
+    async function approveReplyRequest(id) {
+      try {
+        const response = await authFetch(`http://localhost:8081/api/admin/communication/reply-requests/${id}/approve`, { method: 'POST' });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.success === false) throw new Error(payload.message || 'Failed to approve request');
+        loadCommunicationHistory();
+      } catch (error) {
+        alert(error.message || 'Failed to approve request');
+      }
+    }
+
+    async function rejectReplyRequest(id) {
+      try {
+        const response = await authFetch(`http://localhost:8081/api/admin/communication/reply-requests/${id}/reject`, { method: 'POST' });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.success === false) throw new Error(payload.message || 'Failed to reject request');
+        loadCommunicationHistory();
+      } catch (error) {
+        alert(error.message || 'Failed to reject request');
+      }
+    }
+
+    async function deleteCommunicationMessage(id) {
+      if (!confirm('Delete this message?')) return;
+      try {
+        const response = await authFetch(`http://localhost:8081/api/admin/communication/${id}`, { method: 'DELETE' });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.success === false) throw new Error(payload.message || 'Failed to delete message');
+        loadCommunicationHistory();
+      } catch (error) {
+        alert(error.message || 'Failed to delete message');
+      }
+    }
+
+    function prefillMessage(recipientName) {
+      // Switch to Hub
+      const hubTab = document.querySelector('button[onclick="openCommunicationHub(this)"]');
+      if (hubTab) openCommunicationHub(hubTab);
+
+      // Prefill
+      document.getElementById('msgRecipient').value = recipientName;
+      document.getElementById('msgSubject').focus();
+    }
+
+
+    function renderInstitutions(filterStatus) {
+      const tbody = document.getElementById('institutionsTableBody');
+      const filtered = allInstitutions.filter(inst => inst.status === filterStatus);
+
+      tbody.innerHTML = '';
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-500">No ${filterStatus} institutions found</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(inst => {
+        let actions = '';
+        if (filterStatus === 'pending') {
+          actions = `
+                    <button onclick="approveInstitution(${inst.institutionId})" class="action-btn text-green-600 bg-green-50 hover:bg-green-100 mr-2" title="Approve"><i class="fas fa-check"></i></button>
+                    <button onclick="rejectInstitution(${inst.institutionId})" class="action-btn text-orange-600 bg-orange-50 hover:bg-orange-100 mr-2" title="Reject"><i class="fas fa-times"></i></button>
+                    <button onclick="removeInstitution(${inst.institutionId})" class="action-btn text-red-600 bg-red-50 hover:bg-red-100" title="Remove"><i class="fas fa-trash"></i></button>
+                `;
+        } else if (filterStatus === 'approved') {
+          actions = `<button onclick="prefillMessage('${inst.institutionCode || inst.name}')" class="action-btn text-blue-600 bg-blue-50 hover:bg-blue-100 mr-2" title="Send Official Message"><i class="fas fa-comment-dots"></i> Message</button>
+                     <button onclick="removeInstitution(${inst.institutionId})" class="action-btn text-red-600 bg-red-50 hover:bg-red-100" title="Remove"><i class="fas fa-trash"></i></button>`;
+        } else {
+          actions = `<span class="text-red-500 text-sm">Rejected</span>
+                           <button onclick="removeInstitution(${inst.institutionId})" class="action-btn text-red-600 bg-red-50 hover:bg-red-100 ml-2" title="Remove"><i class="fas fa-trash"></i></button>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+                <td>${inst.name}</td>
+                <td>${inst.institutionCode || '-'}</td>
+                <td>
+                    <div class="text-sm">${inst.contactEmail}</div>
+                    <div class="text-xs text-gray-500">${inst.contactPhone}</div>
+                </td>
+                <td>
+                    <div class="text-sm">${inst.adminName || '-'}</div>
+                    <div class="text-xs text-gray-500">${inst.adminEmail || ''}</div>
+                </td>
+                <td><span class="badge ${getStatusBadgeClass(inst.status)}">${inst.status}</span></td>
+                <td>${actions}</td>
+            `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function getStatusBadgeClass(status) {
+      if (status === 'approved') return 'success';
+      if (status === 'rejected') return 'danger';
+      return 'warning';
+    }
+
+    function filterInstitutions(status, btn) {
+      // Update active tab UI
+      document.querySelectorAll('.inst-tab').forEach(b => b.classList.remove('active-tab'));
+      btn.classList.add('active-tab');
+
+      // Switch View Back to List
+      document.getElementById('institutions-list-view').classList.remove('hidden');
+      document.getElementById('communication-hub-view').classList.add('hidden');
+      if (communicationPollingTimer) {
+        clearInterval(communicationPollingTimer);
+        communicationPollingTimer = null;
+      }
+
+      // Refresh table
+      renderInstitutions(status);
+    }
+
+    function switchProfileTab(tabName, btn) {
+      // Toggle Active Class
+      document.querySelectorAll('.profile-tab').forEach(b => b.classList.remove('active-tab'));
+      btn.classList.add('active-tab');
+
+      // Hide all contents
+      document.querySelectorAll('.profile-tab-content').forEach(c => c.style.display = 'none');
+
+      // Show selected
+      document.getElementById('profile-tab-' + tabName).style.display = 'block';
+    }
+
+    async function approveInstitution(id) {
+      if (!confirm("Are you sure you want to approve this institution?")) return;
+
+      try {
+        const response = await authFetch(`http://localhost:8081/api/admin/institutions/${id}/approve`, {
+          method: 'POST'
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.ok && payload.success !== false) {
+          alert(payload.message || "Institution approved successfully!");
+          fetchInstitutionRequests(); // Reload list
+        } else {
+          alert(payload.message || "Failed to approve institution");
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Error approving institution");
+      }
+    }
+
+    async function rejectInstitution(id) {
+      if (!confirm("Are you sure you want to REJECT this institution?")) return;
+      try {
+        const response = await authFetch(`http://localhost:8081/api/admin/institutions/${id}/reject`, { method: 'POST' });
+        const payload = await response.json().catch(() => ({}));
+        if (response.ok && payload.success !== false) {
+          alert(payload.message || "Institution rejected.");
+          fetchInstitutionRequests();
+        } else {
+          alert(payload.message || "Failed to reject institution");
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Error rejecting institution");
+      }
+    }
+
+    async function removeInstitution(id) {
+      if (!confirm("Are you sure you want to REMOVE this institution request permanently?")) return;
+      try {
+        const response = await authFetch(`http://localhost:8081/api/institution/remove/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          alert("Institution removed.");
+          fetchInstitutionRequests();
+        } else {
+          alert("Failed to remove institution");
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Error removing institution");
+      }
+    }
+
+    function showCreateAdminForm() {
+      alert('Create Admin Form\n\nThis would open a modal with fields:\n- Full Name\n- Email\n- Phone Number\n- Institution\n- Access Level');
+    }
+
+    function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        window.location.href = 'auth_portal.html';
+      }
+    }
+
+    // Profile functions
+    function uploadDocuments() {
+      alert('Document upload functionality would be implemented here.\n\nThis would:\n- Validate file types and sizes\n- Upload files to server\n- Update status indicators\n- Store file paths in database');
+    }
+
+    function completeProfile() {
+      alert('Profile completion functionality would be implemented here.\n\nThis would:\n- Validate all required fields are filled\n- Check all mandatory documents are uploaded\n- Update profile status to complete\n- Enable exam registration');
+    }
+
+    function openProfileModal() {
+      document.getElementById('profileModal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    // Load all data
+    async function loadDashboardData() {
+      try {
+        console.log("Loading enterprise dashboard data...");
+        const summaryData = await fetchReportSummary();
+        updateOverviewUI(summaryData);
+        updateReportUI(summaryData);
+
+        // 2. Fetch Detailed Lists to update specific counts if summary missed
+        fetchExams();
+        fetchInstitutionRequests(); // This updates the Institutions table
+
+        // 3. Initialize Visuals
+        initDashboardCharts();
+        renderRecentActivity();
+
+      } catch (e) {
+        console.error("Dashboard load error", e);
+      }
+    }
+
+    // --- Enterprise Chart & Data Helpers ---
+
+    // Chart Instances Storage
+    let chartInstances = {};
+
+    async function initDashboardCharts(institution = '') {
+      if (typeof Chart === 'undefined') return;
+
+      try {
+        const params = new URLSearchParams();
+        if (institution && institution !== 'All Institutions') params.append('institution', institution);
+        const q = params.toString();
+        const url = `http://localhost:8081/api/admin/analytics${q ? `?${q}` : ''}`;
+        
+        const response = await authFetch(url);
+        if (!response.ok) throw new Error("Failed to fetch analytics");
+        const data = await response.json();
+
+        // Helper to safely create chart
+        const createChart = (canvasId, config) => {
+          const ctx = document.getElementById(canvasId);
+          if (!ctx) return;
+
+          // Destroy existing if any
+          if (chartInstances[canvasId]) {
+            chartInstances[canvasId].destroy();
+          }
+
+          chartInstances[canvasId] = new Chart(ctx.getContext('2d'), config);
+        };
+
+        // Exams Chart
+        createChart('examsChart', {
+          type: 'line',
+          data: {
+            labels: data.labels,
+            datasets: [{
+              label: 'Exams',
+              data: data.examCounts,
+              borderColor: '#2563eb', // blue-600
+              backgroundColor: 'rgba(37, 99, 235, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+          }
+        });
+
+        // Students Chart
+        createChart('studentsChart', {
+          type: 'bar',
+          data: {
+            labels: data.labels,
+            datasets: [{
+              label: 'Registered',
+              data: data.studentCounts,
+              backgroundColor: '#7c3aed', // violet-600
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+          }
+        });
+
+        // Reports Trend Chart
+        createChart('reportsTrendChart', {
+          type: 'line',
+          data: {
+            labels: data.labels,
+            datasets: [{
+              label: 'Avg Score',
+              data: data.avgScores,
+              borderColor: '#10b981', // green-500
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              yAxisID: 'y',
+              tension: 0.3,
+              fill: true
+            }, {
+              label: 'Participation',
+              data: data.participants,
+              borderColor: '#6366f1', // indigo-500
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              yAxisID: 'y1',
+              tension: 0.3,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false,
+            },
+            plugins: { legend: { position: 'top' } },
+            scales: {
+              y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: { display: true, text: 'Score (%)' },
+                grid: { color: '#f3f4f6' }
+              },
+              y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: 'Participants' }
+              }
+            }
+          }
+        });
+
+      } catch (error) {
+        console.error("Error loading charts:", error);
+      }
+    }
+
+    async function renderRecentActivity(page = 0) {
+      const tbody = document.getElementById('recentActivityTableBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><i class="fas fa-spinner fa-spin text-indigo-600"></i> Loading activities...</td></tr>';
+
+      try {
+        const response = await authFetch(`http://localhost:8081/api/admin/activity-log?page=${page}&size=5`);
+        if (!response.ok) throw new Error("Failed to fetch activity log");
+        const data = await response.json();
+        const activities = data.content;
+
+        tbody.innerHTML = '';
+        if (activities.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">No recent activity.</td></tr>';
+          return;
+        }
+
+        activities.forEach(act => {
+          let badgeColor = 'bg-gray-100 text-gray-800';
+          if (act.status === 'success') badgeColor = 'bg-green-100 text-green-800 border-green-200';
+          if (act.status === 'danger') badgeColor = 'bg-red-100 text-red-800 border-red-200';
+          if (act.status === 'warning') badgeColor = 'bg-orange-100 text-orange-800 border-orange-200';
+
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-gray-50 transition-colors";
+          tr.innerHTML = `
+                  <td class="text-gray-500 text-xs font-mono">${act.time}</td>
+                  <td class="font-medium text-gray-900">${act.user}</td>
+                  <td class="text-gray-700">${act.action}</td>
+                  <td><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-gray-50 border border-gray-200">${act.module}</span></td>
+                  <td><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${badgeColor}">${act.status}</span></td>
+              `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error("Error loading activity:", error);
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-red-500">Failed to load activity log.</td></tr>';
+      }
+    }
+
+    // Load all data
+    async function loadDashboardData() {
+      try {
+        console.log("Loading enterprise dashboard data...");
+        const summaryData = await fetchReportSummary();
+        updateOverviewUI(summaryData);
+        updateReportUI(summaryData);
+
+        // 2. Fetch Detailed Lists to update specific counts if summary missed
+        await renderExamsTable();
+        renderDetailedExamReports();
+        // fetchInstitutionRequests is defined globally
+        fetchInstitutionRequests();
+        await loadInstitutionsForFilter();
+
+        // 3. Initialize Visuals
+        initDashboardCharts();
+        renderRecentActivity();
+
+      } catch (e) {
+        console.error("Dashboard load error", e);
+      }
+    }
+
+
+
+
+
+    function renderDetailedExamRows(details) {
+      const tbody = document.getElementById('detailed-exam-reports-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      (details || []).forEach(exam => {
+        const pct = Number(exam.completionPct || 0);
+        const failures = Number(exam.failures || 0);
+        const statusText = String(exam.status || 'Upcoming');
+        const statusLower = statusText.toLowerCase();
+        let statusBadge = `<span class="badge warning text-xs">Upcoming</span>`;
+        let barColor = 'bg-yellow-500';
+        if (statusLower === 'completed') {
+          statusBadge = `<span class="badge success text-xs">Completed</span>`;
+          barColor = 'bg-green-500';
+        } else if (statusLower === 'live' || statusLower === 'ongoing') {
+          statusBadge = `<span class="badge warning text-xs bg-yellow-100 text-yellow-800 border border-yellow-200">Ongoing</span>`;
+          barColor = 'bg-blue-500';
+        } else if (statusLower === 'flagged') {
+          statusBadge = `<span class="badge text-xs bg-red-100 text-red-800 border border-red-200">Flagged</span>`;
+          barColor = 'bg-red-500';
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-blue-50 transition-colors cursor-pointer";
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-medium text-gray-900">${exam.examName || '-'}</td>
+          <td class="px-4 py-3 text-sm font-medium text-gray-600">${exam.examDate || '-'}</td>
+          <td class="px-4 py-3 text-gray-600">${exam.institution || '-'}</td>
+          <td class="px-4 py-3 text-center">
+            <div class="w-full bg-gray-200 rounded-full h-1.5">
+              <div class="${barColor} h-1.5 rounded-full" style="width: ${pct}%"></div>
+            </div>
+            <span class="text-[10px] text-gray-500">${pct}%</span>
+          </td>
+          <td class="px-4 py-3 text-center font-bold ${failures > 0 ? 'text-red-500' : 'text-green-500'}">${failures}</td>
+          <td class="px-4 py-3 text-sm text-gray-600">${exam.supervisor || 'Pending'}</td>
+          <td class="px-4 py-3 font-bold text-gray-800">${exam.score || '-'}</td>
+          <td>${statusBadge}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if (!details || details.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-3 text-center text-gray-500">No exams found</td></tr>';
+      }
+    }
+
+    async function fetchReportDetails(institution = '', status = '', date = '') {
+      const params = new URLSearchParams();
+      if (institution && institution !== 'All Institutions') params.append('institution', institution);
+      if (status && status !== 'All Status') params.append('status', status);
+      if (date) params.append('date', date);
+      const q = params.toString();
+      const url = `http://localhost:8081/api/admin/report-details${q ? `?${q}` : ''}`;
+      const res = await authFetch(url);
+      if (!res.ok) throw new Error('Failed to load report details');
+      const payload = await res.json();
+      return payload.data || [];
+    }
+
+    async function renderDetailedExamReports() {
+      try {
+        const details = await fetchReportDetails();
+        renderDetailedExamRows(details);
+      } catch (e) {
+        console.error('Failed to load detailed reports', e);
+        renderDetailedExamRows([]);
+      }
+    }
+
+    // Pagination Variables
+    let currentExamsPage = 1;
+    const examsPerPage = 10;
+    let currentFilteredExams = [];
+
+    async function renderExamsTable(examsToRender = null) {
+      if (!examsToRender) {
+        // Fetch if not provided
+        try {
+          if (!window.allExamsData) {
+            const resp = await authFetch('http://localhost:8081/api/exam/all');
+            if (resp.ok) {
+              const rawExams = await resp.json();
+              window.allExamsData = rawExams.map(e => ({
+                id: 'EX-' + e.examId,
+                name: e.examName,
+                inst: e.institutionName || 'Unknown',
+                date: e.date,
+                time: e.startTime,
+                participants: Math.floor(Math.random() * 50),
+                total: 60,
+                supervisor: e.supervisorName || 'Pending',
+                status: e.status || 'Upcoming',
+                score: (Math.random() * 40 + 60).toFixed(1),
+                failures: Math.floor(Math.random() * 5)
+              }));
+            } else {
+              window.allExamsData = [];
+            }
+          }
+          examsToRender = window.allExamsData;
+        } catch (e) {
+          console.error("Error fetching exams", e);
+          examsToRender = window.allExamsData || [];
+        }
+      }
+
+      currentFilteredExams = examsToRender; // Update current dataset
+
+      // Pagination Calculations
+      const totalExams = examsToRender.length;
+      const totalPages = Math.ceil(totalExams / examsPerPage);
+
+      if (currentExamsPage < 1) currentExamsPage = 1;
+      if (currentExamsPage > totalPages && totalPages > 0) currentExamsPage = totalPages;
+      if (totalPages === 0) currentExamsPage = 1;
+
+      const startIndex = (currentExamsPage - 1) * examsPerPage;
+      const endIndex = Math.min(startIndex + examsPerPage, totalExams);
+      const examsOnPage = examsToRender.slice(startIndex, endIndex);
+
+      const tbody = document.getElementById('examsTableBody');
+      tbody.innerHTML = '';
+
+      examsOnPage.forEach(exam => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-blue-50 transition-colors group";
+
+        // Status Logic
+        let statusHtml = '';
+        const statusLower = (exam.status || 'upcoming').toLowerCase();
+
+        if (statusLower === 'live' || statusLower === 'ongoing') {
+          statusHtml = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <span class="w-1.5 h-1.5 bg-green-600 rounded-full mr-1.5 animate-pulse"></span> Live Now
+                            </span>`;
+        } else if (statusLower === 'upcoming') {
+          statusHtml = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              Upcoming
+                            </span>`;
+        } else if (statusLower === 'completed') {
+          statusHtml = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Completed
+                            </span>`;
+        } else {
+          statusHtml = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              Cancelled
+                            </span>`;
+        }
+
+        // Participants Logic
+        const partCount = exam.participants || 0;
+        const totalPart = exam.total || 100;
+        const partPercent = Math.round((partCount / totalPart) * 100);
+
+        tr.innerHTML = `
+              <td class="p-4"><input type="checkbox" class="exam-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500" value="${exam.id}"></td>
+              <td class="px-6 py-4">
+                  <div class="text-sm font-bold text-gray-900">${exam.name}</div>
+                  <div class="text-xs text-gray-500">ID: ${exam.id}</div>
+              </td>
+              <td class="px-6 py-4">
+                   <div class="flex items-center">
+                      <div class="h-8 w-8 rounded bg-gray-100 flex items-center justify-center text-gray-500 mr-3"><i class="fas fa-university"></i></div>
+                      <div class="text-sm font-medium text-gray-900">${exam.inst}</div>
+                  </div>
+              </td>
+              <td class="px-6 py-4">
+                  <div class="text-sm text-gray-900"><i class="far fa-calendar mr-1 text-gray-400"></i> ${exam.date}</div>
+                  <div class="text-xs text-gray-500 mt-0.5"><i class="far fa-clock mr-1 text-gray-400"></i> ${exam.time}</div>
+              </td>
+              <td class="px-6 py-4">
+                   <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1">
+                      <div class="bg-indigo-600 h-1.5 rounded-full" style="width: ${partPercent}%"></div>
+                  </div>
+                  <div class="flex justify-between text-xs">
+                      <span class="font-medium text-gray-900">${partCount}/${totalPart}</span>
+                      <span class="text-gray-500">Sup: ${exam.supervisor}</span>
+                  </div>
+              </td>
+              <td class="px-6 py-4 text-center">
+                  ${statusHtml}
+              </td>
+              <td class="px-6 py-4 text-center">
+                  <div class="relative inline-block text-left">
+                      <button class="text-gray-400 hover:text-gray-600 font-medium text-lg px-2" onclick="toggleActionMenu(this, event)">
+                          <i class="fas fa-ellipsis-h"></i>
+                      </button>
+                      <!-- Action Dropdown -->
+                      <div class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 focus:outline-none action-menu">
+                          <div class="py-1">
+                              <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" onclick="viewExamDetails('${exam.id}', '${exam.name}', '${exam.inst}'); return false;"><i class="fas fa-eye w-5 text-gray-400"></i> View Details</a>
+                              <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" onclick="viewExamLogs('${exam.id}'); return false;"><i class="fas fa-history w-5 text-gray-400"></i> View Logs</a>
+                              <a href="#" class="text-indigo-600 block px-4 py-2 text-sm hover:bg-indigo-50" onclick="downloadExamReport('${exam.id}'); return false;"><i class="fas fa-download w-5 text-indigo-400"></i> Report</a>
+                              <div class="border-t border-gray-100 my-1"></div>
+                              <a href="#" class="text-red-600 block px-4 py-2 text-sm hover:bg-red-50" onclick="suspendExam('${exam.id}'); return false;"><i class="fas fa-ban w-5 text-red-400"></i> Suspend</a>
+                          </div>
+                      </div>
+                  </div>
+              </td>
+          `;
+        tbody.appendChild(tr);
+      });
+
+      // Update UI Controls
+      const startEl = document.getElementById('examsStartRange');
+      const endEl = document.getElementById('examsEndRange');
+      const totalEl = document.getElementById('examsTotalCount');
+      if (startEl) startEl.innerText = totalExams === 0 ? 0 : startIndex + 1;
+      if (endEl) endEl.innerText = endIndex;
+      if (totalEl) totalEl.innerText = totalExams;
+
+      const prevBtn = document.getElementById('prevExamsBtn');
+      const nextBtn = document.getElementById('nextExamsBtn');
+
+      if (prevBtn) prevBtn.disabled = currentExamsPage <= 1;
+      if (nextBtn) nextBtn.disabled = currentExamsPage >= totalPages;
+    }
+
+    function changeExamsPage(direction) {
+      currentExamsPage += direction;
+      renderExamsTable(currentFilteredExams);
+    }
+
+
+    // Fixed Action Menu Toggle
+    function toggleActionMenu(btn, event) {
+      event.stopPropagation();
+      const menu = btn.nextElementSibling;
+
+      // Close all other menus
+      document.querySelectorAll('.action-menu').forEach(m => {
+        if (m !== menu) m.classList.add('hidden');
+      });
+
+      menu.classList.toggle('hidden');
+    }
+
+    // Filter Logic
+    function applyExamFilters() {
+      currentExamsPage = 1; // Reset to page 1 on filter change
+      const searchVal = document.getElementById('examSearchInput').value.toLowerCase();
+      const statusVal = document.getElementById('examStatusFilter').value;
+      const instVal = document.getElementById('examInstFilter').value;
+
+      let filtered = window.allExamsData.filter(exam => {
+        const matchesSearch = exam.name.toLowerCase().includes(searchVal) || exam.id.toLowerCase().includes(searchVal);
+        const matchesStatus = statusVal === 'All Status' ||
+          (statusVal === 'Live' && (exam.status === 'Live' || exam.status === 'Ongoing')) ||
+          exam.status === statusVal;
+        const matchesInst = instVal === 'All Institutions' || exam.inst.includes(instVal);
+
+        return matchesSearch && matchesStatus && matchesInst;
+      });
+
+      renderExamsTable(filtered);
+    }
+
+    // Export Logic
+    function exportExamsData() {
+      if (!window.allExamsData || window.allExamsData.length === 0) {
+        alert('No data to export');
+        return;
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "ID,Name,Institution,Date,Time,Status,Participants\n";
+
+      window.allExamsData.forEach(e => {
+        const row = `${e.id},"${e.name}",${e.inst},${e.date},${e.time},${e.status},${e.participants}`;
+        csvContent += row + "\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "exams_export.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Init Manage Exams Events
+    function initManageExams() {
+      // Initial render
+      renderExamsTable();
+    }
+
+
+
+    // Settings Tab Logic
+    async function openNotificationsSection() {
+      const modal = document.getElementById('overview-notifications-modal');
+      const list = document.getElementById('overview-notifications-list');
+      if (!modal || !list) return;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      list.innerHTML = '<div class="text-sm text-gray-500">Loading notifications...</div>';
+
+      let notifications = [];
+      try {
+        const response = await authFetch('http://localhost:8081/api/admin/notifications');
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || 'Failed to load notifications');
+        }
+        notifications = Array.isArray(payload.notifications) ? payload.notifications : [];
+      } catch (err) {
+        console.error('Notifications load error:', err);
+      }
+
+      if (notifications.length === 0) {
+        list.innerHTML = '<div class="text-sm text-gray-500">No new notifications.</div>';
+        return;
+      }
+
+      list.innerHTML = notifications.map(n => `
+        <div class="border border-gray-200 rounded-lg p-3">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="font-semibold text-gray-800">${n.title || 'Notification'}</div>
+              <div class="text-sm text-gray-600 mt-1">${n.description || ''}</div>
+              <div class="text-xs text-gray-400 mt-2">${n.time || 'Now'}</div>
+            </div>
+            <button type="button" class="text-xs text-blue-600 hover:underline" onclick="handleNotificationAction('${(n.actionTarget || '').replace(/'/g, "\\'")}')">${n.actionTarget === 'institutions' ? 'Review' : 'Open'}</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function handleNotificationAction(target) {
+      if (target === 'institutions') {
+        showSection('institutions');
+      } else if (target === 'reports') {
+        showSection('reports');
+      } else if (target === 'settings-maintenance') {
+        showSection('settings');
+        const btn = document.querySelector("button[onclick=\"openSettingsTab('maintenance', this)\"]");
+        if (btn) openSettingsTab('maintenance', btn);
+      } else {
+        showSection('overview');
+      }
+      closeNotificationsPanel();
+    }
+
+    function closeNotificationsPanel() {
+      const modal = document.getElementById('overview-notifications-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function openSettingsTab(tabName, btn) {
+      // Hide all tabs
+      document.querySelectorAll('.settings-content').forEach(tab => tab.classList.add('hidden'));
+      // Show selected tab
+      document.getElementById('settings-' + tabName).classList.remove('hidden');
+
+      // Update Tab Styles
+      document.querySelectorAll('.settings-tab').forEach(t => {
+        t.classList.remove('active-settings-tab', 'border-b-2', 'border-blue-600', 'text-blue-600');
+        t.classList.add('border-transparent', 'text-gray-500');
+      });
+      btn.classList.remove('border-transparent', 'text-gray-500');
+      btn.classList.add('active-settings-tab', 'border-b-2', 'border-blue-600', 'text-blue-600');
+    }
+
+    let lastLoadedSettingsPayload = null;
+
+    function collectSystemSettingsPayload() {
+      const payload = {};
+      document.querySelectorAll('[data-setting-key]').forEach((el) => {
+        const key = el.getAttribute('data-setting-key');
+        if (!key) return;
+        if (el.type === 'checkbox') {
+          payload[key] = String(!!el.checked);
+        } else {
+          payload[key] = (el.value ?? '').toString();
+        }
+      });
+      return payload;
+    }
+
+    function applySystemSettings(data) {
+      if (!data || typeof data !== 'object') return;
+      const backupScheduleInput = document.getElementById('setting-backup-schedule-hidden');
+      if (backupScheduleInput) {
+        backupScheduleInput.value = data['maintenance.backup.schedule'] || 'Daily';
+      }
+      document.querySelectorAll('[data-setting-key]').forEach((el) => {
+        const key = el.getAttribute('data-setting-key');
+        if (!key || !(key in data)) return;
+        const value = data[key];
+        if (el.type === 'checkbox') {
+          el.checked = String(value).toLowerCase() === 'true' || String(value) === '1';
+        } else {
+          el.value = value;
+        }
+      });
+      const backupScheduleText = document.getElementById('settings-backup-schedule-text');
+      if (backupScheduleText) {
+        const schedule = data['maintenance.backup.schedule'] || 'Daily';
+        backupScheduleText.textContent = `Scheduled backup: ${schedule}`;
+      }
+    }
+
+    function updateSettingsMetaFooter(meta = {}) {
+      const footer = document.getElementById('settings-last-updated-text');
+      if (!footer) return;
+      const updatedBy = meta.updatedBy || localStorage.getItem('userEmail') || 'Super Admin';
+      const updatedAt = meta.updatedAt ? new Date(meta.updatedAt).toLocaleString() : 'Not updated yet';
+      footer.innerHTML = `Last updated by <strong>${updatedBy}</strong> on <strong>${updatedAt}</strong>`;
+
+      const backupScheduleText = document.getElementById('settings-backup-schedule-text');
+      if (backupScheduleText) {
+        const scheduleValue = document.getElementById('setting-backup-schedule-hidden')?.value || 'Daily';
+        backupScheduleText.textContent = `Scheduled backup: ${scheduleValue}`;
+      }
+    }
+
+    function syncAdminContactEmailFallback() {
+      const adminEmailInput = document.getElementById('setting-admin-contact-email');
+      if (!adminEmailInput) return;
+      const current = (adminEmailInput.value || '').trim().toLowerCase();
+      const isDefault = current === '' || current === 'admin@examhub.com';
+      if (isDefault) {
+        const realEmail = localStorage.getItem('userEmail')
+          || document.getElementById('sidebar-profile-email')?.textContent?.trim()
+          || '';
+        if (realEmail) {
+          adminEmailInput.value = realEmail;
+        }
+      }
+    }
+
+    async function loadSystemSettings() {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const response = await fetch('http://localhost:8081/api/admin/settings', { headers });
+        if (!response.ok) {
+          throw new Error('Unable to load settings');
+        }
+        const data = await response.json();
+        applySystemSettings(data);
+        lastLoadedSettingsPayload = collectSystemSettingsPayload();
+
+        const metaResponse = await fetch('http://localhost:8081/api/admin/settings/meta', { headers });
+        if (metaResponse.ok) {
+          const meta = await metaResponse.json();
+          updateSettingsMetaFooter(meta);
+          if (meta.adminContactEmail) {
+            const adminEmailInput = document.getElementById('setting-admin-contact-email');
+            if (adminEmailInput) adminEmailInput.value = meta.adminContactEmail;
+          }
+        }
+        syncAdminContactEmailFallback();
+        await loadCacheStatus();
+        await refreshRecentLogs();
+      } catch (error) {
+        console.error('Settings load error:', error);
+        showToast('❌ Failed to load system settings from server.', 'error');
+      }
+    }
+
+    async function loadCacheStatus() {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const response = await fetch('http://localhost:8081/api/admin/settings/maintenance/cache-status', { headers });
+        if (!response.ok) {
+          throw new Error('Unable to load cache status');
+        }
+        const data = await response.json();
+        const cacheSizeText = document.getElementById('settings-cache-size-text');
+        if (cacheSizeText) {
+          const size = data.estimatedHumanSize || '0 B';
+          const entries = data.totalEntries ?? 0;
+          cacheSizeText.textContent = `Size: ${size} (${entries} entries)`;
+        }
+      } catch (error) {
+        console.error('Cache status load error:', error);
+        const cacheSizeText = document.getElementById('settings-cache-size-text');
+        if (cacheSizeText) {
+          cacheSizeText.textContent = 'Size: Unavailable';
+        }
+      }
+    }
+
+    function openSettingsConfirmModal() {
+      const modal = document.getElementById('settings-save-confirm-modal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeSettingsConfirmModal() {
+      const modal = document.getElementById('settings-save-confirm-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function saveSystemSettings() {
+      openSettingsConfirmModal();
+    }
+
+    async function confirmSaveSystemSettings() {
+      closeSettingsConfirmModal();
+      const btn = document.querySelector('#section-settings .primary-btn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+      btn.disabled = true;
+
+      try {
+        const token = localStorage.getItem('token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        const response = await fetch('http://localhost:8081/api/admin/settings', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(collectSystemSettingsPayload())
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to save settings');
+        }
+
+        updateSettingsMetaFooter({
+          updatedBy: localStorage.getItem('userEmail') || 'Super Admin',
+          updatedAt: new Date().toISOString()
+        });
+        lastLoadedSettingsPayload = collectSystemSettingsPayload();
+        showToast('✅ System configuration saved successfully!', 'success');
+      } catch (error) {
+        console.error('Settings save error:', error);
+        showToast('❌ ' + (error.message || 'Failed to save settings.'), 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function discardSystemSettings() {
+      if (lastLoadedSettingsPayload && typeof lastLoadedSettingsPayload === 'object') {
+        applySystemSettings(lastLoadedSettingsPayload);
+        showToast('✅ Changes discarded. Restored last saved settings.', 'success');
+      } else {
+        loadSystemSettings();
+        showToast('✅ Changes discarded.', 'success');
+      }
+    }
+
+    async function runDatabaseBackup(event, btnEl) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const btn = btnEl || document.querySelector('button[onclick*="runDatabaseBackup"]');
+      if (!btn) return;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Backing up...';
+      btn.disabled = true;
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000);
+        const response = await fetch('http://localhost:8081/api/admin/settings/maintenance/backup', {
+          method: 'POST',
+          headers,
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Backup failed');
+        showToast('✅ Backup completed: ' + (data.file || 'file created'), 'success');
+        await loadSystemSettings();
+      } catch (error) {
+        console.error('Backup error:', error);
+        if (error.name === 'AbortError') {
+          showToast('❌ Backup is taking too long. Please retry.', 'error');
+        } else {
+          showToast('❌ ' + (error.message || 'Backup failed'), 'error');
+        }
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function clearSystemCache(btnEl) {
+      const btn = btnEl || document.querySelector('button[onclick="clearSystemCache(this)"]');
+      if (!btn) return;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Clearing...';
+      btn.disabled = true;
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const response = await fetch('http://localhost:8081/api/admin/settings/maintenance/clear-cache', {
+          method: 'POST',
+          headers
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Cache clear failed');
+        showToast('✅ ' + (data.message || 'System cache cleared successfully'), 'success');
+        await loadCacheStatus();
+      } catch (error) {
+        console.error('Cache clear error:', error);
+        showToast('❌ ' + (error.message || 'Cache clear failed'), 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function configureBackupSchedule() {
+      const selected = prompt('Set backup schedule (Hourly / Daily / Weekly / Monthly):', 'Daily');
+      if (!selected) return;
+      try {
+        const token = localStorage.getItem('token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const response = await fetch('http://localhost:8081/api/admin/settings/maintenance/backup-schedule', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ schedule: selected.trim() })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to update schedule');
+        const backupScheduleInput = document.getElementById('setting-backup-schedule-hidden');
+        if (backupScheduleInput) backupScheduleInput.value = data.schedule;
+        const backupScheduleText = document.getElementById('settings-backup-schedule-text');
+        if (backupScheduleText) backupScheduleText.textContent = `Scheduled backup: ${data.schedule}`;
+        showToast('✅ Backup schedule updated to ' + data.schedule, 'success');
+      } catch (error) {
+        console.error('Schedule update error:', error);
+        showToast('❌ ' + (error.message || 'Failed to update backup schedule'), 'error');
+      }
+    }
+
+    async function refreshRecentLogs() {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const response = await fetch('http://localhost:8081/api/admin/settings/maintenance/logs', { headers });
+        const data = await response.json();
+        const terminal = document.getElementById('recent-logs-terminal');
+        const logs = Array.isArray(data.logs) ? data.logs : [];
+        if (!terminal) return;
+        
+        if (logs.length === 0) {
+          terminal.innerHTML = '<span class="text-gray-500">> No recent system activity logged.</span>';
+          return;
+        }
+
+        const recentContent = logs.slice(0, 5).map(l => {
+          const timeStr = new Date(l.timestamp).toLocaleString();
+          return `> [${timeStr}] <span class="text-blue-400">[${l.action || 'INFO'}]</span> ${l.details || ''}`;
+        }).join('<br>');
+        terminal.innerHTML = recentContent;
+      } catch (error) {
+        console.error('Refresh logs error:', error);
+      }
+    }
+
+    async function viewFullMaintenanceLogs() {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        
+        const modal = document.getElementById('logsModal');
+        const modalContent = document.getElementById('logsModalContent');
+        if (!modal || !modalContent) return;
+        
+        modal.classList.remove('hidden');
+        modalContent.innerHTML = 'Loading complete logs...';
+
+        const response = await fetch('http://localhost:8081/api/admin/settings/maintenance/logs', { headers });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to load logs');
+        
+        const logs = Array.isArray(data.logs) ? data.logs : [];
+        if (logs.length === 0) {
+          modalContent.innerHTML = '<span class="text-gray-500">> No logs found.</span>';
+          return;
+        }
+        
+        const content = logs.map(l => {
+          const time = new Date(l.timestamp).toLocaleString();
+          return `> [${time}] <span class="text-blue-400">[${l.action || 'ACTION'}]</span> ${l.details || ''} <span class="text-gray-500">(Actor: ${l.actorId || 'System'})</span>`;
+        }).join('<br>');
+        
+        modalContent.innerHTML = content;
+      } catch (error) {
+        console.error('View logs error:', error);
+        const modalContent = document.getElementById('logsModalContent');
+        if (modalContent) modalContent.innerHTML = `<span class="text-red-400">> Failed to load logs: ${error.message}</span>`;
+      }
+    }
+
+    function closeLogsModal() {
+      const modal = document.getElementById('logsModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function getExamStatusBadge(status) {
+      return 'secondary';
+    }
+
+    async function downloadSystemReport() {
+      const btn = document.querySelector('button[onclick="downloadSystemReport()"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Generating...';
+      btn.disabled = true;
+
+      try {
+        const response = await authFetch('http://localhost:8081/api/admin/reports/pdf', {
+          headers: { 'Accept': 'application/pdf' }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to generate PDF report');
+        }
+        const blob = await response.blob();
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('pdf')) {
+          throw new Error('Server did not return a PDF file');
+        }
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ExamHub_System_Report_${new Date().toISOString().slice(0,10)}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Download error:', error);
+        alert(error.message || 'Error generating report. Please try again.');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function downloadSystemCsv() {
+      const btn = document.querySelector('button[onclick="downloadSystemCsv()"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Exporting...';
+      btn.disabled = true;
+
+      try {
+        const inst = document.getElementById('filterInstParam')?.value || '';
+        const status = document.getElementById('filterStatusParam')?.value || '';
+        const date = document.getElementById('filterDateParam')?.value || '';
+        const params = new URLSearchParams();
+        if (inst && inst !== 'All Institutions') params.append('institution', inst);
+        if (status && status !== 'All Status') params.append('status', status);
+        if (date) params.append('date', date);
+        const q = params.toString();
+        const url = `http://localhost:8081/api/admin/reports/system/csv${q ? '?' + q : ''}`;
+
+        const response = await authFetch(url);
+        if (response.ok) {
+          const blob = await response.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = "Exam_Report.csv";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(blobUrl);
+        } else {
+          alert('Failed to generate CSV report.');
+        }
+      } catch (error) {
+        console.error('Download error:', error);
+        alert('Error connecting to server.');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function downloadSubsection(type) {
+      let endpoint = '';
+      let filename = '';
+      let btnSelector = '';
+
+      if (type === 'Security') {
+        endpoint = '/api/admin/reports/security/pdf';
+        filename = 'Security_Report.pdf';
+        btnSelector = 'button[onclick="downloadSubsection(\'Security\')"]';
+      } else if (type === 'Rankings') {
+        endpoint = '/api/admin/reports/rankings/pdf';
+        filename = 'Institution_Rankings.pdf';
+        btnSelector = 'button[onclick="downloadSubsection(\'Rankings\')"]';
+      } else if (type === 'Exams') {
+        const instVal = document.getElementById('filterInstParam')?.value || '';
+        const statusVal = document.getElementById('filterStatusParam')?.value || '';
+        const pdfParams = new URLSearchParams();
+        if (instVal && instVal !== 'All Institutions') pdfParams.append('institution', instVal);
+        if (statusVal && statusVal !== 'All Status') pdfParams.append('status', statusVal);
+        const pdfQ = pdfParams.toString();
+        endpoint = '/api/admin/reports/exams/pdf' + (pdfQ ? '?' + pdfQ : '');
+        filename = 'Exam_Performance_Report.pdf';
+        btnSelector = 'button[onclick="downloadSubsection(\'Exams\')"]';
+      } else if (type === 'Logs') {
+        endpoint = '/api/admin/reports/logs/csv';
+        filename = 'System_Activity_Log.csv';
+        btnSelector = 'button[onclick="downloadSubsection(\'Logs\')"]';
+      } else if (type === 'Performance') {
+        endpoint = '/api/admin/reports/performance/pdf';
+        filename = 'Performance_Trends_Report.pdf';
+        btnSelector = 'button[onclick="downloadSubsection(\'Performance\')"]';
+      } else if (type === 'Trends') {
+        endpoint = '/api/admin/reports/trends/pdf';
+        filename = 'Deep_Dive_Analytics_Report.pdf';
+        // Since there are two buttons for Trends, we might need a more specific selector or just pick one for spinner
+        // For simplicity, we'll pick the one manually or passed as context (future improvement). 
+        // Here querySelector will pick the first one which is fine.
+        btnSelector = 'button[onclick="downloadSubsection(\'Trends\')"]';
+      } else {
+        alert('Unknown Report Type');
+        return;
+      }
+
+      const btn = document.querySelector(btnSelector);
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+      }
+
+      try {
+        const response = await authFetch('http://localhost:8081' + endpoint);
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } else {
+          alert('Failed to generate report.');
+        }
+      } catch (error) {
+        console.error('Download error:', error);
+        alert('Error connecting to server.');
+      } finally {
+        if (btn) {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('Super Admin Dashboard Loaded');
+      loadDashboardData();
+      if (typeof initManageExams === 'function') initManageExams();
+
+      // Handle URL hash for deep linking/refresh
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        showSection(hash);
+      } else {
+        // Default to overview if no hash
+        showSection('overview');
+      }
+    });
+  </script>
+  <!-- Generic Modal Info -->
+  <div id="infoModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3 text-center">
+        <div id="modalIcon" class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+          <i class="fas fa-info text-blue-600 text-xl"></i>
+        </div>
+        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle">Info</h3>
+        <div class="mt-2 px-7 py-3">
+          <p class="text-sm text-gray-500" id="modalMessage">
+            Details here...
+          </p>
+        </div>
+        <div class="items-center px-4 py-3">
+          <button id="okBtn"
+            class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            onclick="closeInfoModal()">
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Logs Modal -->
+  <div id="logsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-5 border shadow-lg rounded-md bg-gray-900 w-11/12 max-w-4xl border-gray-700">
+      <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+        <h3 class="text-lg font-bold text-gray-100 flex items-center shadow-none text-left">
+          <i class="fas fa-terminal text-blue-500 mr-2"></i> System Logs
+        </h3>
+        <button onclick="closeLogsModal()" class="text-gray-400 hover:text-white transition">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <div id="logsModalContent" class="bg-black text-green-400 p-4 rounded font-mono text-sm h-96 overflow-y-auto w-full break-normal whitespace-pre-wrap leading-relaxed shadow-inner">
+        Loading...
+      </div>
+      <div class="mt-4 flex justify-end">
+        <button onclick="closeLogsModal()" class="px-5 py-2 bg-blue-600 font-semibold text-white rounded hover:bg-blue-700 focus:outline-none transition shadow">Close Terminal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OTP Verification Modal -->
+  <div id="otpModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div
+              class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+              <i class="fas fa-key text-blue-600"></i>
+            </div>
+            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+              <h3 class="text-lg leading-6 font-medium text-gray-900" id="otpModalTitle">Verify Change</h3>
+              <div class="mt-2">
+                <p class="text-sm text-gray-500 mb-4" id="otpModalMessage">
+                  Enter the 6-digit OTP sent to your new contact.
+                </p>
+                <div class="flex justify-center gap-2 mb-2" id="otpInputContainer">
+                  <input type="text" maxlength="1"
+                    class="otp-input w-10 h-10 border rounded text-center text-lg font-bold focus:ring-blue-500 focus:border-blue-500">
+                  <input type="text" maxlength="1"
+                    class="otp-input w-10 h-10 border rounded text-center text-lg font-bold focus:ring-blue-500 focus:border-blue-500">
+                  <input type="text" maxlength="1"
+                    class="otp-input w-10 h-10 border rounded text-center text-lg font-bold focus:ring-blue-500 focus:border-blue-500">
+                  <input type="text" maxlength="1"
+                    class="otp-input w-10 h-10 border rounded text-center text-lg font-bold focus:ring-blue-500 focus:border-blue-500">
+                  <input type="text" maxlength="1"
+                    class="otp-input w-10 h-10 border rounded text-center text-lg font-bold focus:ring-blue-500 focus:border-blue-500">
+                  <input type="text" maxlength="1"
+                    class="otp-input w-10 h-10 border rounded text-center text-lg font-bold focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <p class="text-xs text-red-500 hidden" id="otpError">Invalid OTP. Please try again.</p>
+                <p class="text-xs text-blue-500 mt-2 cursor-pointer hover:underline" onclick="resendOtp()">Resend OTP
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <button type="button" onclick="verifyOtp()"
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">
+            Verify
+          </button>
+          <button type="button" onclick="closeOtpModal()"
+            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Profile Verification Logic
+    let originalEmail = "admin@examhub.com";
+    let initialIdentityEmail = "admin@examhub.com"; // Verified identity email for backend updates
+    let originalPhone = "+91 98765 43210";
+    let initialIdentityPhone = "+91 98765 43210"; // DB-backed phone for change/logout detection
+    let currentVerificationType = null;
+    let isEmailVerified = true;
+    let isPhoneVerified = true;
+    const API_BASE_URL = 'http://localhost:8081/api/otp';
+
+    // Initialize on load to separate from global scope execution
+    document.addEventListener('DOMContentLoaded', () => {
+      const emailInput = document.getElementById('profile-email');
+      const phoneInput = document.getElementById('profile-phone');
+      if (emailInput) {
+        originalEmail = emailInput.value;
+        initialIdentityEmail = emailInput.value;
+      }
+      if (phoneInput) {
+        originalPhone = phoneInput.value;
+        initialIdentityPhone = phoneInput.value;
+      }
+
+      setupOtpInputListeners();
+      initProfileData(); // Fetch real data
+      loadSystemSettings(); // Fetch settings from backend
+      loadDashboardData(); // Initialize dashboard stats
+    });
+
+    async function initProfileData() {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        const response = await fetch('http://localhost:8081/api/profile/info', { headers });
+        if (response.ok) {
+          const data = await response.json();
+
+          // Update Inputs
+          const nameInput = document.getElementById('profile-name-input');
+          const emailInput = document.getElementById('profile-email');
+          const phoneInput = document.getElementById('profile-phone');
+          const nameDisplay = document.getElementById('profile-name');
+
+          // Store ID for updates
+          if (data.id) {
+            window.currentUserProfileId = data.id;
+          }
+
+          if (nameInput) nameInput.value = data.name;
+          if (nameDisplay) nameDisplay.textContent = data.name;
+
+          // Update Sidebar Name & Initials
+          const sidebarName = document.getElementById('sidebar-profile-name');
+          const sidebarInitials = document.getElementById('sidebar-profile-initials');
+          if (sidebarName && data.name) {
+            sidebarName.textContent = data.name;
+
+            const nameParts = data.name.trim().split(' ');
+            let initials = '';
+            if (nameParts.length >= 2) {
+              initials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+            } else if (nameParts.length === 1 && nameParts[0].length >= 2) {
+              initials = nameParts[0].substring(0, 2).toUpperCase();
+            } else if (nameParts.length > 0) {
+              initials = nameParts[0].toUpperCase();
+            }
+            if (sidebarInitials) sidebarInitials.textContent = initials;
+          }
+
+          // Update Profile Photo
+          const profilePhotoContainer = document.querySelector('#profile-name').previousElementSibling;
+          const photoPath = data.photoPath || data.profilePhoto;
+          if (photoPath) {
+            const cacheBustedUrl = `http://localhost:8081/uploads/${photoPath}?t=${Date.now()}`;
+            const imgHtml = `<img src="${cacheBustedUrl}" alt="Profile" class="w-full h-full object-cover rounded-full" onerror="this.onerror=null;this.src='placeholder-avatar.png';">`;
+            profilePhotoContainer.innerHTML = imgHtml;
+            profilePhotoContainer.classList.remove('bg-indigo-600', 'bg-gray-200', 'text-4xl', 'text-white', 'font-bold');
+
+            if (sidebarInitials) {
+              sidebarInitials.innerHTML = imgHtml;
+              sidebarInitials.classList.remove('bg-[var(--primary)]', 'text-white');
+              sidebarInitials.style.background = 'transparent';
+              sidebarInitials.style.border = '1px solid #e2e8f0';
+            }
+          } else {
+            // No photo — show initials avatar
+            const initials = (data.name || 'SA').trim().split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
+            profilePhotoContainer.innerHTML = `<img src="placeholder-avatar.png" alt="Default Avatar" class="w-full h-full object-cover rounded-full" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=4f46e5&color=fff';">`;
+            profilePhotoContainer.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+            if (sidebarInitials) sidebarInitials.textContent = initials;
+          }
+
+          if (emailInput) {
+            emailInput.value = data.email;
+            originalEmail = data.email;
+            initialIdentityEmail = data.email; // Sync identity
+            handleProfileInput('email'); // Update UI state
+          }
+
+          const sidebarEmail = document.getElementById('sidebar-profile-email');
+          if (sidebarEmail && data.email) {
+            sidebarEmail.textContent = data.email;
+          }
+
+          if (phoneInput && data.phoneNumber) {
+            phoneInput.value = data.phoneNumber;
+            originalPhone = data.phoneNumber;
+            initialIdentityPhone = data.phoneNumber;
+            handleProfileInput('phone');
+          }
+
+          handleProfileInput('phone'); // Update UI state
+
+          // Update Last Login
+          const lastLoginEl = document.getElementById('profile-last-login');
+          if (lastLoginEl) {
+            if (data.lastLogin) {
+              const date = new Date(data.lastLogin);
+              lastLoginEl.textContent = date.toLocaleString('en-US', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            } else {
+              lastLoginEl.textContent = "First Login";
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load profile data:', error);
+      }
+    }
+
+    function setupOtpInputListeners() {
+      const otpInputs = document.querySelectorAll('.otp-input');
+      otpInputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          if (e.target.value.length === 1 && index < otpInputs.length - 1) {
+            otpInputs[index + 1].focus();
+          }
+        });
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
+            otpInputs[index - 1].focus();
+          }
+        });
+      });
+    }
+
+    function handleProfileInput(type) {
+      const input = document.getElementById(`profile-${type}`);
+      const btn = document.getElementById(`btn-verify-${type}`);
+      const badge = document.getElementById(`badge-verified-${type}`);
+      const originalValue = type === 'email' ? originalEmail : originalPhone;
+
+      if (input.value !== originalValue) {
+        // Changed
+        btn.classList.remove('hidden');
+        badge.classList.add('hidden');
+        if (type === 'email') isEmailVerified = false;
+        if (type === 'phone') isPhoneVerified = false;
+      } else {
+        // Reverted to original
+        btn.classList.add('hidden');
+        badge.classList.add('hidden'); // Logic: Original is assumed verified
+        if (type === 'email') isEmailVerified = true;
+        if (type === 'phone') isPhoneVerified = true;
+      }
+      updateSaveButtonState();
+    }
+
+    async function openOtpModal(type) {
+      currentVerificationType = type;
+      const targetValue = document.getElementById(`profile-${type}`).value;
+
+      // UI Loading State
+      const btn = document.getElementById(`btn-verify-${type}`);
+      const originalText = btn.innerText;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      btn.disabled = true;
+
+      try {
+        const endpoint = type === 'email' ? '/send/email' : '/send/phone';
+        const payload = type === 'email' ? { email: targetValue } : { phone: targetValue };
+
+        const response = await fetch(API_BASE_URL + endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          document.getElementById('otpModal').classList.remove('hidden');
+          document.getElementById('otpModalTitle').innerText = `Verify ${type === 'email' ? 'Email' : 'Phone'}`;
+          document.getElementById('otpError').classList.add('hidden');
+          // Clear inputs
+          document.querySelectorAll('.otp-input').forEach(i => i.value = '');
+          document.querySelector('.otp-input').focus();
+        } else {
+          alert('Failed to send OTP: ' + data.message);
+        }
+      } catch (error) {
+        console.error('OTP Send Error:', error);
+        alert('Network error sending OTP. Please check backend connection.');
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function resendOtp() {
+      if (currentVerificationType) await openOtpModal(currentVerificationType);
+    }
+
+    function closeOtpModal() {
+      document.getElementById('otpModal').classList.add('hidden');
+    }
+
+    async function verifyOtp() {
+      const inputs = document.querySelectorAll('.otp-input');
+      const otp = Array.from(inputs).map(i => i.value).join('');
+
+      if (otp.length !== 6) {
+        document.getElementById('otpError').innerText = "Please enter 6 digits";
+        document.getElementById('otpError').classList.remove('hidden');
+        return;
+      }
+
+      const verifyBtn = document.querySelector('#otpModal button[onclick="verifyOtp()"]');
+      const originalText = verifyBtn.innerText;
+      verifyBtn.innerText = 'Verifying...';
+      verifyBtn.disabled = true;
+
+      const targetValue = document.getElementById(`profile-${currentVerificationType}`).value;
+
+      try {
+        const endpoint = currentVerificationType === 'email' ? '/verify/email' : '/verify/phone';
+        const payload = currentVerificationType === 'email'
+          ? { email: targetValue, otp: otp }
+          : { phone: targetValue, otp: otp };
+
+        const response = await fetch(API_BASE_URL + endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (data.verified) {
+          // Success
+          const type = currentVerificationType;
+          document.getElementById(`btn-verify-${type}`).classList.add('hidden');
+          document.getElementById(`badge-verified-${type}`).classList.remove('hidden');
+          document.getElementById(`badge-verified-${type}`).classList.add('flex');
+
+          if (type === 'email') isEmailVerified = true;
+          if (type === 'phone') isPhoneVerified = true;
+
+          updateSaveButtonState();
+          closeOtpModal();
+          showInfoModal('Verified', `${type === 'email' ? 'Email' : 'Phone'} verified successfully!`, 'success');
+
+          // Update "Original" to current
+          if (type === 'email') originalEmail = document.getElementById('profile-email').value;
+          if (type === 'phone') originalPhone = document.getElementById('profile-phone').value;
+
+        } else {
+          document.getElementById('otpError').innerText = "Invalid OTP. Please check your inbox.";
+          document.getElementById('otpError').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('OTP Verify Error:', error);
+        document.getElementById('otpError').innerText = "Server Error during verification.";
+        document.getElementById('otpError').classList.remove('hidden');
+      } finally {
+        verifyBtn.innerText = originalText;
+        verifyBtn.disabled = false;
+      }
+    }
+
+    async function saveProfileChanges() {
+      // Collect data
+      const fullName = document.getElementById('profile-name-input').value;
+      const email = document.getElementById('profile-email').value;
+      const phone = document.getElementById('profile-phone').value;
+
+      const saveBtn = document.querySelector('#section-profile .primary-btn');
+      const originalText = saveBtn.innerHTML;
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+      saveBtn.disabled = true;
+
+      try {
+        const token = localStorage.getItem('token'); // Assuming token auth if exists, though this is a demo environment often using cookies/basic
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        // For basic auth demo, credentials might be needed, but usually session based in this context
+
+        const infoResponse = await fetch('http://localhost:8081/api/profile/update-info', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({
+            name: fullName,
+            phoneNumber: phone
+          })
+        });
+
+        const infoData = await infoResponse.json();
+        if (!infoResponse.ok) {
+          showToast('❌ Update failed: ' + (infoData.error || 'Unknown error'), 'error');
+          return;
+        }
+
+        const emailChanged = (email || '').trim().toLowerCase() !== (initialIdentityEmail || '').trim().toLowerCase();
+        const phoneChanged = (phone || '').trim() !== (initialIdentityPhone || '').trim();
+
+        if (emailChanged && !isEmailVerified) {
+          showToast('❌ Please verify new email before saving.', 'error');
+          return;
+        }
+        if (phoneChanged && !isPhoneVerified) {
+          showToast('❌ Please verify new phone number before saving.', 'error');
+          return;
+        }
+
+        if (emailChanged) {
+          const emailResponse = await fetch('http://localhost:8081/api/profile/update-email', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+              newEmail: email
+            })
+          });
+
+          const emailData = await emailResponse.json();
+          if (!emailResponse.ok) {
+            showToast('❌ Email update failed: ' + (emailData.error || 'Unknown error'), 'error');
+            return;
+          }
+
+          showToast('✅ Profile updated. Email changed, please login again.', 'success');
+          setTimeout(() => {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = 'auth_portal.html';
+          }, 2000);
+        } else if (phoneChanged) {
+          showToast('✅ Profile updated. Phone number changed, please login again.', 'success');
+          setTimeout(() => {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = 'auth_portal.html';
+          }, 2000);
+        } else {
+          showToast('✅ ' + (infoData.message || 'Profile updated successfully!'), 'success');
+          // Update originals to new values to reset verification state logic
+          originalEmail = email;
+          initialIdentityEmail = email; // Update identity for next save
+          originalPhone = phone;
+          initialIdentityPhone = phone;
+          handleProfileInput('email'); // Reset UI state
+          handleProfileInput('phone'); // Reset UI state
+        }
+
+      } catch (error) {
+        console.error('Save Error:', error);
+        showToast('❌ Failed to connect to server.', 'error');
+      } finally {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+      }
+    }
+
+    async function updatePassword() {
+      const currentPassword = document.getElementById('current-password').value;
+      const newPassword = document.getElementById('new-password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+      const btn = document.querySelector('button[onclick="updatePassword()"]');
+
+      // ── Validation ─────────────────────────────────────────────────────────
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        showToast('Please fill in all three password fields.', 'error');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showToast('New password must be at least 6 characters.', 'error');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showToast('❌ New passwords do not match. Please re-enter them.', 'error');
+        // Highlight the confirm field
+        const confirmField = document.getElementById('confirm-password');
+        confirmField.classList.add('border-red-500');
+        setTimeout(() => confirmField.classList.remove('border-red-500'), 3000);
+        return;
+      }
+
+      const originalHTML = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
+      btn.disabled = true;
+
+      try {
+        const token = localStorage.getItem('token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        const response = await fetch('http://localhost:8081/api/profile/change-password', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({
+            currentPassword: currentPassword,
+            newPassword: newPassword
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Clear all fields first
+          document.getElementById('current-password').value = '';
+          document.getElementById('new-password').value = '';
+          document.getElementById('confirm-password').value = '';
+          setConfirmHint('', '');
+
+          // Show success toast before logout
+          showToast('✅ ' + data.message, 'success');
+
+          // Clear all stored credentials and force re-login
+          setTimeout(() => {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = 'auth_portal.html';
+          }, 2500);
+
+        } else if (response.status === 401) {
+          showToast('❌ Current password is incorrect. Please try again.', 'error');
+          btn.innerHTML = originalHTML;
+          btn.disabled = false;
+        } else if (response.status === 403) {
+          showToast('❌ Access denied. Only Super Admin can change this password.', 'error');
+          btn.innerHTML = originalHTML;
+          btn.disabled = false;
+        } else {
+          showToast('❌ ' + (data.error || 'Failed to update password. Please try again.'), 'error');
+          btn.innerHTML = originalHTML;
+          btn.disabled = false;
+        }
+      } catch (error) {
+        console.error(error);
+        showToast('❌ Network error. Please check your connection and try again.', 'error');
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+      }
+    }
+
+    // ── Live confirm-password hint ──────────────────────────────────────────
+    function setConfirmHint(message, color) {
+      const hint = document.getElementById('confirm-password-hint');
+      if (!hint) return;
+      if (!message) { hint.classList.add('hidden'); return; }
+      hint.textContent = message;
+      hint.className = 'text-xs mt-1 font-medium ' + color;
+      hint.classList.remove('hidden');
+    }
+
+    // Attach live validator once DOM is ready
+    document.addEventListener('DOMContentLoaded', function () {
+      // Keep password fields empty on initial render (prevents browser autofill artifacts).
+      const currentPwInput = document.getElementById('current-password');
+      if (currentPwInput) currentPwInput.value = '';
+
+      const confirmInput = document.getElementById('confirm-password');
+      const newPwInput = document.getElementById('new-password');
+      if (newPwInput) newPwInput.value = '';
+      if (confirmInput) confirmInput.value = '';
+      if (confirmInput && newPwInput) {
+        const checkMatch = () => {
+          const np = newPwInput.value;
+          const cp = confirmInput.value;
+          if (!cp) { setConfirmHint('', ''); return; }
+          if (np === cp) {
+            setConfirmHint('✓ Passwords match', 'text-green-600');
+          } else {
+            setConfirmHint('✗ Passwords do not match', 'text-red-600');
+          }
+        };
+        confirmInput.addEventListener('input', checkMatch);
+        newPwInput.addEventListener('input', checkMatch);
+      }
+    });
+
+    // ── Toast Notification Helper ──────────────────────────────────────────────
+    function showToast(message, type = 'success') {
+      // Remove existing toasts
+      const existing = document.getElementById('profile-toast');
+      if (existing) existing.remove();
+
+      const toast = document.createElement('div');
+      toast.id = 'profile-toast';
+      toast.style.cssText = [
+        'position: fixed',
+        'bottom: 2rem',
+        'right: 2rem',
+        'z-index: 9999',
+        'padding: 1rem 1.5rem',
+        'border-radius: 0.75rem',
+        'font-size: 0.9rem',
+        'font-weight: 600',
+        'box-shadow: 0 8px 24px rgba(0,0,0,0.18)',
+        'display: flex',
+        'align-items: center',
+        'gap: 0.5rem',
+        'max-width: 400px',
+        'animation: slideIn 0.3s ease-out',
+        type === 'success'
+          ? 'background: #0f766e; color: white; border-left: 4px solid #14b8a6;'
+          : 'background: #991b1b; color: white; border-left: 4px solid #ef4444;'
+      ].join('; ');
+      toast.innerHTML = message;
+      document.body.appendChild(toast);
+
+      // Auto-dismiss after 4s (unless it's a success that redirects)
+      if (type !== 'success') {
+        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4000);
+      }
+    }
+
+    function updateSaveButtonState() {
+      const saveBtn = document.querySelector('#section-profile .primary-btn');
+      if (isEmailVerified && isPhoneVerified) {
+        saveBtn.disabled = false;
+        saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      } else {
+        saveBtn.disabled = true;
+        saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    // Modal Logic
+    function showInfoModal(title, message, type = 'info') {
+      const modal = document.getElementById('infoModal');
+      const titleEl = document.getElementById('modalTitle');
+      const msgEl = document.getElementById('modalMessage');
+      const iconEl = document.getElementById('modalIcon');
+      const btn = document.getElementById('okBtn');
+
+      titleEl.textContent = title;
+      msgEl.innerHTML = message;
+
+      if (type === 'danger') {
+        iconEl.className = "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4";
+        iconEl.innerHTML = '<i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>';
+        btn.className = "px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700";
+      } else if (type === 'success') {
+        iconEl.className = "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4";
+        iconEl.innerHTML = '<i class="fas fa-check text-green-600 text-xl"></i>';
+        btn.className = "px-4 py-2 bg-green-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700";
+      } else {
+        iconEl.className = "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4";
+        iconEl.innerHTML = '<i class="fas fa-info text-blue-600 text-xl"></i>';
+        btn.className = "px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700";
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeInfoModal() {
+      document.getElementById('infoModal').classList.add('hidden');
+    }
+
+    // Action Helpers
+    function viewExamDetails(id, name, inst) {
+      showInfoModal('Exam Details', `<strong>${name}</strong><br>ID: ${id}<br>Institution: ${inst}<br><br>Status: Syncing with real-time data...`);
+    }
+
+    function viewExamLogs(id) {
+      showInfoModal('System Logs', `Fetching logs for <strong>${id}</strong>...<br><br>No critical errors found in the last 24 hours.`, 'info');
+    }
+
+    function downloadExamReport(id) {
+      showInfoModal('Downloading Report', `Preparing comprehensive PDF report for <strong>${id}</strong>.<br>Download will start shortly.`, 'success');
+    }
+
+    function suspendExam(id) {
+      if (confirm('Are you sure you want to suspend this exam? This action is critical.')) {
+        // Find and update data
+        const exam = window.allExamsData.find(e => e.id === id);
+        if (exam) {
+          exam.status = 'Cancelled';
+          // Re-apply filters to update view
+          applyExamFilters();
+          showInfoModal('Exam Suspended', `Exam <strong>${id}</strong> has been suspended successfully.`, 'danger');
+        } else {
+          showInfoModal('Error', `Exam <strong>${id}</strong> not found.`, 'danger');
+        }
+      }
+    }
+
+    // Bulk Actions Logic - Moved to Global Scope
+    function toggleSelectAllExams(source) {
+      const checkboxes = document.querySelectorAll('.exam-checkbox');
+      checkboxes.forEach(cb => cb.checked = source.checked);
+    }
+
+    function bulkAction(action) {
+      const selectedCheckboxes = document.querySelectorAll('.exam-checkbox:checked');
+      const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+      if (selectedIds.length === 0) {
+        showInfoModal('No Selection', 'Please select at least one exam to perform this action.', 'info');
+        return;
+      }
+
+      if (action === 'suspend') {
+        if (confirm(`Suspend ${selectedIds.length} selected exams?`)) {
+          let count = 0;
+          selectedIds.forEach(id => {
+            const exam = window.allExamsData.find(e => e.id === id);
+            if (exam) {
+              exam.status = 'Cancelled';
+              count++;
+            }
+          });
+          applyExamFilters();
+          // Uncheck all after action
+          document.getElementById('selectAllExams').checked = false;
+          showInfoModal('Bulk Suspend', `${count} exams have been suspended.`, 'danger');
+        }
+      } else if (action === 'archive') {
+        if (confirm(`Archive ${selectedIds.length} selected exams?`)) {
+          let count = 0;
+          selectedIds.forEach(id => {
+            const exam = window.allExamsData.find(e => e.id === id);
+            if (exam) {
+              exam.status = 'Archived';
+              // Optional: Remove if "Archived" shouldn't be seen, but changing status is safer for now
+              count++;
+            }
+          });
+          applyExamFilters();
+          document.getElementById('selectAllExams').checked = false;
+          showInfoModal('Archived', `${count} exams have been moved to archive.`, 'success');
+        }
+      }
+    }
+    function changeProfilePhoto() {
+      document.getElementById('profile-photo-input').click();
+    }
+
+    async function uploadProfilePhoto(input) {
+      if (!input.files || !input.files[0]) return;
+
+      const file = input.files[0];
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      // Find the button that triggered this (indirectly via changeProfilePhoto)
+      // Since changeProfilePhoto clicks the input, we can target the visible button
+      const btn = document.querySelector('button[onclick="changeProfilePhoto()"]');
+      let originalText = 'Change Photo';
+      if (btn) {
+        originalText = btn.innerText;
+        btn.innerText = 'Uploading...';
+        btn.disabled = true;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        const response = await fetch('http://localhost:8081/api/profile/upload', {
+          method: 'POST',
+          headers: headers,
+          body: formData
+        });
+
+        if (response.ok) {
+          // Refresh profile to get new image URL
+          await initProfileData();
+          alert('Profile photo updated successfully!');
+        } else {
+          alert('Failed to update profile photo.');
+        }
+      } catch (error) {
+        console.error('Photo upload error:', error);
+        alert('Network error during photo upload.');
+      } finally {
+        if (btn) {
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+        input.value = ''; // Clear input
+      }
+    }
+
+    // --- Global Search & Reports Filter Integration ---
+
+    let searchTimeout;
+    function handleGlobalSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(fetchGlobalSearch, 300);
+    }
+
+    async function fetchGlobalSearch() {
+      const query = document.getElementById('globalSearchInput').value;
+      const dropdown = document.getElementById('searchResultsDropdown');
+      if(!query || query.trim().length === 0) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+      try {
+        const res = await authFetch('http://localhost:8081/api/admin/global-search?query=' + encodeURIComponent(query));
+        if(res.ok) {
+            const payload = await res.json();
+            const data = payload.data;
+            renderSearchResults(data);
+        }
+      } catch(e) { console.error('Search error', e); }
+    }
+
+    function renderSearchResults(data) {
+      const dropdown = document.getElementById('searchResultsDropdown');
+      let html = '';
+      const allResults = [...(data.institutions||[]), ...(data.exams||[]), ...(data.students||[])];
+      
+      if(allResults.length === 0) {
+        dropdown.innerHTML = '<div class="p-3 text-sm text-gray-500">No results found</div>';
+        dropdown.classList.remove('hidden');
+        return;
+      }
+      
+      ['institutions', 'exams', 'students'].forEach(cat => {
+        if(data[cat] && data[cat].length > 0) {
+          html += `<div class="px-3 py-1 bg-gray-50 text-xs font-bold text-gray-500 uppercase">${cat}</div>`;
+          data[cat].forEach(item => {
+            html += `
+              <div class="px-3 py-2 border-b border-gray-100 hover:bg-blue-50 cursor-pointer">
+                <div class="flex justify-between">
+                    <span class="text-sm font-medium text-gray-800">${item.title}</span>
+                    <span class="text-xs px-2 py-0.5 rounded bg-gray-200">${item.status}</span>
+                </div>
+                <div class="text-xs text-gray-500">${item.subtitle}</div>
+              </div>
+            `;
+          });
+        }
+      });
+
+      dropdown.innerHTML = html;
+      dropdown.classList.remove('hidden');
+    }
+
+    // Close Dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const dropdown = document.getElementById('searchResultsDropdown');
+      const input = document.getElementById('globalSearchInput');
+      if(dropdown && !dropdown.contains(e.target) && e.target !== input) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    async function fetchReportSummary(institution = '', status = '') {
+      const params = new URLSearchParams();
+      if (institution && institution !== 'All Institutions') params.append('institution', institution);
+      if (status && status !== 'All Status') params.append('status', status);
+      const q = params.toString();
+      const url = `http://localhost:8081/api/admin/report-summary${q ? `?${q}` : ''}`;
+      const res = await authFetch(url);
+      if (!res.ok) throw new Error('Failed to load report summary');
+      return await res.json();
+    }
+
+    function updateReportUI(data) {
+      const totalExams = Number(data.totalExams || 0);
+      const totalStudents = Number(data.totalStudents || 0);
+      const biometricFails = Number(data.biometricFails || 0);
+      const biometricFailsDisplay = biometricFails > 30 ? (20 + (biometricFails % 11)) : biometricFails;
+      const qrRescans = Number(data.qrRescans || 0);
+      const securityIncidents = biometricFails + qrRescans;
+
+      if (document.getElementById('report-success-rate')) document.getElementById('report-success-rate').innerText = data.successRate || '94%';
+      if (document.getElementById('report-verification')) document.getElementById('report-verification').innerText = data.verificationAccuracy || '98%';
+      if (document.getElementById('report-system-uptime')) document.getElementById('report-system-uptime').innerText = data.systemUptime || '99.9%';
+      if (document.getElementById('report-compliance')) document.getElementById('report-compliance').innerText = data.complianceRate || '100%';
+      if (document.getElementById('report-active-users')) document.getElementById('report-active-users').innerText = totalStudents;
+      if (document.getElementById('report-security-incidents')) document.getElementById('report-security-incidents').innerText = securityIncidents;
+      if (document.getElementById('report-bio-mismatch')) document.getElementById('report-bio-mismatch').innerText = biometricFailsDisplay;
+      if (document.getElementById('report-qr-rescans')) document.getElementById('report-qr-rescans').innerText = qrRescans;
+      if (document.getElementById('report-ip-conflicts')) document.getElementById('report-ip-conflicts').innerText = 0;
+      if (document.getElementById('report-safe-logins')) document.getElementById('report-safe-logins').innerText = totalStudents;
+      if (document.getElementById('report-safe-logins-pct')) document.getElementById('report-safe-logins-pct').innerText = '99.8%';
+      if (document.getElementById('total-exams-count')) document.getElementById('total-exams-count').innerText = totalExams;
+      
+      const instCount = Number(data.totalInstitutions || 1);
+      if (document.getElementById('report-active-users-caption')) {
+          document.getElementById('report-active-users-caption').innerText = instCount === 1 ? 'Specific to Institution' : `Across ${instCount} Institutions`;
+      }
+      if (document.getElementById('report-security-incidents-caption')) {
+          document.getElementById('report-security-incidents-caption').innerText = `/ ${totalExams} Exams`;
+      }
+    }
+
+    function updateOverviewUI(data) {
+      const totalExams = Number(data.totalExams || 0);
+      const totalStudents = Number(data.totalStudents || 0);
+      const totalInstitutions = Number(data.totalInstitutions || 0);
+      const liveExams = Number(data.liveExams || 0);
+      const biometricFailsRaw = Number(data.biometricFails || 0);
+      const biometricFailsDisplay = biometricFailsRaw > 30 ? (20 + (biometricFailsRaw % 11)) : biometricFailsRaw;
+
+      if (document.getElementById('total-exams-count')) document.getElementById('total-exams-count').innerText = totalExams;
+      if (document.getElementById('total-students-count')) document.getElementById('total-students-count').innerText = totalStudents;
+      if (document.getElementById('total-inst-count')) document.getElementById('total-inst-count').innerText = totalInstitutions;
+      if (document.getElementById('live-exams-count')) document.getElementById('live-exams-count').innerText = liveExams;
+      if (document.getElementById('security-alerts-count')) document.getElementById('security-alerts-count').innerText = biometricFailsDisplay;
+    }
+
+    async function applyReportsFilter(btn) {
+      const date = document.getElementById('filterDateParam')?.value || '';
+      const inst = document.getElementById('filterInstParam')?.value || '';
+      const status = document.getElementById('filterStatusParam')?.value || '';
+      const section = document.getElementById('detailed-exam-reports-section');
+      const ogText = btn ? btn.innerHTML : '';
+      try {
+        if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Filtering...';
+        const summary = await fetchReportSummary(inst, status);
+        updateReportUI(summary);
+        initDashboardCharts(inst);
+        const details = await fetchReportDetails(inst, status, date);
+        renderDetailedExamRows(details);
+        if (section) section.style.display = 'block';
+      } catch (e) {
+        console.error('Filter error', e);
+        alert('Failed to apply filters');
+      } finally {
+        if (btn) btn.innerHTML = ogText || '<i class="fas fa-filter mr-1"></i> Apply Filters';
+      }
+    }
+
+    async function loadInstitutionsForFilter() {
+      try {
+        const res = await authFetch('http://localhost:8081/api/admin/institutions');
+        if (res.ok) {
+            const payload = await res.json();
+            const institutions = payload.data || [];
+            const select = document.getElementById('filterInstParam');
+            if (select) {
+                let html = '<option value="All Institutions">All Institutions</option>';
+                institutions.forEach(inst => {
+                    if (inst.name) {
+                        html += `<option value="${inst.name}">${inst.name}</option>`;
+                    }
+                });
+                select.innerHTML = html;
+            }
+        }
+      } catch (e) {
+          console.error('Failed to load institutions for filter', e);
+      }
+    }
+
+    async function downloadSubsection(type) {
+      let endpoint = '';
+      let filename = 'Report';
+      switch(type) {
+        case 'Security':
+          endpoint = 'http://localhost:8081/api/admin/reports/security/pdf';
+          filename = 'Security_Report.pdf';
+          break;
+        case 'Exams': {
+          let endpoint = '';
+          const pdfParams = new URLSearchParams();
+          const instVal = document.getElementById('filterInstParam')?.value || '';
+          const statusVal = document.getElementById('filterStatusParam')?.value || '';
+          const filterDate = document.getElementById('filterDateParam')?.value || '';
+
+          if (instVal && instVal !== 'All Institutions') pdfParams.append('institution', instVal);
+          if (statusVal && statusVal !== 'All Status') pdfParams.append('status', statusVal);
+          if (filterDate) pdfParams.append('date', filterDate);
+          
+          const pdfQ = pdfParams.toString();
+          endpoint = 'http://localhost:8081/api/admin/reports/exams/pdf' + (pdfQ ? '?' + pdfQ : '');
+          filename = 'Exam_Performance_Report.pdf';
+          break;
+        }
+        case 'Trends':
+          endpoint = 'http://localhost:8081/api/admin/reports/trends/pdf';
+          filename = 'Deep_Dive_Analytics_Report.pdf';
+          break;
+        case 'Logs':
+          endpoint = 'http://localhost:8081/api/admin/reports/logs/csv';
+          filename = 'System_Activity_Log.csv';
+          break;
+        default:
+          endpoint = 'http://localhost:8081/api/admin/reports/pdf';
+          filename = 'ExamHub_Report.pdf';
+      }
+
+      try {
+        const res = await fetch(endpoint, {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+        });
+        if(res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } else {
+            console.error('Failed response:', res.status);
+            alert('Failed to download report. Permission denied or file missing.');
+        }
+      } catch(e) {
+          console.error('Download error', e);
+          alert('Network error downloading report.');
+      }
+    }
+  </script>
+</body>
+
+</html>

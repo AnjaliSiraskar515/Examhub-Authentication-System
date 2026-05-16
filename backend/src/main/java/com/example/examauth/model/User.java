@@ -3,8 +3,10 @@ package com.example.examauth.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "users")
-
+@Table(name = "users", indexes = {
+        @Index(name = "idx_prn", columnList = "prn"),
+        @Index(name = "idx_email", columnList = "email")
+})
 public class User {
 
     @Id
@@ -23,9 +25,26 @@ public class User {
     private String role;
     private String status;
 
+    @Column(nullable = false, columnDefinition = "varchar(20) default 'REGULAR'")
+    private String studentType = "REGULAR";
+
     // Used for JWT invalidation: increment this to force logout on all existing tokens
     @Column(columnDefinition = "INT DEFAULT 0")
     private int tokenVersion = 0;
+
+    // Eligibility & Billing
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean feesPaid = false;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean isEligible = false;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean examAccessAllowed = false;
+
+    // Security
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private Boolean firstLogin = true;
 
     @Column(length = 2000)
     private String biometricHash;
@@ -65,6 +84,10 @@ public class User {
     private Boolean qrVerified = false;
     private Boolean biometricVerified = false;
 
+    // Communication restriction
+    @Column(columnDefinition = "boolean default false")
+    private Boolean communicationBlocked = false;
+
     public Boolean getQrVerified() {
         return qrVerified;
     }
@@ -87,6 +110,14 @@ public class User {
 
     public void setBiometricEnrolled(boolean biometricEnrolled) {
         this.biometricEnrolled = biometricEnrolled;
+    }
+
+    public Boolean getCommunicationBlocked() {
+        return communicationBlocked == null ? false : communicationBlocked;
+    }
+
+    public void setCommunicationBlocked(Boolean communicationBlocked) {
+        this.communicationBlocked = communicationBlocked;
     }
 
     public String getBiometricTemplateHash() {
@@ -138,13 +169,30 @@ public class User {
     // ===========================================================
     // Supervisor Profile Fields (Added)
     // ===========================================================
+    private String supervisorType; // "HEAD" or "EXAM"
     private String universityName;
     private String collegeName;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "college_id")
+    private College college;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id")
+    private Department departmentEntity;
+
     private String institutionCode; // To uniquely link to Institution record
     private String universityLogoPath; // filename stored in uploads/logo/
-    private String designation; // e.g. Chief Supervisor, Room Invigilator
     private String employeeId;
     private String appointmentLetterPath;
+
+    public String getSupervisorType() {
+        return supervisorType;
+    }
+
+    public void setSupervisorType(String supervisorType) {
+        this.supervisorType = supervisorType;
+    }
 
     public String getUniversityLogoPath() {
         return universityLogoPath;
@@ -153,7 +201,6 @@ public class User {
     public void setUniversityLogoPath(String universityLogoPath) {
         this.universityLogoPath = universityLogoPath;
     }
-
 
     public String getUniversityName() {
         return universityName;
@@ -171,21 +218,28 @@ public class User {
         this.collegeName = collegeName;
     }
 
+    public College getCollege() {
+        return college;
+    }
+
+    public void setCollege(College college) {
+        this.college = college;
+    }
+
+    public Department getDepartmentEntity() {
+        return departmentEntity;
+    }
+
+    public void setDepartmentEntity(Department departmentEntity) {
+        this.departmentEntity = departmentEntity;
+    }
+
     public String getInstitutionCode() {
         return institutionCode;
     }
 
     public void setInstitutionCode(String institutionCode) {
         this.institutionCode = institutionCode;
-    }
-
-
-    public String getDesignation() {
-        return designation;
-    }
-
-    public void setDesignation(String designation) {
-        this.designation = designation;
     }
 
     public String getEmployeeId() {
@@ -271,6 +325,14 @@ public class User {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getStudentType() {
+        return studentType;
+    }
+
+    public void setStudentType(String studentType) {
+        this.studentType = studentType;
     }
 
     public int getTokenVersion() {
@@ -433,6 +495,15 @@ public class User {
         this.major = major;
     }
 
+    @Transient
+    public String getCourse() {
+        return major != null ? major : "N/A";
+    }
+
+    public void setCourse(String course) {
+        this.major = course;
+    }
+
     public String getYear() {
         return year;
     }
@@ -479,5 +550,36 @@ public class User {
 
     public void setGender(String gender) {
         this.gender = gender;
+    }
+    public Boolean getFeesPaid() {
+        return feesPaid;
+    }
+
+    public void setFeesPaid(Boolean feesPaid) {
+        this.feesPaid = feesPaid;
+    }
+
+    public Boolean getIsEligible() {
+        return isEligible;
+    }
+
+    public void setIsEligible(Boolean isEligible) {
+        this.isEligible = isEligible;
+    }
+
+    public Boolean getExamAccessAllowed() {
+        return examAccessAllowed;
+    }
+
+    public void setExamAccessAllowed(Boolean examAccessAllowed) {
+        this.examAccessAllowed = examAccessAllowed;
+    }
+
+    public Boolean getFirstLogin() {
+        return firstLogin;
+    }
+
+    public void setFirstLogin(Boolean firstLogin) {
+        this.firstLogin = firstLogin;
     }
 }

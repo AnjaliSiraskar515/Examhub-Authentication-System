@@ -88,10 +88,7 @@
       <div class="flex items-center space-x-4">
         <div id="networkStatus" class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="System Online"></div>
         <div class="flex items-center space-x-3">
-          <svg class="w-10 h-10" viewBox="0 0 54 54" fill="none">
-            <rect x="8" y="8" width="38" height="32" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="2" />
-            <path d="M27 7L42 14L27 21L12 14L27 7Z" fill="#14b8a6" stroke="#14b8a6" stroke-width="1" />
-          </svg>
+          <img src="logo.png" alt="ExamHub" class="w-10 h-10 object-contain">
           <div>
             <h1 class="text-xl font-semibold text-gray-900">Supervisor Dashboard</h1>
             <p class="text-sm text-gray-500">ExamHub - Secure Authentication System</p>
@@ -1152,6 +1149,13 @@
         const p = await res.json();
         document.getElementById('profileAvatar').src = p.avatar || 'placeholder-avatar.png';
         document.getElementById('profileName').innerText = p.name || 'Supervisor Name';
+        
+        const roleSpan = document.getElementById('profileType');
+        if (roleSpan) {
+            roleSpan.innerText = p.supervisorType === 'HEAD' ? 'Head Supervisor' : 'Exam Supervisor';
+            roleSpan.classList.remove('hidden');
+        }
+
         document.getElementById('profileEmail').innerText = p.email || '';
 
         // Update Header Profile
@@ -2204,6 +2208,13 @@
 
         document.getElementById('profileAvatar').src = avatarSrc;
         document.getElementById('profileName').innerText = p.name || 'Supervisor Name';
+        
+        const roleSpan2 = document.getElementById('profileType');
+        if (roleSpan2) {
+            roleSpan2.innerHTML = p.supervisorType === 'HEAD' ? '<i class="fas fa-crown mr-1"></i> Head Supervisor' : 'Exam Supervisor';
+            roleSpan2.classList.remove('hidden');
+        }
+
         document.getElementById('profileEmail').innerText = p.email || '';
         document.getElementById('headerProfileName').innerText = p.name || 'Supervisor';
         document.getElementById('headerProfileAvatar').src = avatarSrc;
