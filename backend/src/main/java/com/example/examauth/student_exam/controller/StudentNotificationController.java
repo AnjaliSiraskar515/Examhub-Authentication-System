@@ -4,11 +4,11 @@ import com.example.examauth.student_exam.dto.NotificationResponseDTO;
 import com.example.examauth.student_exam.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/student/notifications")
@@ -16,23 +16,36 @@ import java.util.List;
 public class StudentNotificationController {
 
     private final NotificationService notificationService;
-
     private final com.example.examauth.repo.UserRepository userRepository;
 
-    @GetMapping
-    public ResponseEntity<List<NotificationResponseDTO>> getAllNotifications(
-            org.springframework.security.core.Authentication authentication) {
-
-        Long studentId = 1L; // Fallback for testing
-
+    private Long resolveStudentId(Authentication authentication) {
+        Long studentId = 1L;
         if (authentication != null && authentication.isAuthenticated()) {
             String email = authentication.getName();
-            com.example.examauth.model.User user = userRepository.findByEmail(email).orElse(null);
+            com.example.examauth.model.User user = userRepository.findFirstByEmailAndRole(
+                email, authentication.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "")
+            ).orElse(null);
             if (user != null) {
                 studentId = user.getUserId();
             }
         }
+        return studentId;
+    }
 
-        return ResponseEntity.ok(notificationService.getNotificationsForStudent(studentId));
+    @GetMapping
+    public ResponseEntity<List<NotificationResponseDTO>> getAllNotifications(Authentication authentication) {
+        return ResponseEntity.ok(notificationService.getNotificationsForStudent(resolveStudentId(authentication)));
+    }
+
+    @PostMapping("/{id}/read")
+    public ResponseEntity<?> markAsRead(@PathVariable Long id) {
+        notificationService.markAsRead(id);
+        return ResponseEntity.ok(Map.of("message", "Notification marked as read"));
+    }
+
+    @PostMapping("/mark-all-read")
+    public ResponseEntity<?> markAllAsRead(Authentication authentication) {
+        notificationService.markAllAsRead(resolveStudentId(authentication));
+        return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
     }
 }

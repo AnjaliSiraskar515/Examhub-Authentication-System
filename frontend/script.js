@@ -3,7 +3,7 @@ console.log("✅ script.js loaded successfully!");
 // ===========================================================
 //  GLOBAL CONSTANTS
 // ===========================================================
-const BACKEND_BASE = "/api";
+const BACKEND_BASE = "http://localhost:8081/api";
 
 let emailVerified = false;
 let phoneVerified = false;
@@ -298,7 +298,7 @@ async function loginRequest(identifier, password, role = "STUDENT", prn = null, 
         case "STUDENT": location.href = "student_dashboard.html"; break;
         case "SUPERVISOR": location.href = "supervisor_dashboard.html"; break;
         case "UNIVERSITY_ADMIN": location.href = "university_dashboard.html"; break;
-        case "SUPERADMIN": location.href = "super_admin_dashboard.html"; break;
+        case "SUPER_ADMIN": location.href = "super_admin_dashboard.html"; break;
         default: alert("Unknown role: " + userRole);
       }
     } else {

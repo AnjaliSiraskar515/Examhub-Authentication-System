@@ -71,7 +71,58 @@ export default function ExamRegistration() {
             const response = await fetch('/api/university/exams');
             if (!response.ok) throw new Error("Failed to fetch exams");
             const rawExams = await response.json();
-            exams = rawExams.filter(ex => ex.status === 'OPEN');
+            
+            // Filter logic: Only show OPEN exams for student's course, department, and semester
+            exams = rawExams.filter(ex => {
+                if (ex.status !== 'OPEN') return false;
+                
+                // If profile is missing course/sem, default to showing the exam to avoid hiding valid exams
+                if (!studentProfile.course || !studentProfile.semester) return true;
+
+                const stuCourse = String(studentProfile.course).toLowerCase().trim();
+                const stuDept = String(studentProfile.branch || studentProfile.department || '').toLowerCase().trim();
+                const stuSemStr = String(studentProfile.semester).toLowerCase().replace(/\D/g, '');
+                const stuSem = parseInt(stuSemStr) || 0;
+                
+                const exCourse = String(ex.course || '').toLowerCase().trim();
+                const exDept = String(ex.department || '').toLowerCase().trim();
+                const exSemStr = String(ex.semester || '').toLowerCase().replace(/\D/g, '');
+                const exSem = parseInt(exSemStr) || 0;
+                
+                // Helper to check if two strings loosely match (handles B.Tech vs Bachelor of Tech, Comp Sci vs Comp Engg)
+                const looseMatch = (str1, str2) => {
+                    if (!str1 || !str2) return true;
+                    const s1 = str1.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const s2 = str2.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (s1.includes(s2) || s2.includes(s1)) return true;
+                    if (s1.startsWith('btech') && s2.startsWith('bachelor')) return true;
+                    if (s2.startsWith('btech') && s1.startsWith('bachelor')) return true;
+                    if (s1.startsWith('mtech') && s2.startsWith('master')) return true;
+                    if (s2.startsWith('mtech') && s1.startsWith('master')) return true;
+                    if (s1.startsWith('comp') && s2.startsWith('comp')) return true;
+                    if (s1.startsWith('elec') && s2.startsWith('elec')) return true;
+                    return false;
+                };
+
+                // Course & Department Match (loose)
+                if (!looseMatch(ex.course, studentProfile.course)) return false;
+                if (!looseMatch(ex.department, studentProfile.branch || studentProfile.department)) return false;
+                
+                const isBacklog = (ex.examType || '').toLowerCase().includes('backlog') || 
+                                  (ex.examType || '').toLowerCase().includes('supplementary') || 
+                                  (ex.sessionName || '').toLowerCase().includes('supplementary') ||
+                                  (ex.sessionName || '').toLowerCase().includes('backlog');
+
+                if (isBacklog) {
+                    // For backlog/supplementary, student must be in a higher or equal semester
+                    if (stuSem > 0 && exSem > 0 && exSem > stuSem) return false;
+                    return true;
+                } else {
+                    // For regular exams, semester must match exactly
+                    if (stuSem > 0 && exSem > 0 && exSem !== stuSem) return false;
+                    return true;
+                }
+            });
 
             // ── 3. Fetch THIS student's registrations (token-based — backend resolves actual user)
             try {

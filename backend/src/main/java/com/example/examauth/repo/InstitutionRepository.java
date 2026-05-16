@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface InstitutionRepository extends JpaRepository<Institution, Long> {
     Optional<Institution> findFirstByInstitutionCode(String institutionCode);
 
+    Optional<Institution> findFirstByName(String name);
+
     Optional<Institution> findFirstByContactEmail(String email);
 
     Optional<Institution> findFirstByAdminEmail(String email);

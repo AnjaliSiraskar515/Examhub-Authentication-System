@@ -48,7 +48,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepository.findFirstByEmail(username).orElse(null);
+            String tokenRole = jwtUtil.extractRole(jwt);
+            Long userId = jwtUtil.extractUserId(jwt);
+            User user = null;
+
+            if (userId != null) {
+                user = userRepository.findById(userId).orElse(null);
+            } else if (tokenRole != null && !tokenRole.isEmpty()) {
+                // Fallback: match both email AND role to avoid returning wrong-role duplicate accounts
+                user = userRepository.findFirstByEmailAndRole(username, tokenRole).orElse(null);
+            } else {
+                // Fallback for older tokens that don't have role claim
+                user = userRepository.findFirstByEmail(username).orElse(null);
+            }
 
             if (user != null && jwtUtil.validateToken(jwt, user.getEmail())) {
                 int jwtVersion = jwtUtil.extractTokenVersion(jwt);

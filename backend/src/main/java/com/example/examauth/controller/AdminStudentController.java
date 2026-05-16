@@ -39,13 +39,28 @@ public class AdminStudentController {
     @Autowired
     private SubjectRepository subjectRepository;
 
+    @Autowired
+    private com.example.examauth.service.AlertNotificationService alertNotificationService;
+
     @GetMapping
     public ResponseEntity<List<User>> getAllStudents(
             @RequestParam(required = false) Long collegeId,
             @RequestParam(required = false) String college,
             @RequestParam(required = false) String year,
             @RequestParam(required = false) String department) {
+        
+        String __email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        User __admin = userRepository.findFirstByEmailAndRole(__email, org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority().replace("ROLE_", "")).orElse(null);
+        String __myUniv = (__admin != null && "UNIVERSITY_ADMIN".equals(__admin.getRole())) ? __admin.getUniversityName() : null;
+
         List<User> students = userRepository.findByRoleWithCollege("STUDENT");
+
+        if (__myUniv != null && !__myUniv.isEmpty()) {
+            students = students.stream().filter(u -> 
+                __myUniv.equalsIgnoreCase(u.getUniversityName()) || 
+                (u.getCollege() != null && __myUniv.equalsIgnoreCase(u.getCollege().getUniversityName()))
+            ).collect(java.util.stream.Collectors.toList());
+        }
 
         // Optional filtering in-memory
         if (collegeId != null) {
@@ -197,8 +212,41 @@ public class AdminStudentController {
     }
 
     @DeleteMapping("/{id}")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<?> removeStudent(@PathVariable Long id) {
+        // Capture user details BEFORE deletion for the notification email
+        User removedUser = userRepository.findById(id).orElse(null);
+
+        // Resolve the acting admin's university name for the email
+        String universityName = "the University Administration";
+        try {
+            String adminEmail = org.springframework.security.core.context.SecurityContextHolder
+                    .getContext().getAuthentication().getName();
+            User admin = userRepository.findFirstByEmail(adminEmail).orElse(null);
+            if (admin != null) {
+                if (admin.getUniversityName() != null && !admin.getUniversityName().isEmpty()) {
+                    universityName = admin.getUniversityName();
+                } else if (admin.getCollege() != null && admin.getCollege().getUniversityName() != null) {
+                    universityName = admin.getCollege().getUniversityName();
+                }
+            }
+        } catch (Exception ignored) {}
+
+        // Delete associated backlogs first to avoid orphaned records
+        // and ensure the same student can be re-imported via CSV
+        backlogRepository.deleteByStudentId(id);
         userRepository.deleteById(id);
+
+        // Send access-removal email notification asynchronously AFTER successful deletion
+        if (removedUser != null && removedUser.getEmail() != null) {
+            alertNotificationService.sendAccessRemovedEmail(
+                    removedUser.getEmail(),
+                    removedUser.getName() != null ? removedUser.getName() : "User",
+                    removedUser.getRole(),
+                    universityName
+            );
+        }
+
         return ResponseEntity.ok("Student removed.");
     }
 

@@ -177,10 +177,17 @@ export default function CreateExam(passedExamId = null) {
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Assign Supervisor(s) <span class="text-red-500">*</span></label>
-                                <select id="supervisorIds" name="supervisorIds" multiple class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 h-24" required>
-                                    <!-- Dynamic API options -->
-                                </select>
-                                <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple supervisors.</p>
+                                <div class="relative">
+                                    <div id="supDropdownBtn" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 flex justify-between items-center cursor-pointer">
+                                        <span id="supDropdownText" class="truncate">Select Supervisor(s)</span>
+                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                    <div id="supDropdownMenu" class="hidden absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                                        <div id="supervisorIdsContainer">
+                                            <!-- Dynamic API options as checkboxes -->
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -732,9 +739,9 @@ export default function CreateExam(passedExamId = null) {
             semester: getVal('semester'),
             collegeId: window.CollegeContext?.selectedCollegeId || null,
 
-            supervisorId: document.getElementById('supervisorIds') && document.getElementById('supervisorIds').selectedOptions.length > 0 ? parseInt(document.getElementById('supervisorIds').selectedOptions[0].value) : null,
-            supervisorName: document.getElementById('supervisorIds') && document.getElementById('supervisorIds').selectedOptions.length > 0 ? document.getElementById('supervisorIds').selectedOptions[0].text : null,
-            supervisorIds: Array.from(document.getElementById('supervisorIds')?.selectedOptions || []).filter(opt => opt.value).map(opt => parseInt(opt.value)),
+            supervisorId: Array.from(document.querySelectorAll('input[name="supervisorIds[]"]:checked')).length > 0 ? parseInt(Array.from(document.querySelectorAll('input[name="supervisorIds[]"]:checked'))[0].value) : null,
+            supervisorName: Array.from(document.querySelectorAll('input[name="supervisorIds[]"]:checked')).length > 0 ? Array.from(document.querySelectorAll('input[name="supervisorIds[]"]:checked'))[0].getAttribute('data-text') : null,
+            supervisorIds: Array.from(document.querySelectorAll('input[name="supervisorIds[]"]:checked')).map(cb => parseInt(cb.value)),
 
             // No examSubjectId needed, mapping handled via subjects array directly
 
@@ -852,25 +859,15 @@ export default function CreateExam(passedExamId = null) {
 
             if (data.supervisorIds && data.supervisorIds.length > 0) {
                 setTimeout(() => {
-                    const select = document.getElementById('supervisorIds');
-                    if (select) {
-                        Array.from(select.options).forEach(opt => {
-                            if (data.supervisorIds.includes(parseInt(opt.value))) {
-                                opt.selected = true;
-                            }
-                        });
-                    }
+                    data.supervisorIds.forEach(id => {
+                        const cb = document.getElementById('sup_' + id);
+                        if (cb) { cb.checked = true; cb.dispatchEvent(new Event('change')); }
+                    });
                 }, 500);
             } else if (data.supervisorId) {
                 setTimeout(() => {
-                    const select = document.getElementById('supervisorIds');
-                    if (select) {
-                        Array.from(select.options).forEach(opt => {
-                            if (parseInt(opt.value) === data.supervisorId) {
-                                opt.selected = true;
-                            }
-                        });
-                    }
+                    const cb = document.getElementById('sup_' + data.supervisorId);
+                    if (cb) { cb.checked = true; cb.dispatchEvent(new Event('change')); }
                 }, 500);
             }
 
@@ -921,18 +918,54 @@ export default function CreateExam(passedExamId = null) {
 
     const loadSupervisors = async () => {
         try {
-            // Assume university ID 1 for now or fetch from context
-            const res = await authFetch(`http://localhost:8080/api/university/1/staff`);
+            let collegeId = window.CollegeContext?.selectedCollegeId || sessionStorage.getItem('selectedCollegeId') || 1;
+            const res = await authFetch(`/api/university/${collegeId}/staff`);
             if (res.ok) {
                 const staff = await res.json();
-                const dropdown = document.getElementById('supervisorIds');
-                // Assume staff contains both supervisors and others, we just list all or filter if role==SUPERVISOR
-                staff.forEach(person => {
-                    const opt = document.createElement('option');
-                    opt.value = person.staffId || person.id || person.userId; // Depending on API response
-                    opt.textContent = person.name + (person.supervisorType ? ` (${person.supervisorType})` : '');
-                    dropdown.appendChild(opt);
-                });
+                const container = document.getElementById('supervisorIdsContainer');
+                if (container) {
+                    container.innerHTML = '';
+                    staff.forEach(person => {
+                        const val = person.staffId || person.id || person.userId;
+                        const labelText = person.name + (person.supervisorType ? ` (${person.supervisorType})` : '');
+                        const div = document.createElement('div');
+                        div.className = "flex items-center mb-2";
+                        div.innerHTML = `
+                            <input type="checkbox" id="sup_${val}" name="supervisorIds[]" value="${val}" data-text="${labelText}" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 sup-checkbox">
+                            <label for="sup_${val}" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer w-full">${labelText}</label>
+                        `;
+                        container.appendChild(div);
+                    });
+                    
+                    const updateText = () => {
+                        const checked = Array.from(document.querySelectorAll('.sup-checkbox:checked'));
+                        const textSpan = document.getElementById('supDropdownText');
+                        if (textSpan) {
+                            if (checked.length === 0) textSpan.textContent = 'Select Supervisor(s)';
+                            else if (checked.length === 1) textSpan.textContent = checked[0].getAttribute('data-text');
+                            else textSpan.textContent = `${checked.length} selected`;
+                        }
+                    };
+                    document.querySelectorAll('.sup-checkbox').forEach(cb => cb.addEventListener('change', updateText));
+                    
+                    const btn = document.getElementById('supDropdownBtn');
+                    const menu = document.getElementById('supDropdownMenu');
+                    if (btn && menu) {
+                        const newBtn = btn.cloneNode(true);
+                        btn.parentNode.replaceChild(newBtn, btn);
+                        
+                        newBtn.addEventListener('click', (e) => {
+                            menu.classList.toggle('hidden');
+                            e.stopPropagation();
+                        });
+                        
+                        document.addEventListener('click', (e) => {
+                            if (!newBtn.contains(e.target) && !menu.contains(e.target)) {
+                                menu.classList.add('hidden');
+                            }
+                        });
+                    }
+                }
             }
         } catch (e) {
             console.error('Failed to load supervisors', e);
@@ -941,19 +974,31 @@ export default function CreateExam(passedExamId = null) {
 
     const loadDepartments = async () => {
         try {
-            const collegeId = window.CollegeContext?.selectedCollegeId;
+            const collegeId = window.CollegeContext?.selectedCollegeId || sessionStorage.getItem('selectedCollegeId') || 1;
             if (!collegeId) return;
-            const res = await authFetch(`http://localhost:8080/api/admin/departments?collegeId=${collegeId}`);
+            const res = await authFetch(`/api/admin/departments?collegeId=${collegeId}`);
             if (res.ok) {
                 const depts = await res.json();
                 const dropdown = document.getElementById('department');
                 dropdown.innerHTML = '<option value="">Select Department</option>';
-                depts.forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d.id;
-                    opt.textContent = d.name;
-                    dropdown.appendChild(opt);
-                });
+                
+                if (depts.length === 0) {
+                    // Fallback to default departments if DB is empty
+                    const defaults = ['Computer Science', 'Information Technology', 'Electronics & Communication', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering'];
+                    defaults.forEach((name, index) => {
+                        const opt = document.createElement('option');
+                        opt.value = index + 1; // Arbitrary ID, as payload uses text
+                        opt.textContent = name;
+                        dropdown.appendChild(opt);
+                    });
+                } else {
+                    depts.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = d.name;
+                        dropdown.appendChild(opt);
+                    });
+                }
             }
         } catch (e) {
             console.error('Failed to load departments', e);

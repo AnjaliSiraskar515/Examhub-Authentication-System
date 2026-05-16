@@ -24,16 +24,23 @@ public class JwtUtil {
      * all previously issued tokens become invalid.
      */
     public String generateToken(String email) {
-        return generateToken(email, 0);
+        return generateToken(email, 0, null, null, null);
     }
 
     public String generateToken(String email, int tokenVersion) {
+        return generateToken(email, tokenVersion, null, null, null);
+    }
+
+    public String generateToken(String email, int tokenVersion, String role, Long userId, String prn) {
         int sessionMinutes = settingsService.getIntSetting(
                 SettingsService.KEY_SESSION_TIMEOUT_MINUTES,
                 15);
         return Jwts.builder()
                 .setSubject(email)
                 .claim("tokenVersion", tokenVersion)
+                .claim("role", role)
+                .claim("userId", userId)
+                .claim("prn", prn)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + (sessionMinutes * 60L * 1000L)))
                 .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
@@ -62,6 +69,32 @@ public class JwtUtil {
             return v != null ? ((Number) v).intValue() : 0;
         } catch (Exception e) {
             return -1; // invalid token
+        }
+    }
+
+    public String extractRole(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(SECRET_KEY)
+                    .parseClaimsJws(token)
+                    .getBody();
+            Object r = claims.get("role");
+            return r != null ? r.toString() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public Long extractUserId(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(SECRET_KEY)
+                    .parseClaimsJws(token)
+                    .getBody();
+            Object id = claims.get("userId");
+            return id != null ? ((Number) id).longValue() : null;
+        } catch (Exception e) {
+            return null;
         }
     }
 

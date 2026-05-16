@@ -32,41 +32,99 @@ public class CommunicationController {
 
     @PostMapping("/api/admin/communication/send")
     public ResponseEntity<?> sendMessage(Authentication authentication, @RequestBody Map<String, String> body) {
-        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
-            return ResponseEntity.status(401).body(response(false, "Unauthorized", Map.of()));
+        try {
+            if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+                return ResponseEntity.status(401).body(response(false, "Unauthorized", Map.of()));
+            }
+
+            String subject = value(body.get("subject"));
+            String message = value(body.get("message"));
+            String recipient = value(body.get("recipient"));
+            String priority = normalizePriority(value(body.get("priority")));
+            String type = normalizeType(value(body.get("type")));
+
+            if (subject.isBlank() || message.isBlank() || recipient.isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(response(false, "Subject, message and recipient are required", Map.of()));
+            }
+
+            String senderEmail = authentication.getName();
+            String receiverEmail = resolveInstitutionAdminEmail(recipient);
+
+            CommunicationMessage msg = new CommunicationMessage();
+            msg.setSenderRole("SUPER_ADMIN");
+            msg.setReceiverRole("UNIVERSITY_ADMIN");
+            msg.setSenderEmail(senderEmail);
+            msg.setReceiverEmail(receiverEmail);
+            msg.setReceiverInstitutionCode(recipient);
+            msg.setSubject(subject);
+            msg.setMessage(message);
+            msg.setPriority(priority);
+            msg.setType(type);
+            msg.setStatus("SENT");
+            msg.setReplyAllowed("GENERAL".equals(type)); // Only GENERAL allows reply
+            msg.setAcknowledged(false); // WARNING uses this
+            msg.setParentMessageId(null);
+            msg.setCreatedAt(LocalDateTime.now());
+            CommunicationMessage saved = communicationMessageRepository.save(msg);
+
+            return ResponseEntity.ok(response(true, "Communication sent successfully", saved));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                    .body(response(false, "Internal Server Error: " + e.getMessage(), Map.of()));
         }
+    }
 
-        String subject = value(body.get("subject"));
-        String message = value(body.get("message"));
-        String recipient = value(body.get("recipient"));
-        String priority = normalizePriority(value(body.get("priority")));
-        String type = normalizeType(value(body.get("type")));
+    @PostMapping("/api/head-supervisor/communication/send")
+    public ResponseEntity<?> sendHeadSupervisorMessage(Authentication authentication,
+            @RequestBody Map<String, String> body) {
+        try {
+            if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+                return ResponseEntity.status(401).body(response(false, "Unauthorized", Map.of()));
+            }
 
-        if (subject.isBlank() || message.isBlank() || recipient.isBlank()) {
-            return ResponseEntity.badRequest().body(response(false, "Subject, message and recipient are required", Map.of()));
+            String subject = value(body.get("subject"));
+            String message = value(body.get("message"));
+            String priority = normalizePriority(value(body.get("priority")));
+            String type = normalizeType(value(body.get("type")));
+
+            if (subject.isBlank() || message.isBlank()) {
+                return ResponseEntity.badRequest().body(response(false, "Subject and message are required", Map.of()));
+            }
+
+            String senderEmail = authentication.getName();
+            String institutionCode = resolveInstitutionCode(authentication);
+            if (institutionCode == null || institutionCode.isBlank()) {
+                return ResponseEntity.status(404)
+                        .body(response(false, "Institution code not found for current user", Map.of()));
+            }
+
+            String receiverEmail = resolveInstitutionAdminEmail(institutionCode);
+
+            CommunicationMessage msg = new CommunicationMessage();
+            msg.setSenderRole("HEAD_SUPERVISOR");
+            msg.setReceiverRole("UNIVERSITY_ADMIN");
+            msg.setSenderEmail(senderEmail);
+            msg.setReceiverEmail(receiverEmail);
+            msg.setReceiverInstitutionCode(institutionCode);
+            msg.setSubject(subject);
+            msg.setMessage(message);
+            msg.setPriority(priority);
+            msg.setType(type);
+            msg.setStatus("SENT");
+            msg.setReplyAllowed(false);
+            msg.setAcknowledged(false);
+            msg.setParentMessageId(null);
+            msg.setCreatedAt(LocalDateTime.now());
+            CommunicationMessage saved = communicationMessageRepository.save(msg);
+
+            return ResponseEntity.ok(response(true, "Message sent to University Admin successfully", saved));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                    .body(response(false, "Internal Server Error: " + e.getMessage(), Map.of()));
         }
-
-        String senderEmail = authentication.getName();
-        String receiverEmail = resolveInstitutionAdminEmail(recipient);
-
-        CommunicationMessage msg = new CommunicationMessage();
-        msg.setSenderRole("SUPER_ADMIN");
-        msg.setReceiverRole("UNIVERSITY_ADMIN");
-        msg.setSenderEmail(senderEmail);
-        msg.setReceiverEmail(receiverEmail);
-        msg.setReceiverInstitutionCode(recipient);
-        msg.setSubject(subject);
-        msg.setMessage(message);
-        msg.setPriority(priority);
-        msg.setType(type);
-        msg.setStatus("SENT");
-        msg.setReplyAllowed("GENERAL".equals(type)); // Only GENERAL allows reply
-        msg.setAcknowledged(false); // WARNING uses this
-        msg.setParentMessageId(null);
-        msg.setCreatedAt(LocalDateTime.now());
-        CommunicationMessage saved = communicationMessageRepository.save(msg);
-
-        return ResponseEntity.ok(response(true, "Communication sent successfully", saved));
     }
 
     @GetMapping("/api/admin/communication/history")
@@ -84,11 +142,26 @@ public class CommunicationController {
     public ResponseEntity<?> getUniversityInbox(Authentication authentication) {
         String institutionCode = resolveInstitutionCode(authentication);
         if (institutionCode == null || institutionCode.isBlank()) {
-            return ResponseEntity.ok(response(true, "Institution code not found for current user, returning empty inbox", List.of()));
+            return ResponseEntity.ok(
+                    response(true, "Institution code not found for current user, returning empty inbox", List.of()));
         }
 
         List<CommunicationMessage> inbox = communicationMessageRepository
                 .findByReceiverRoleAndReceiverInstitutionCodeOrderByCreatedAtDesc("UNIVERSITY_ADMIN", institutionCode);
+
+        for (CommunicationMessage msg : inbox) {
+            if ("HEAD_SUPERVISOR".equals(msg.getSenderRole())) {
+                userRepository.findFirstByEmail(msg.getSenderEmail()).ifPresent(user -> {
+                    String detail = user.getName() != null ? user.getName() : "Head Supervisor";
+                    if (user.getCollegeName() != null && !user.getCollegeName().isBlank()) {
+                        detail += " (" + user.getCollegeName() + ")";
+                    } else if (user.getCollege() != null && user.getCollege().getName() != null) {
+                        detail += " (" + user.getCollege().getName() + ")";
+                    }
+                    msg.setSenderDetails(detail);
+                });
+            }
+        }
 
         return ResponseEntity.ok(response(true, "Inbox fetched successfully", inbox));
     }
@@ -109,7 +182,8 @@ public class CommunicationController {
 
         String institutionCode = resolveInstitutionCode(authentication);
         if (institutionCode == null || institutionCode.isBlank()) {
-            return ResponseEntity.status(404).body(response(false, "Institution code not found for current user", Map.of()));
+            return ResponseEntity.status(404)
+                    .body(response(false, "Institution code not found for current user", Map.of()));
         }
 
         CommunicationMessage msg = communicationMessageRepository.findById(messageId).orElse(null);
@@ -118,7 +192,8 @@ public class CommunicationController {
         }
         if (!"UNIVERSITY_ADMIN".equalsIgnoreCase(msg.getReceiverRole())
                 || !institutionCode.equalsIgnoreCase(value(msg.getReceiverInstitutionCode()))) {
-            return ResponseEntity.status(403).body(response(false, "Message does not belong to current institution", Map.of()));
+            return ResponseEntity.status(403)
+                    .body(response(false, "Message does not belong to current institution", Map.of()));
         }
 
         if ("SENT".equalsIgnoreCase(value(msg.getStatus()))) {
@@ -137,7 +212,8 @@ public class CommunicationController {
 
         String institutionCode = resolveInstitutionCode(authentication);
         if (institutionCode == null || institutionCode.isBlank()) {
-            return ResponseEntity.status(404).body(response(false, "Institution code not found for current user", Map.of()));
+            return ResponseEntity.status(404)
+                    .body(response(false, "Institution code not found for current user", Map.of()));
         }
 
         CommunicationMessage msg = communicationMessageRepository.findById(messageId).orElse(null);
@@ -146,11 +222,13 @@ public class CommunicationController {
         }
         if (!"UNIVERSITY_ADMIN".equalsIgnoreCase(value(msg.getReceiverRole()))
                 || !institutionCode.equalsIgnoreCase(value(msg.getReceiverInstitutionCode()))) {
-            return ResponseEntity.status(403).body(response(false, "Message does not belong to current institution", Map.of()));
+            return ResponseEntity.status(403)
+                    .body(response(false, "Message does not belong to current institution", Map.of()));
         }
         String msgType = value(msg.getType());
         if (msgType.isBlank() || !"WARNING".equalsIgnoreCase(msgType)) {
-            return ResponseEntity.status(400).body(response(false, "Acknowledge is only for WARNING messages", Map.of()));
+            return ResponseEntity.status(400)
+                    .body(response(false, "Acknowledge is only for WARNING messages", Map.of()));
         }
 
         msg.setAcknowledged(true);
@@ -162,7 +240,8 @@ public class CommunicationController {
     }
 
     @PostMapping("/api/messages/request-reply")
-    public ResponseEntity<?> requestReplyPermission(Authentication authentication, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> requestReplyPermission(Authentication authentication,
+            @RequestBody Map<String, Object> body) {
         Long messageId = parseMessageId(body.get("id"));
         if (messageId == null) {
             return ResponseEntity.badRequest().body(response(false, "Valid message id is required", Map.of()));
@@ -170,7 +249,8 @@ public class CommunicationController {
 
         String institutionCode = resolveInstitutionCode(authentication);
         if (institutionCode == null || institutionCode.isBlank()) {
-            return ResponseEntity.status(404).body(response(false, "Institution code not found for current user", Map.of()));
+            return ResponseEntity.status(404)
+                    .body(response(false, "Institution code not found for current user", Map.of()));
         }
 
         CommunicationMessage msg = communicationMessageRepository.findById(messageId).orElse(null);
@@ -179,15 +259,20 @@ public class CommunicationController {
         }
         if (!"UNIVERSITY_ADMIN".equalsIgnoreCase(value(msg.getReceiverRole()))
                 || !institutionCode.equalsIgnoreCase(value(msg.getReceiverInstitutionCode()))) {
-            return ResponseEntity.status(403).body(response(false, "Message does not belong to current institution", Map.of()));
+            return ResponseEntity.status(403)
+                    .body(response(false, "Message does not belong to current institution", Map.of()));
         }
 
-        // Reply workflow applies only to GENERAL type (null/empty treated as GENERAL for backward compat)
+        // Reply workflow applies only to GENERAL type (null/empty treated as GENERAL
+        // for backward compat)
         String msgType = value(msg.getType());
-        if (msgType.isBlank()) msgType = "GENERAL";
-        else msgType = msgType.toUpperCase();
+        if (msgType.isBlank())
+            msgType = "GENERAL";
+        else
+            msgType = msgType.toUpperCase();
         if (!"GENERAL".equals(msgType)) {
-            return ResponseEntity.status(400).body(response(false, "Reply request is not allowed for this message type", Map.of()));
+            return ResponseEntity.status(400)
+                    .body(response(false, "Reply request is not allowed for this message type", Map.of()));
         }
 
         String currentStatus = value(msg.getStatus()).toUpperCase();
@@ -205,7 +290,8 @@ public class CommunicationController {
 
     @GetMapping("/api/admin/communication/reply-requests")
     public ResponseEntity<?> getReplyRequests() {
-        List<CommunicationMessage> requested = communicationMessageRepository.findByStatusOrderByCreatedAtDesc("REQUESTED");
+        List<CommunicationMessage> requested = communicationMessageRepository
+                .findByStatusOrderByCreatedAtDesc("REQUESTED");
         return ResponseEntity.ok(response(true, "Reply requests fetched successfully", requested));
     }
 
@@ -241,12 +327,14 @@ public class CommunicationController {
         Long parentMessageId = parseMessageId(body.get("parentMessageId"));
         String replyMessage = body.get("message") == null ? "" : String.valueOf(body.get("message")).trim();
         if (parentMessageId == null || replyMessage.isBlank()) {
-            return ResponseEntity.badRequest().body(response(false, "parentMessageId and message are required", Map.of()));
+            return ResponseEntity.badRequest()
+                    .body(response(false, "parentMessageId and message are required", Map.of()));
         }
 
         String institutionCode = resolveInstitutionCode(authentication);
         if (institutionCode == null || institutionCode.isBlank()) {
-            return ResponseEntity.status(404).body(response(false, "Institution code not found for current user", Map.of()));
+            return ResponseEntity.status(404)
+                    .body(response(false, "Institution code not found for current user", Map.of()));
         }
 
         CommunicationMessage parent = communicationMessageRepository.findById(parentMessageId).orElse(null);
@@ -256,12 +344,16 @@ public class CommunicationController {
         if (!institutionCode.equalsIgnoreCase(value(parent.getReceiverInstitutionCode()))) {
             return ResponseEntity.status(403).body(response(false, "Reply not allowed for this institution", Map.of()));
         }
-        // Reply allowed only for GENERAL type with approval (null/empty treated as GENERAL for backward compat)
+        // Reply allowed only for GENERAL type with approval (null/empty treated as
+        // GENERAL for backward compat)
         String parentType = value(parent.getType());
-        if (parentType.isBlank()) parentType = "GENERAL";
-        else parentType = parentType.toUpperCase();
+        if (parentType.isBlank())
+            parentType = "GENERAL";
+        else
+            parentType = parentType.toUpperCase();
         if (!"GENERAL".equals(parentType)) {
-            return ResponseEntity.status(403).body(response(false, "Reply not allowed for this message type", Map.of()));
+            return ResponseEntity.status(403)
+                    .body(response(false, "Reply not allowed for this message type", Map.of()));
         }
         if (!Boolean.TRUE.equals(parent.getReplyAllowed())) {
             return ResponseEntity.status(403).body(response(false, "Reply not allowed", Map.of()));
@@ -298,7 +390,8 @@ public class CommunicationController {
     public ResponseEntity<?> deleteUniversityMessage(Authentication authentication, @PathVariable Long id) {
         String institutionCode = resolveInstitutionCode(authentication);
         if (institutionCode == null || institutionCode.isBlank()) {
-            return ResponseEntity.status(404).body(response(false, "Institution code not found for current user", Map.of()));
+            return ResponseEntity.status(404)
+                    .body(response(false, "Institution code not found for current user", Map.of()));
         }
 
         CommunicationMessage msg = communicationMessageRepository.findById(id).orElse(null);
@@ -307,7 +400,69 @@ public class CommunicationController {
         }
         if (!"UNIVERSITY_ADMIN".equalsIgnoreCase(value(msg.getReceiverRole()))
                 || !institutionCode.equalsIgnoreCase(value(msg.getReceiverInstitutionCode()))) {
-            return ResponseEntity.status(403).body(response(false, "Message does not belong to current institution", Map.of()));
+            return ResponseEntity.status(403)
+                    .body(response(false, "Message does not belong to current institution", Map.of()));
+        }
+
+        communicationMessageRepository.deleteById(id);
+        return ResponseEntity.ok(response(true, "Message deleted successfully", Map.of("id", id)));
+    }
+
+    @GetMapping("/api/head-supervisor/communication/inbox")
+    public ResponseEntity<?> getHeadSupervisorInbox(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).body(response(false, "Unauthorized", List.of()));
+        }
+        String email = authentication.getName();
+
+        List<CommunicationMessage> inbox = communicationMessageRepository
+                .findBySenderEmailOrReceiverEmailOrderByCreatedAtDesc(email, email);
+
+        return ResponseEntity.ok(response(true, "Inbox fetched successfully", inbox));
+    }
+
+    @PostMapping("/api/head-supervisor/communication/mark-read")
+    public ResponseEntity<?> markHeadSupervisorRead(Authentication authentication,
+            @RequestBody Map<String, Object> body) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).body(response(false, "Unauthorized", Map.of()));
+        }
+        Long messageId = parseMessageId(body.get("id"));
+        if (messageId == null) {
+            return ResponseEntity.badRequest().body(response(false, "Message id is required", Map.of()));
+        }
+
+        CommunicationMessage msg = communicationMessageRepository.findById(messageId).orElse(null);
+        if (msg == null) {
+            return ResponseEntity.status(404).body(response(false, "Message not found", Map.of()));
+        }
+
+        if (!authentication.getName().equalsIgnoreCase(msg.getReceiverEmail())) {
+            return ResponseEntity.status(403)
+                    .body(response(false, "Not authorized to mark this message as read", Map.of()));
+        }
+
+        if ("SENT".equalsIgnoreCase(value(msg.getStatus()))) {
+            msg.setStatus("READ");
+        }
+        communicationMessageRepository.save(msg);
+        return ResponseEntity.ok(response(true, "Message marked as read", msg));
+    }
+
+    @DeleteMapping("/api/head-supervisor/communication/{id}")
+    public ResponseEntity<?> deleteHeadSupervisorMessage(Authentication authentication, @PathVariable Long id) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).body(response(false, "Unauthorized", Map.of()));
+        }
+        String email = authentication.getName();
+
+        CommunicationMessage msg = communicationMessageRepository.findById(id).orElse(null);
+        if (msg == null) {
+            return ResponseEntity.status(404).body(response(false, "Message not found", Map.of()));
+        }
+
+        if (!email.equalsIgnoreCase(msg.getSenderEmail()) && !email.equalsIgnoreCase(msg.getReceiverEmail())) {
+            return ResponseEntity.status(403).body(response(false, "Not authorized to delete this message", Map.of()));
         }
 
         communicationMessageRepository.deleteById(id);
@@ -327,6 +482,15 @@ public class CommunicationController {
             return user.getInstitutionCode();
         }
 
+        if (user.getUniversityName() != null && !user.getUniversityName().isBlank()) {
+            Institution byName = institutionRepository.findFirstByName(user.getUniversityName()).orElse(null);
+            if (byName != null && byName.getInstitutionCode() != null) {
+                user.setInstitutionCode(byName.getInstitutionCode());
+                userRepository.save(user);
+                return byName.getInstitutionCode();
+            }
+        }
+
         Institution byContact = institutionRepository.findFirstByContactEmail(email).orElse(null);
         if (byContact != null && byContact.getInstitutionCode() != null) {
             user.setInstitutionCode(byContact.getInstitutionCode());
@@ -344,7 +508,8 @@ public class CommunicationController {
     }
 
     private String normalizePriority(String value) {
-        if (value == null || value.isBlank()) return "NORMAL";
+        if (value == null || value.isBlank())
+            return "NORMAL";
         String upper = value.trim().toUpperCase();
         if ("LOW".equals(upper) || "NORMAL".equals(upper) || "URGENT".equals(upper)) {
             return upper;
@@ -353,7 +518,8 @@ public class CommunicationController {
     }
 
     private String normalizeType(String value) {
-        if (value == null || value.isBlank()) return "GENERAL";
+        if (value == null || value.isBlank())
+            return "GENERAL";
         String upper = value.trim().toUpperCase();
         if ("GENERAL".equals(upper) || "WARNING".equals(upper) || "BROADCAST".equals(upper)) {
             return upper;

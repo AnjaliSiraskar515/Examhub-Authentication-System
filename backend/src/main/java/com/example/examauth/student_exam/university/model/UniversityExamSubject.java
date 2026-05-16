@@ -19,6 +19,11 @@ public class UniversityExamSubject {
     private Integer passingMarks;
     private Integer duration;
 
+    // Scheduling per subject
+    private java.time.LocalDate examDate;
+    private java.time.LocalTime startTime;
+    private java.time.LocalTime endTime;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exam_id")
     @JsonIgnore

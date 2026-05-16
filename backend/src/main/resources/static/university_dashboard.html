@@ -75,6 +75,11 @@
                 </a>
                 <a href="#"
                     class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    data-target="allocation-section">
+                    <i class="fas fa-sitemap w-5"></i> Hall & Seat Allocation
+                </a>
+                <a href="#"
+                    class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     data-target="students-section">
                     <i class="fas fa-user-graduate w-5"></i> Manage Students
                 </a>
@@ -94,9 +99,12 @@
                     <i class="fas fa-book w-5"></i> Manage Subjects
                 </a>
                 <a href="#"
-                    class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    class="nav-link flex justify-between items-center px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     data-target="communication-section">
-                    <i class="fas fa-bell w-5"></i> Communication Hub
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-bell w-5"></i> Communication Hub
+                    </div>
+                    <span id="comm-unread-badge" class="hidden bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
                 </a>
                 <a href="#"
                     class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -231,7 +239,7 @@
                                     class="exam-filter-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Draft</button>
                             </div>
                             <div class="flex flex-col md:flex-row gap-3">
-                                <input type="text" placeholder="Search by Course, Date, or Room..."
+                                <input type="text" placeholder="Search by Course or Date..."
                                     class="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
                                 <button id="load-create-exam-btn"
                                     class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/30 flex items-center gap-2 justify-center">
@@ -254,7 +262,7 @@
                                             <th class="px-6 py-3">Date</th>
                                             <th class="px-6 py-3">Time</th>
                                             <th class="px-6 py-3">Type</th>
-                                            <th class="px-6 py-3">Room</th>
+
                                             <th class="px-6 py-3">Status</th>
                                             <th class="px-6 py-3 text-right">Actions</th>
                                         </tr>
@@ -266,6 +274,74 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EXAM HALL ALLOCATION -->
+                    <div id="allocation-section" class="tab-content hidden space-y-6">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-2xl font-bold">Hall & Seat Allocation</h2>
+                            <div class="flex gap-2">
+                                <button id="btn-auto-map" onclick="autoMapColleges()" class="hidden bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-green-500/30 flex items-center gap-2 transition-all active:scale-95">
+                                    <i class="fas fa-magic"></i> Auto-Map Colleges
+                                </button>
+                                <button id="btn-map-college" onclick="openMapCollegeModal()" class="hidden bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/30 flex items-center gap-2 transition-all active:scale-95">
+                                    <i class="fas fa-plus"></i> Manual Map
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Exam Selector -->
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <label class="block text-sm font-semibold mb-2">Select Exam to Manage Allocation</label>
+                            <select id="allocation-exam-select" class="w-full max-w-lg px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500">
+                                <option value="">— Select Exam —</option>
+                            </select>
+                        </div>
+
+                        <!-- Mapped Colleges Table -->
+                        <div id="allocation-mappings-container" class="hidden bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                                    <tr>
+                                        <th class="px-6 py-3">College</th>
+                                        <th class="px-6 py-3">Head Supervisor</th>
+                                        <th class="px-6 py-3">Capacity</th>
+                                        <th class="px-6 py-3">Status</th>
+                                        <th class="px-6 py-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="allocation-mappings-body">
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Seating Chart View (Hidden by default) -->
+                        <div id="seating-chart-container" class="hidden space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-lg font-bold">Seating Chart</h3>
+                                <button onclick="closeSeatingChart()" class="text-gray-500 hover:text-gray-800"><i class="fas fa-times text-xl"></i></button>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                                        <tr>
+                                            <th class="px-6 py-3">Roll No</th>
+                                            <th class="px-6 py-3">PRN</th>
+                                            <th class="px-6 py-3">Name</th>
+                                            <th class="px-6 py-3">Hall</th>
+                                            <th class="px-6 py-3">Seat</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="seating-chart-body">
+                                    </tbody>
+                                </table>
+                                <div class="p-4 flex justify-between items-center border-t border-gray-200 dark:border-gray-700">
+                                    <button id="seat-prev-page" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">Prev</button>
+                                    <span id="seat-page-info" class="text-sm text-gray-500">Page 1</span>
+                                    <button id="seat-next-page" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">Next</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -352,6 +428,7 @@
                                         <tr>
                                             <th class="px-6 py-3">ID</th>
                                             <th class="px-6 py-3">Name</th>
+                                            <th class="px-6 py-3">Email</th>
                                             <th class="px-6 py-3">College</th>
                                             <th class="px-6 py-3">Course</th>
                                             <th class="px-6 py-3">Department</th>
@@ -449,6 +526,7 @@
                                             <th class="px-6 py-3">Department</th>
                                             <th class="px-6 py-3">Role</th>
                                             <th class="px-6 py-3">Status</th>
+                                            <th class="px-6 py-3 text-right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="staff-table-body">
@@ -663,38 +741,19 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <!-- Sidebar Inbox -->
                             <div class="md:col-span-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col min-h-[400px]">
-                                <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600 font-semibold text-gray-700 dark:text-gray-200 flex justify-between items-center">
-                                    <span><i class="fas fa-inbox mr-2 text-blue-500"></i> Inbox</span>
-                                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">2 New</span>
+                                <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600 font-semibold text-gray-700 dark:text-gray-200 flex flex-col gap-2">
+                                    <div class="flex justify-between items-center">
+                                        <span><i class="fas fa-inbox mr-2 text-blue-500"></i> Inbox</span>
+                                        <button onclick="openComposeHeadSupervisorModal()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded shadow-sm"><i class="fas fa-plus mr-1"></i> Compose</button>
+                                    </div>
+                                    <select id="inbox-filter" onchange="filterInboxMessages()" class="text-xs w-full p-1 border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:ring-1 focus:ring-blue-500">
+                                        <option value="ALL">All Messages</option>
+                                        <option value="SUPER_ADMIN">From Super Admin</option>
+                                        <option value="HEAD_SUPERVISOR">From Head Supervisor</option>
+                                    </select>
                                 </div>
-                                <div class="flex-1 overflow-y-auto">
-                                    <!-- Message 1 -->
-                                    <div class="p-4 border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer bg-blue-50/50 dark:bg-gray-700/50" onclick="showCommMessage('msg1')">
-                                        <div class="flex justify-between items-start mb-1">
-                                            <span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded">WARNING</span>
-                                            <span class="text-[10px] text-gray-400">Feb 14, 2026</span>
-                                        </div>
-                                        <h4 class="font-semibold text-sm text-gray-800 dark:text-white mt-2">Compliance Violation</h4>
-                                        <p class="text-xs text-gray-500 mt-1 truncate">Immediate attention required regarding...</p>
-                                    </div>
-                                    <!-- Message 2 -->
-                                    <div class="p-4 border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer bg-blue-50/50 dark:bg-gray-700/50" onclick="showCommMessage('msg2')">
-                                        <div class="flex justify-between items-start mb-1">
-                                            <span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded">BROADCAST</span>
-                                            <span class="text-[10px] text-gray-400">Feb 12, 2026</span>
-                                        </div>
-                                        <h4 class="font-semibold text-sm text-gray-800 dark:text-white mt-2">System Maintenance</h4>
-                                        <p class="text-xs text-gray-500 mt-1 truncate">Platform will be down for maintenance on...</p>
-                                    </div>
-                                    <!-- Message 3 -->
-                                    <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onclick="showCommMessage('msg3')">
-                                        <div class="flex justify-between items-start mb-1">
-                                            <span class="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">INFO</span>
-                                            <span class="text-[10px] text-gray-400">Feb 01, 2026</span>
-                                        </div>
-                                        <h4 class="font-semibold text-sm text-gray-800 dark:text-white mt-2">Welcome to ExamHub</h4>
-                                        <p class="text-xs text-gray-500 mt-1 truncate">Welcome! Ensure all your profiles are...</p>
-                                    </div>
+                                <div id="inbox-list" class="flex-1 overflow-y-auto">
+                                    <div class="p-4 text-center text-gray-500">Loading messages...</div>
                                 </div>
                             </div>
 
@@ -710,7 +769,7 @@
                                             <div>
                                                 <h3 id="comm-msg-subject" class="text-xl font-bold text-gray-900 dark:text-white">Subject</h3>
                                                 <div class="flex items-center gap-2 mt-2">
-                                                    <span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-1 rounded font-medium"><i class="fas fa-user-shield mr-1 text-blue-500"></i> From: Super Admin</span>
+                                                    <span id="comm-msg-sender" class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-1 rounded font-medium"><i class="fas fa-user-shield mr-1 text-blue-500"></i> From: Super Admin</span>
                                                     <span id="comm-msg-date" class="text-xs text-gray-400">Date</span>
                                                 </div>
                                             </div>
@@ -720,9 +779,57 @@
                                     <div class="p-6 flex-1 bg-gray-50/50 dark:bg-gray-900/20">
                                         <div id="comm-msg-body" class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">Body</div>
                                     </div>
-                                    <div class="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end">
-                                        <button class="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 font-medium rounded-lg text-sm transition-colors" onclick="document.getElementById('comm-msg-view').classList.add('hidden'); document.getElementById('comm-empty-state').classList.remove('hidden');">Close</button>
+                                    <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+                                        <div id="reply-container" class="hidden mb-4 p-4 bg-blue-50 dark:bg-gray-800 rounded-lg">
+                                            <textarea id="reply-message" rows="3" class="w-full px-3 py-2 text-sm border border-blue-200 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 mb-2 dark:bg-gray-700 dark:text-white" placeholder="Type your reply here..."></textarea>
+                                            <div class="flex justify-end gap-2">
+                                                <button onclick="document.getElementById('reply-container').classList.add('hidden')" class="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-600 rounded">Cancel</button>
+                                                <button id="btn-send-reply" class="px-3 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded shadow-sm">Send Reply</button>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <div id="comm-actions">
+                                                <!-- Action buttons like Reply, Request Reply will be injected here -->
+                                            </div>
+                                            <button class="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 font-medium rounded-lg text-sm transition-colors" onclick="document.getElementById('comm-msg-view').classList.add('hidden'); document.getElementById('comm-empty-state').classList.remove('hidden');">Close View</button>
+                                        </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Compose Message Modal (University -> Head Supervisor) -->
+                    <div id="compose-head-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+                            <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800 dark:text-gray-100">Message Head Supervisor</h3>
+                                <button onclick="closeComposeHeadSupervisorModal()" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times"></i></button>
+                            </div>
+                            <div class="p-6 space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Head Supervisor</label>
+                                    <select id="compose-head-recipient" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:text-white">
+                                        <option value="">Loading...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+                                    <input type="text" id="compose-head-subject" placeholder="Enter subject" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
+                                    <textarea id="compose-head-body" rows="4" placeholder="Type your message..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none dark:bg-gray-700 dark:text-white"></textarea>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex gap-2 items-center">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
+                                        <select id="compose-head-priority" class="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700 dark:text-white">
+                                            <option value="NORMAL">Normal</option>
+                                            <option value="URGENT">Urgent</option>
+                                        </select>
+                                    </div>
+                                    <button onclick="submitComposeHeadSupervisor()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-md transition flex items-center gap-2"><i class="fas fa-paper-plane"></i> Send</button>
                                 </div>
                             </div>
                         </div>
@@ -799,7 +906,7 @@
                             <select id="subject-filter-course"
                                 class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                                 <option value="">All Courses</option>
-                                <option>B.Tech</option><option>B.E</option><option>MBA</option><option>MCA</option><option>B.Sc</option>
+                                <option>B.E</option><option>B.Tech</option><option>B.Sc</option><option>MBA</option><option>MCA</option>
                             </select>
                             <select id="subject-filter-dept"
                                 class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
@@ -849,6 +956,33 @@
     </div>
 
     <!-- MODALS -->
+
+    <!-- Map College Modal -->
+    <div id="map-college-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeMapCollegeModal()"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Map College to Exam</h3>
+                <button onclick="closeMapCollegeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="map-college-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Select College</label>
+                    <select id="map-college-select" required class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                        <option value="">— Select College —</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Select Head Supervisor</label>
+                    <select id="map-supervisor-select" required class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900" disabled>
+                        <option value="">— Select Head Supervisor —</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Assign College</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Create Exam Modal -->
     <div id="create-exam-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal('create-exam-modal')"></div>
@@ -999,6 +1133,8 @@
     <script src="js/university/analytics.js"></script>
     <script src="js/university/colleges.js"></script>
     <script src="js/university/subjects.js"></script>
+    <script src="js/university/communication.js"></script>
+    <script src="js/university/allocation.js"></script>
 
     <!-- Safe ES6 Injection of CreateExam -->
     <script type="module">
@@ -1021,48 +1157,6 @@
             });
         }
     </script>
-    <script>
-        const msgDatabase = {
-            'msg1': {
-                subject: 'Compliance Violation Incident',
-                date: 'February 14, 2026 at 10:30 AM',
-                type: 'WARNING',
-                typeClass: 'bg-red-100 text-red-700 border-red-200',
-                body: 'Dear University Admin,\n\nWe have noticed several compliance violations regarding exam scheduling at your affiliated colleges. Please review the attached audit report and rectify the irregularities within 48 hours to avoid suspension of services.\n\nRegards,\nSuper Admin'
-            },
-            'msg2': {
-                subject: 'System Maintenance Broadcast',
-                date: 'February 12, 2026 at 04:00 PM',
-                type: 'BROADCAST',
-                typeClass: 'bg-blue-100 text-blue-700 border-blue-200',
-                body: 'Attention All Universities,\n\nThe ExamHub platform will undergo scheduled maintenance on Sunday from 02:00 AM to 05:00 AM. Please advise your staff not to assign any exam timings during this window.\n\nThank you for your cooperation.'
-            },
-            'msg3': {
-                subject: 'Welcome to ExamHub',
-                date: 'February 01, 2026 at 09:00 AM',
-                type: 'INFO',
-                typeClass: 'bg-gray-100 text-gray-700 border-gray-200',
-                body: 'Welcome to your University Admin Dashboard!\n\nHere you can manage exams, track student performance, and oversee affiliated colleges. Ensure your profile details are fully updated.\n\nIf you need help, consult the documentation.'
-            }
-        };
-
-        window.showCommMessage = function(msgId) {
-            const msg = msgDatabase[msgId];
-            if(!msg) return;
-            
-            document.getElementById('comm-empty-state').classList.add('hidden');
-            const view = document.getElementById('comm-msg-view');
-            view.classList.remove('hidden');
-            
-            document.getElementById('comm-msg-subject').innerText = msg.subject;
-            document.getElementById('comm-msg-date').innerText = msg.date;
-            
-            const typeBadge = document.getElementById('comm-msg-type');
-            typeBadge.innerText = msg.type;
-            typeBadge.className = `text-xs font-bold px-3 py-1 rounded border ${msg.typeClass}`;
-            
-            document.getElementById('comm-msg-body').innerText = msg.body;
-        };
     </script>
 </body>
 

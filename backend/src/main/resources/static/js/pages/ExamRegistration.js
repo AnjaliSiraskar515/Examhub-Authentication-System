@@ -71,7 +71,58 @@ export default function ExamRegistration() {
             const response = await fetch('/api/university/exams');
             if (!response.ok) throw new Error("Failed to fetch exams");
             const rawExams = await response.json();
-            exams = rawExams.filter(ex => ex.status === 'OPEN');
+            
+            // Filter logic: Only show OPEN exams for student's course, department, and semester
+            exams = rawExams.filter(ex => {
+                if (ex.status !== 'OPEN') return false;
+                
+                // If profile is missing course/sem, default to showing the exam to avoid hiding valid exams
+                if (!studentProfile.course || !studentProfile.semester) return true;
+
+                const stuCourse = String(studentProfile.course).toLowerCase().trim();
+                const stuDept = String(studentProfile.branch || studentProfile.department || '').toLowerCase().trim();
+                const stuSemStr = String(studentProfile.semester).toLowerCase().replace(/\D/g, '');
+                const stuSem = parseInt(stuSemStr) || 0;
+                
+                const exCourse = String(ex.course || '').toLowerCase().trim();
+                const exDept = String(ex.department || '').toLowerCase().trim();
+                const exSemStr = String(ex.semester || '').toLowerCase().replace(/\D/g, '');
+                const exSem = parseInt(exSemStr) || 0;
+                
+                // Helper to check if two strings loosely match (handles B.Tech vs Bachelor of Tech, Comp Sci vs Comp Engg)
+                const looseMatch = (str1, str2) => {
+                    if (!str1 || !str2) return true;
+                    const s1 = str1.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const s2 = str2.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (s1.includes(s2) || s2.includes(s1)) return true;
+                    if (s1.startsWith('btech') && s2.startsWith('bachelor')) return true;
+                    if (s2.startsWith('btech') && s1.startsWith('bachelor')) return true;
+                    if (s1.startsWith('mtech') && s2.startsWith('master')) return true;
+                    if (s2.startsWith('mtech') && s1.startsWith('master')) return true;
+                    if (s1.startsWith('comp') && s2.startsWith('comp')) return true;
+                    if (s1.startsWith('elec') && s2.startsWith('elec')) return true;
+                    return false;
+                };
+
+                // Course & Department Match (loose)
+                if (!looseMatch(ex.course, studentProfile.course)) return false;
+                if (!looseMatch(ex.department, studentProfile.branch || studentProfile.department)) return false;
+                
+                const isBacklog = (ex.examType || '').toLowerCase().includes('backlog') || 
+                                  (ex.examType || '').toLowerCase().includes('supplementary') || 
+                                  (ex.sessionName || '').toLowerCase().includes('supplementary') ||
+                                  (ex.sessionName || '').toLowerCase().includes('backlog');
+
+                if (isBacklog) {
+                    // For backlog/supplementary, student must be in a higher or equal semester
+                    if (stuSem > 0 && exSem > 0 && exSem > stuSem) return false;
+                    return true;
+                } else {
+                    // For regular exams, semester must match exactly
+                    if (stuSem > 0 && exSem > 0 && exSem !== stuSem) return false;
+                    return true;
+                }
+            });
 
             // ── 3. Fetch THIS student's registrations (token-based — backend resolves actual user)
             try {
@@ -529,134 +580,6 @@ export default function ExamRegistration() {
         declaration.addEventListener('change', calculateFee);
         calculateFee();
 
-        let isScanning = false;
-
-        const startScan = async () => {
-            if (isScanning || verifyFingerprintBtn.disabled) return;
-            isScanning = true;
-
-            verifyFingerprintBtn.classList.add('hidden');
-            verifyFingerprintBtn.disabled = true;
-            verifyFingerprintResult.classList.add('hidden');
-
-            if (!document.getElementById('sweep-laser-keyframes')) {
-                const style = document.createElement('style');
-                style.id = 'sweep-laser-keyframes';
-                style.innerHTML = `@keyframes sweepLaser { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }`;
-                document.head.appendChild(style);
-            }
-
-            verifyFingerprintLoading.classList.remove('hidden');
-            verifyFingerprintLoading.innerHTML = `
-                <div class="relative inline-block overflow-hidden py-2 px-6">
-                    <i id="examScanIcon" class="fas fa-fingerprint text-indigo-500 text-5xl mb-2 transition-colors duration-300"></i>
-                    <div id="examScanLaser" class="absolute left-0 w-full h-1 bg-green-400 shadow-[0_0_15px_3px_rgba(74,222,128,0.8)] z-10" style="animation: sweepLaser 1.5s infinite ease-in-out alternate"></div>
-                </div>
-                <p id="examScanText" class="text-sm text-indigo-600 font-semibold animate-pulse">Acquiring biometric data...</p>
-            `;
-
-            setTimeout(async () => {
-                const examScanText = document.getElementById('examScanText');
-                if (examScanText) {
-                    examScanText.textContent = "Matching templates...";
-                    examScanText.classList.remove('animate-pulse');
-                }
-
-                if (Math.random() < 0.15) {
-                    finishScan(false, "Scanner Error: Poor scan quality. Try again.");
-                    return;
-                }
-
-                try {
-                    let userId = localStorage.getItem('userId');
-                    if (!userId) {
-                        const token = localStorage.getItem('token');
-                        if (token) {
-                            const payload = JSON.parse(atob(token.split('.')[1]));
-                            userId = payload.sub;
-                        } else {
-                            userId = "UNKNOWN";
-                        }
-                    }
-
-                    const fingerprintData = "PHYSICAL_MINUTIAE_" + userId;
-                    const token = localStorage.getItem('token');
-
-                    const response = await fetch('/api/student-profile/biometric/verify', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': token ? `Bearer ${token}` : ''
-                        },
-                        body: JSON.stringify({ fingerprint: fingerprintData })
-                    });
-
-                    if (response.status === 401 || response.status === 403) {
-                        throw new Error("Session expired or unauthorized. Please re-login.");
-                    }
-
-                    const data = await response.json();
-
-                    if (response.ok && data.success) {
-                        finishScan(true, "Biometric Verified!");
-                    } else {
-                        throw new Error(data.message || "Fingerprint verification failed.");
-                    }
-                } catch (err) {
-                    finishScan(false, err.message);
-                }
-            }, 2000); // 2.0s simulated scan wait
-        };
-
-        const finishScan = (success, message) => {
-            isScanning = false;
-            const examScanIcon = document.getElementById('examScanIcon');
-            const examScanLaser = document.getElementById('examScanLaser');
-            const examScanText = document.getElementById('examScanText');
-
-            if (success) {
-                if (examScanIcon) examScanIcon.className = "fas fa-check-circle text-green-500 text-5xl mb-2 transition-all scale-110";
-                if (examScanLaser) examScanLaser.classList.add('hidden');
-                if (examScanText) {
-                    examScanText.className = "text-sm text-green-600 font-bold";
-                    examScanText.textContent = message;
-                }
-
-                verifyFingerprintBtn.innerHTML = '<i class="fas fa-check"></i> Verified';
-                verifyFingerprintBtn.disabled = true;
-
-                setTimeout(() => {
-                    isBiometricVerified = true;
-                    verifyFingerprintLoading.classList.add('hidden');
-                    verifyFingerprintResult.classList.remove('hidden');
-                    verifyFingerprintResult.classList.remove('text-red-500');
-                    verifyFingerprintResult.classList.add('text-green-600');
-                    verifyFingerprintResult.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-                    calculateFee();
-                }, 1000);
-            } else {
-                if (examScanIcon) examScanIcon.className = "fas fa-times-circle text-red-500 text-5xl mb-2 transition-all scale-110";
-                if (examScanLaser) examScanLaser.classList.add('hidden');
-                if (examScanText) {
-                    examScanText.className = "text-sm text-red-600 font-bold";
-                    examScanText.textContent = "Failed";
-                }
-
-                verifyFingerprintBtn.classList.remove('hidden');
-                verifyFingerprintBtn.disabled = false;
-                verifyFingerprintBtn.innerHTML = '<i class="fas fa-redo"></i> Try Again';
-
-                setTimeout(() => {
-                    verifyFingerprintLoading.classList.add('hidden');
-                    verifyFingerprintResult.classList.remove('hidden');
-                    verifyFingerprintResult.classList.remove('text-green-600');
-                    verifyFingerprintResult.classList.add('text-red-500');
-                    verifyFingerprintResult.innerHTML = `<i class="fas fa-times-circle"></i> ${message}`;
-                }, 1500);
-            }
-        };
-
-        verifyFingerprintBtn.addEventListener('click', startScan);
 
         // WIZARD CONTROLS LOGIC
         const nextBtn = document.getElementById('regNextBtn');

@@ -131,10 +131,15 @@ function renderStaffTable() {
                     ${staff.department || '<span class="text-gray-400 italic">Not Assigned</span>'}
                 </td>
                 <td class="px-6 py-4 text-gray-700 font-bold dark:text-gray-300">
-                    <div>${staff.designation || 'Supervisor'}</div>
-                    <div class="text-[10px] text-gray-400 font-mono tracking-wide mt-1">${staff.supervisorType === 'HEAD' ? '<span class="text-indigo-500"><i class="fas fa-crown"></i> Head Supervisor</span>' : 'Exam Supervisor'}</div>
+                    <div>${staff.supervisorType === 'HEAD' ? '<span class="text-indigo-500"><i class="fas fa-crown"></i> Head Supervisor</span>' : 'Exam Supervisor'}</div>
                 </td>
                 <td class="px-6 py-4"><span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-md uppercase tracking-wider shadow-sm"><i class="fas fa-check-circle mr-1"></i>Active</span></td>
+                <td class="px-6 py-4 text-right">
+                    <button onclick="deleteStaff(${staff.userId})"
+                        class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold rounded-lg transition-all active:scale-95">
+                        <i class="fas fa-trash-alt mr-1"></i>Delete
+                    </button>
+                </td>
             </tr>
         `;
     }).join('');
@@ -194,16 +199,7 @@ function injectStaffModal() {
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold mb-1 text-gray-600 dark:text-gray-300 uppercase tracking-widest">Designation</label>
-                            <select id="staff-designation" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 outline-none focus:ring-2 focus:ring-green-500 transition-all text-gray-900 dark:text-white font-bold cursor-pointer">
-                                <option value="Senior Invigilator">Senior Invigilator</option>
-                                <option value="Chief Supervisor">Chief Supervisor</option>
-                                <option value="Lab Assistant">Lab Assistant</option>
-                                <option value="Support Staff">Support Staff</option>
-                            </select>
-                        </div>
+                    <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label class="block text-xs font-bold mb-1 text-gray-600 dark:text-gray-300 uppercase tracking-widest">Department</label>
                             <select id="staff-department" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 outline-none focus:ring-2 focus:ring-green-500 transition-all text-gray-900 dark:text-white font-bold cursor-pointer">
@@ -265,7 +261,6 @@ function setupStaffFormListener() {
             const nameEl = document.getElementById('staff-name').value.trim();
             const emailEl = document.getElementById('staff-email').value.trim();
             const phoneEl = document.getElementById('staff-phone').value.trim();
-            const desigEl = document.getElementById('staff-designation').value.trim();
             const deptEl = document.getElementById('staff-department').value.trim();
             const typeEl = document.getElementById('staff-supervisorType').value.trim();
 
@@ -294,7 +289,6 @@ function setupStaffFormListener() {
                         name: nameEl,
                         email: emailEl,
                         phone: phoneEl,
-                        designation: desigEl,
                         department: deptEl,
                         collegeId: collegeId,
                         supervisorType: typeEl
@@ -351,7 +345,7 @@ function setupStaffFormListener() {
                             </div>
 
                             <ul class="text-sm font-mono mb-6 pb-4 border-b dark:border-gray-700">
-                                <li>Col 1: Name</li><li>Col 2: Email</li><li>Col 3: Phone</li><li>Col 4: Designation</li><li>Col 5: Department</li><li>Col 6: Role (EXAM / HEAD)</li>
+                                <li>Col 1: Name</li><li>Col 2: Email</li><li>Col 3: Phone</li><li>Col 4: Department</li><li>Col 5: Role (EXAM / HEAD)</li>
                             </ul>
                             <form id="staff-csv-form">
                                 <input type="file" id="staff-csv-input" accept=".csv" required class="w-full mb-4">
@@ -423,5 +417,20 @@ function setupStaffFormListener() {
             showModal('staff-csv-modal');
         });
         csvBtn.setAttribute('data-listener', 'true');
+    }
+}
+
+async function deleteStaff(userId) {
+    const found = staffList.find(s => s.userId == userId);
+    const name = found ? found.name : 'this supervisor';
+    if (!confirm(`Are you sure you want to permanently delete "${name}"? This cannot be undone.`)) return;
+
+    try {
+        const resp = await authFetch(`${ADMIN_API_BASE_URL}/supervisors/${userId}`, { method: 'DELETE' });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Delete failed');
+        window.loadStaff(); // Refresh table
+    } catch (e) {
+        alert('Failed to delete supervisor: ' + e.message);
     }
 }

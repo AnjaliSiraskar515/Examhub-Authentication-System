@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>University Admit Card</title>
+  <link rel="icon" type="image/png" href="/logo.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     /* Reset and base styles */
@@ -189,7 +190,7 @@
 
     .sig-table td {
       border: none;
-      width: 33.33%;
+      width: 50%;
       padding: 0 10px;
     }
 
@@ -286,11 +287,11 @@
 
       <table class="details-table">
         <tr>
-          <td class="label">Seat Number:</td>
-          <td class="value"><span id="seatNo">-</span></td>
+          <td class="label">Roll Number:</td>
+          <td class="value"><span id="examRollNo">-</span></td>
           <td class="label">PRN Number:</td>
           <td class="value"><span id="rollNo">-</span></td>
-          <td rowspan="4" class="qr-cell">
+          <td rowspan="5" class="qr-cell">
             <div class="qr-wrapper">
               <img id="qrImage" alt="Hall ticket QR code" style="width:86px;height:86px;display:block;" />
             </div>
@@ -317,8 +318,12 @@
           <td style="width: 80%;"><span id="examName">-</span></td>
         </tr>
         <tr>
-          <td class="label">Center Code & Name:</td>
-          <td><span id="centerName">-</span></td>
+          <td class="label">Center Code &amp; Name:</td>
+          <td>
+            <span id="centerCode" style="font-weight:bold;">-</span>
+            <span style="margin: 0 6px; color:#999;">&mdash;</span>
+            <span id="centerName" style="font-weight:bold;">-</span>
+          </td>
         </tr>
       </table>
 
@@ -365,6 +370,9 @@
                 <li>Do not write anything on the admit card. It may be considered as copying material.</li>
                 <li>The invigilator's signature must be obtained during the exam for each respective subject in the
                   schedule table.</li>
+                <li style="font-weight:bold;">Your specific <u>Exam Hall &amp; Seat Number</u> will be communicated via an
+                  in-app notification <u>2 hours before</u> the exam start time. Please check your notifications
+                  on the ExamHub portal before arriving at the center.</li>
               </ol>
             </td>
           </tr>
@@ -376,10 +384,6 @@
           <td>
             <div class="sig-line"></div>
             <div class="sig-text">Candidate's Signature</div>
-          </td>
-          <td>
-            <div class="sig-line"></div>
-            <div class="sig-text">Principal Stamp & Sign</div>
           </td>
           <td>
             <div class="sig-line">
@@ -395,7 +399,7 @@
   </div>
 
   <script>
-    const API_BASE = 'http://localhost:8080';
+    const API_BASE = '';
 
     function setQrFromPayload(qrCode) {
       const qrImage = document.getElementById('qrImage');
@@ -412,7 +416,7 @@
 
     async function loadAdmitCard() {
       const params = new URLSearchParams(window.location.search);
-      const regId = params.get('regId');
+      const regId = params.get('regId') || localStorage.getItem('currentHallTicketRegId');
       const scheduleBody = document.getElementById('examSchedule');
       const qrImage = document.getElementById('qrImage');
 
@@ -425,10 +429,14 @@
       }
 
       const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
-      // Token Auth removed as per explicit instructions
 
       try {
-        const response = await fetch(`${API_BASE}/api/admit-card/${encodeURIComponent(regId)}`);
+        const headers = {};
+        if (token && token !== 'mock-token-xyz') {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch(`${API_BASE}/api/admit-card/${encodeURIComponent(regId)}`, { headers });
 
         if (!response.ok) {
           let message = 'Hall ticket not available';
@@ -446,11 +454,25 @@
 
         document.getElementById('studentName').innerText = data.studentName || '-';
         document.getElementById('rollNo').innerText = data.prn || '-';
-        document.getElementById('seatNo').innerText = data.seatNumber || '-';
+        document.getElementById('examRollNo').innerText = data.rollNumber || '-';
+        // Hall name and Seat Number intentionally not shown on printed ticket — sent via notification 2 hrs before exam
         document.getElementById('course').innerText = data.course || '-';
         document.getElementById('semester').innerText = data.semester || '-';
         document.getElementById('examName').innerText = data.examName || '-';
-        document.getElementById('centerName').innerText = data.centerName || '-';
+
+        // Center code and name are now sent as separate fields from the backend
+        const codeEl = document.getElementById('centerCode');
+        const nameEl = document.getElementById('centerName');
+        const separatorEl = codeEl ? codeEl.nextElementSibling : null;
+        if (data.centerCode && data.centerCode.trim() !== '') {
+          codeEl.innerText = data.centerCode.trim();
+          if (separatorEl) separatorEl.style.display = '';
+        } else {
+          codeEl.innerText = '';
+          if (separatorEl) separatorEl.style.display = 'none';
+        }
+        nameEl.innerText = data.centerName || 'Center Not Assigned';
+
         document.getElementById('verifyStatus').innerText = 'ELIGIBLE';
 
         setQrFromPayload(data.qrCode);

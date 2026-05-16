@@ -55,6 +55,9 @@ public class AdminController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.example.examauth.service.AlertNotificationService alertNotificationService;
+
     @Value("${file.upload-dir:uploads/profile}")
     private String baseUploadDir;
 
@@ -208,6 +211,11 @@ public class AdminController {
     public ResponseEntity<?> getSupervisors(
             @RequestParam(required = false) Long collegeId,
             @RequestParam(required = false) String department) {
+        
+        String __email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        com.example.examauth.model.User __admin = userRepo.findFirstByEmailAndRole(__email, org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority().replace("ROLE_", "")).orElse(null);
+        String __myUniv = (__admin != null && "UNIVERSITY_ADMIN".equals(__admin.getRole())) ? __admin.getUniversityName() : null;
+
         // Resolve college name for legacy fallback matching
         final String resolvedCollegeName = (collegeId != null)
                 ? collegeRepo.findById(collegeId).map(c -> c.getName()).orElse(null)
@@ -217,8 +225,9 @@ public class AdminController {
                 .filter(u -> {
                     String r = u.getRole() != null ? u.getRole().trim().toLowerCase() : "";
                     // Support legacy or custom roles like "supervisor A" or "chief supervisor"
-                    return r.contains("supervisor") || r.contains("staff") || r.contains("faculty") || u.getDesignation() != null;
+                    return r.contains("supervisor") || r.contains("staff") || r.contains("faculty") || u.getSupervisorType() != null;
                 })
+                .filter(u -> __myUniv == null || __myUniv.isEmpty() || __myUniv.equalsIgnoreCase(u.getUniversityName()) || (u.getCollege() != null && __myUniv.equalsIgnoreCase(u.getCollege().getUniversityName())))
                 .filter(u -> {
                     // If collegeId filter provided, restrict to that college only
                     if (collegeId != null) {
@@ -262,8 +271,8 @@ public class AdminController {
                     map.put("status", u.getStatus());
                     map.put("role", u.getRole());
                     map.put("department", displayDept); // Expose mapped department
-                    map.put("designation", u.getDesignation());
                     map.put("collegeName", (u.getCollege() != null && u.getCollege().getName() != null) ? u.getCollege().getName() : u.getCollegeName());
+                    map.put("supervisorType", u.getSupervisorType() != null ? u.getSupervisorType() : "EXAM");
                     map.put("collegeId", u.getCollege() != null ? u.getCollege().getId() : null);
                     map.put("photoPath", u.getPhotoPath()); // Profile photo
                     return map;
@@ -276,7 +285,7 @@ public class AdminController {
     public ResponseEntity<?> assignSupervisor(@RequestBody Map<String, Object> body) {
         String email = (String) body.get("email");
         // create or find supervisor user
-        User sup = userRepo.findByEmail(email).orElseGet(() -> {
+        User sup = userRepo.findFirstByEmailAndRole(email, "SUPERVISOR").orElseGet(() -> {
             User u = new User();
             u.setEmail(email);
             u.setName(email.split("@")[0]);
@@ -307,6 +316,24 @@ public class AdminController {
         u.setDepartment(department);
         userRepo.save(u);
         return ResponseEntity.ok(Map.of("message", "Department updated", "department", department));
+    }
+
+    @DeleteMapping("/supervisors/{id}")
+    public ResponseEntity<?> deleteSupervisor(@PathVariable Long id) {
+        User u = userRepo.findById(id).orElse(null);
+        if (u == null) return ResponseEntity.status(404).body(Map.of("error", "Supervisor not found"));
+        if (!"SUPERVISOR".equalsIgnoreCase(u.getRole())) {
+            return ResponseEntity.status(403).body(Map.of("error", "User is not a supervisor"));
+        }
+        // Send deactivation email before deleting
+        try {
+            String universityName = u.getUniversityName() != null ? u.getUniversityName()
+                : (u.getCollege() != null && u.getCollege().getUniversityName() != null
+                    ? u.getCollege().getUniversityName() : "your university");
+            alertNotificationService.sendAccessRemovedEmail(u.getEmail(), u.getName(), u.getRole(), universityName);
+        } catch (Exception ignored) {}
+        userRepo.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Supervisor deleted successfully"));
     }
 
     @GetMapping("/users/{role}")

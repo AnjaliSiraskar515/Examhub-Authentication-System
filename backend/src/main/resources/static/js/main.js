@@ -11,24 +11,12 @@ import CreateExam from './pages/CreateExam.js';
 import ExamRegistration from './pages/ExamRegistration.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 0. Set up mock student session for testing (if no session exists)
-    if (!localStorage.getItem('token')) {
-        console.log('🔧 Initializing MOCK student session for testing...');
-        localStorage.setItem('userId', 'S12345');
-        localStorage.setItem('role', 'STUDENT');
-        localStorage.setItem('token', 'mock-token-xyz');
-        localStorage.setItem('userProfile', JSON.stringify({
-            name: 'Demo Student',
-            email: 'demo@student.com',
-            rollNumber: 'S12345',
-            course: 'B.Tech',
-            year: '2026'
-        }));
-        console.log('✅ Mock session created:', {
-            userId: 'S12345',
-            role: 'STUDENT',
-            token: 'mock-token-xyz'
-        });
+    // 0. Redirect to login if no session exists
+    if (!localStorage.getItem('token') || localStorage.getItem('token') === 'mock-token-xyz') {
+        console.log('🔒 No valid session found. Redirecting to login...');
+        localStorage.clear();
+        window.location.href = 'index.html';
+        return;
     }
 
     // 1. Initialize Theme
@@ -184,6 +172,11 @@ async function loadAndInjectUserProfile() {
         if (courseEl) courseEl.textContent = courseLine;
         if (avatarEl) avatarEl.src = avatarUrl;
 
+        // Force password change on first login
+        if (profile.firstLogin === true) {
+            showForcePasswordChangeModal();
+        }
+
     } catch (error) {
         console.warn('Could not load user profile for sidebar:', error);
     }
@@ -236,14 +229,23 @@ async function enforceStudentVerificationGate() {
     if (!studentProfileId) return;
 
     try {
-        const response = await fetch(
-            `/api/student-profile/${encodeURIComponent(studentProfileId)}`,
-            { headers: { 'Authorization': `Bearer ${token}` } }
-        );
-        if (!response.ok) return;
+        let verified = false;
 
-        const profile = await response.json();
-        const verified = !!profile.verified;
+        try {
+            const bioResponse = await fetch('/api/student-profile/biometric/status', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (bioResponse.ok) {
+                const bioData = await bioResponse.json();
+                if (bioData.success && bioData.enrolled) {
+                    verified = true;
+                }
+            }
+        } catch (e) {
+            console.warn('Could not fetch biometric status:', e);
+        }
+
+        window.dispatchEvent(new CustomEvent('verification-status', { detail: { verified } }));
 
         if (verified) {
             removeVerificationBanner();
@@ -252,7 +254,7 @@ async function enforceStudentVerificationGate() {
             return;
         }
 
-        showVerificationBanner();
+        removeVerificationBanner();
         toggleRegisterButton(true);
         toggleMyExamsAccess(true);
     } catch (error) {
@@ -261,14 +263,7 @@ async function enforceStudentVerificationGate() {
 }
 
 function showVerificationBanner() {
-    const container = document.getElementById('page-container');
-    if (!container || document.getElementById('verification-warning-banner')) return;
-
-    const banner = document.createElement('div');
-    banner.id = 'verification-warning-banner';
-    banner.className = 'mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800';
-    banner.textContent = 'Please complete face verification before proceeding.';
-    container.prepend(banner);
+    // Banner removed as per requirement
 }
 
 function removeVerificationBanner() {
@@ -298,4 +293,107 @@ function toggleMyExamsAccess(disabled) {
     } else {
         navItem.classList.remove('pointer-events-none', 'opacity-50');
     }
+}
+
+// First Login Password Change Modal
+function showForcePasswordChangeModal() {
+    if (document.getElementById('force-password-modal')) return;
+
+    const modalHtml = `
+        <div id="force-password-modal" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center">
+            <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl relative">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Security Update Required</h2>
+                    <p class="text-sm text-gray-500 mt-2">As this is your first time logging in, you must change your default password to continue.</p>
+                </div>
+                
+                <form id="force-password-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Password (PRN)</label>
+                        <input type="password" id="force-current-password" required
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+                        <input type="password" id="force-new-password" required minlength="6"
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm New Password</label>
+                        <input type="password" id="force-confirm-password" required minlength="6"
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    
+                    <div id="force-password-alert" class="hidden text-sm p-3 rounded-xl font-medium"></div>
+                    
+                    <button type="submit" id="force-password-submit"
+                        class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all mt-4">
+                        Update Password & Continue
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    document.getElementById('force-password-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const currentPassword = document.getElementById('force-current-password').value;
+        const newPassword = document.getElementById('force-new-password').value;
+        const confirmPassword = document.getElementById('force-confirm-password').value;
+        const alertBox = document.getElementById('force-password-alert');
+        const submitBtn = document.getElementById('force-password-submit');
+
+        if (newPassword !== confirmPassword) {
+            alertBox.textContent = "New passwords do not match!";
+            alertBox.className = "text-sm p-3 rounded-xl font-medium bg-red-50 text-red-600 block";
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+
+        try {
+            const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
+            const res = await fetch('/api/profile/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ currentPassword, newPassword })
+            });
+
+            const data = await res.text();
+            
+            if (res.ok) {
+                alertBox.textContent = "Password updated successfully!";
+                alertBox.className = "text-sm p-3 rounded-xl font-medium bg-green-50 text-green-600 block";
+                
+                // Clear the firstLogin flag via an update API call if necessary, 
+                // but usually the backend should clear it upon password change.
+                
+                setTimeout(() => {
+                    // The old token is now invalid (tokenVersion incremented).
+                    // Clear session and redirect to login for fresh authentication.
+                    localStorage.clear();
+                    window.location.href = 'index.html?msg=password_changed';
+                }, 1500);
+            } else {
+                alertBox.textContent = data || "Failed to update password.";
+                alertBox.className = "text-sm p-3 rounded-xl font-medium bg-red-50 text-red-600 block";
+            }
+        } catch (err) {
+            alertBox.textContent = "Network error. Try again.";
+            alertBox.className = "text-sm p-3 rounded-xl font-medium bg-red-50 text-red-600 block";
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Update Password & Continue";
+        }
+    });
 }

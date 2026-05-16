@@ -9,6 +9,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- html2pdf for direct PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --primary: #2563eb;
@@ -170,16 +172,27 @@
     <aside class="w-64 bg-white border-r border-gray-200 min-h-screen">
       <nav class="px-4 py-6">
         <button onclick="showTab('profile')"
-          class="w-full tab-btn py-3 px-4 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 mb-2">
+          class="w-full tab-btn active py-3 px-4 rounded-lg flex items-center gap-3 text-indigo-700 mb-2">
           <i class="fa-solid fa-user w-5"></i> My Profile
         </button>
-        <button onclick="showTab('exams')"
-          class="w-full tab-btn active py-3 px-4 rounded-lg flex items-center gap-3 text-indigo-700 mb-2">
-          <i class="fa-solid fa-tasks w-5"></i> Exams Assigned
-        </button>
-        <button onclick="showTab('approvals')"
+        <button onclick="showTab('exams')" id="navExams"
           class="w-full tab-btn py-3 px-4 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 mb-2">
+          <i class="fa-solid fa-tasks w-5" id="navExamsIcon"></i> <span id="navExamsLabel">Exams Assigned</span>
+        </button>
+        <button onclick="showTab('approvals')" id="navApprovals"
+          class="w-full tab-btn py-3 px-4 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 mb-2 hidden">
           <i class="fa-solid fa-clipboard-check w-5"></i> Exam Form Approvals
+        </button>
+        <button onclick="showTab('halls')" id="navHalls"
+          class="w-full tab-btn py-3 px-4 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 mb-2 hidden">
+          <i class="fa-solid fa-building w-5"></i> Exam Halls Configuration
+        </button>
+        <button onclick="showTab('communication')" id="navCommunication"
+          class="w-full tab-btn py-3 px-4 rounded-lg flex items-center justify-between text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 mb-2 hidden">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-comments w-5"></i> Communication Hub
+          </div>
+          <span id="comm-unread-badge" class="hidden bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
         </button>
 
         <!-- Logout Button -->
@@ -193,12 +206,12 @@
 
     <!-- Main Content -->
     <main class="flex-1 p-8">
-      <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <!-- Stats Cards (Exam Supervisor only) -->
+      <div id="statsRowWrapper" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="stat-card p-6 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-blue-100 text-sm">Exams Assigned Today</p>
+              <p class="text-blue-100 text-sm">Exams Assigned</p>
               <p class="text-2xl font-bold" id="statExams">--</p>
             </div>
             <i class="fas fa-calendar-day text-3xl text-blue-200 opacity-50"></i>
@@ -244,7 +257,7 @@
               <div>
                 <h3 id="profileName" class="text-xl font-semibold text-gray-900">Supervisor Name</h3>
                 <p id="profileEmail" class="text-gray-600">supervisor@example.com</p>
-                <p id="profileDepartment"
+                <p id="profileType"
                   class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded mt-2 inline-block shadow-sm">
                   --</p>
               </div>
@@ -445,8 +458,45 @@
 
       <div id="tab-approvals" class="tab-content hidden">
         <div class="card p-6">
-          <h2 class="text-2xl font-semibold mb-6 text-gray-900"><i class="fas fa-clipboard-check mr-2"></i> Exam Form
-            Approvals</h2>
+          <h2 class="text-2xl font-semibold mb-4 text-gray-900"><i class="fas fa-clipboard-check mr-2"></i> Exam Form Approvals</h2>
+
+          <!-- Filter Bar -->
+          <div class="flex flex-wrap items-end gap-3 mb-5 p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex-1 min-w-[180px]">
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1"><i class="fas fa-graduation-cap mr-1"></i>Department</label>
+              <select id="filterDepartment" onchange="applyFormFilters()"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-400 focus:outline-none bg-white">
+                <option value="">All Departments</option>
+              </select>
+            </div>
+            <div class="flex-1 min-w-[160px]">
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1"><i class="fas fa-calendar-alt mr-1"></i>Semester</label>
+              <select id="filterSemester" onchange="applyFormFilters()"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-400 focus:outline-none bg-white">
+                <option value="">All Semesters</option>
+              </select>
+            </div>
+            <div class="flex-1 min-w-[140px]">
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1"><i class="fas fa-tag mr-1"></i>Status</label>
+              <select id="filterStatus" onchange="applyFormFilters()"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-400 focus:outline-none bg-white">
+                <option value="">All Statuses</option>
+                <option value="APPLIED">Applied</option>
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+              </select>
+            </div>
+            <div class="flex items-end gap-2">
+              <button onclick="applyFormFilters()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
+                <i class="fas fa-filter mr-1"></i> Filter
+              </button>
+              <button onclick="clearFormFilters()" class="px-4 py-2 text-sm font-medium text-gray-600 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg transition">
+                <i class="fas fa-times mr-1"></i> Clear
+              </button>
+            </div>
+            <div class="ml-auto text-xs text-gray-400 self-end" id="filterResultCount"></div>
+          </div>
+
           <div class="flex flex-col gap-4" id="approvalsListContainer">
             <!-- Pending exam registrations will be injected here -->
             <p class="text-gray-500 italic">No pending forms to approve right now.</p>
@@ -462,21 +512,210 @@
             <p class="mt-2">Camera feed will appear here</p>
           </div>
 
-          <!-- Manual Entry for Testing -->
-          <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h3 class="text-sm font-semibold text-yellow-800 mb-2"><i class="fas fa-bug mr-1"></i> Manual Verification
-              (For Testing)</h3>
-            <div class="flex gap-2">
-              <input type="text" id="manualTokenInput" placeholder="Paste qrToken here..."
-                class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-              <button onclick="handleManualVerify()"
-                class="px-3 py-2 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700">Verify</button>
-            </div>
-          </div>
 
           <div id="scanResult" class="p-4 bg-gray-50 rounded-lg"></div>
         </div>
       </div>
+
+      <!-- Head Supervisor: Exams Overview Tab -->
+      <div id="tab-head-overview" class="tab-content hidden">
+        <div class="space-y-6">
+          <!-- Header Banner -->
+          <div class="rounded-2xl bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-900 p-7 text-white shadow-xl flex items-center gap-6 flex-wrap">
+            <div class="bg-white/10 rounded-full p-4">
+              <i class="fas fa-crown text-3xl text-yellow-300"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-black tracking-tight">College Exam Overview</h2>
+              <p class="text-indigo-200 text-sm mt-1">Full exam schedule &amp; structure for your assigned college</p>
+            </div>
+            <div class="ml-auto text-right">
+              <span class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full text-sm font-bold border border-white/30">
+                <i class="fas fa-university"></i> <span id="headCollegeName">Loading...</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Summary Stat Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="bg-white rounded-2xl shadow p-5 border-l-4 border-indigo-500 flex items-center gap-4">
+              <div class="bg-indigo-50 rounded-xl p-3"><i class="fas fa-calendar-check text-indigo-600 text-2xl"></i></div>
+              <div>
+                <p class="text-xs text-gray-400 uppercase tracking-widest font-semibold">Total Exams</p>
+                <p class="text-3xl font-black text-indigo-700" id="headStatExams">--</p>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow p-5 border-l-4 border-emerald-500 flex items-center gap-4">
+              <div class="bg-emerald-50 rounded-xl p-3"><i class="fas fa-users text-emerald-600 text-2xl"></i></div>
+              <div>
+                <p class="text-xs text-gray-400 uppercase tracking-widest font-semibold">Total Students</p>
+                <p class="text-3xl font-black text-emerald-700" id="headStatStudents">--</p>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow p-5 border-l-4 border-purple-500 flex items-center gap-4">
+              <div class="bg-purple-50 rounded-xl p-3"><i class="fas fa-bolt text-purple-600 text-2xl"></i></div>
+              <div>
+                <p class="text-xs text-gray-400 uppercase tracking-widest font-semibold">Active / Upcoming</p>
+                <p class="text-3xl font-black text-purple-700" id="headStatActive">--</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Exam Schedule Table -->
+          <div class="bg-white rounded-2xl shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 class="font-bold text-gray-800 text-lg"><i class="fas fa-table mr-2 text-indigo-500"></i>Exam Schedule &amp; Structure</h3>
+              <span class="text-xs text-gray-400 italic">College-wide exam registry</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-xs text-gray-500 uppercase tracking-wider">
+                  <tr>
+                    <th class="px-5 py-3 text-left">Exam Name</th>
+                    <th class="px-5 py-3 text-left">Date</th>
+                    <th class="px-5 py-3 text-left">Time</th>
+                    <th class="px-5 py-3 text-left">Mode</th>
+                    <th class="px-5 py-3 text-left">Status</th>
+                    <th class="px-5 py-3 text-left">Students</th>
+                    <th class="px-5 py-3 text-left">Center / Location</th>
+                  </tr>
+                </thead>
+                <tbody id="headExamScheduleBody" class="divide-y divide-gray-100">
+                  <tr><td colspan="7" class="text-center text-gray-400 py-10"><i class="fas fa-spinner fa-spin mr-2"></i>Loading exams...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Head Supervisor: Exam Halls Configuration Tab -->
+      <div id="tab-halls" class="tab-content hidden">
+        <div class="space-y-6">
+          <div class="rounded-2xl bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-900 p-7 text-white shadow-xl flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-6">
+                <div class="bg-white/10 rounded-full p-4">
+                  <i class="fas fa-building text-3xl text-blue-300"></i>
+                </div>
+                <div>
+                  <h2 class="text-2xl font-black tracking-tight">Exam Halls Configuration</h2>
+                  <p class="text-indigo-200 text-sm mt-1">Configure physical halls, capacities, and assign supervisors</p>
+                </div>
+            </div>
+            <button onclick="openCreateHallModal()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded shadow">
+                <i class="fas fa-plus mr-2"></i> Add New Hall
+            </button>
+          </div>
+
+          <!-- Exam Selection -->
+          <div class="bg-white p-6 rounded-2xl shadow border border-gray-100">
+              <label class="block text-sm font-semibold mb-2">Select Exam to Configure</label>
+              <select id="halls-exam-select" class="w-full max-w-lg px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-indigo-500">
+                  <option value="">— Select Exam —</option>
+              </select>
+          </div>
+
+          <!-- Halls List -->
+          <div class="bg-white rounded-2xl shadow overflow-hidden border border-gray-100 hidden" id="halls-list-container">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+              <h3 class="font-bold text-gray-800 text-lg"><i class="fas fa-list mr-2 text-indigo-500"></i>Configured Halls</h3>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-xs text-gray-500 uppercase tracking-wider">
+                  <tr>
+                    <th class="px-5 py-3 text-left">Hall Name</th>
+                    <th class="px-5 py-3 text-left">Prefix</th>
+                    <th class="px-5 py-3 text-left">Capacity</th>
+                    <th class="px-5 py-3 text-left">Supervisor</th>
+                    <th class="px-5 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="halls-list-body" class="divide-y divide-gray-100">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Head Supervisor: Communication Hub Tab -->
+      <div id="tab-communication" class="tab-content hidden">
+        <div class="space-y-6">
+          <div class="rounded-2xl bg-gradient-to-br from-indigo-700 via-purple-700 to-indigo-900 p-7 text-white shadow-xl flex items-center gap-6 flex-wrap">
+            <div class="bg-white/10 rounded-full p-4">
+              <i class="fas fa-comments text-3xl text-yellow-300"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-black tracking-tight">Communication Hub</h2>
+              <p class="text-indigo-200 text-sm mt-1">Direct communication with University Administration</p>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Message List -->
+            <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[600px]">
+              <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-2xl">
+                <h3 class="font-bold text-gray-800"><i class="fas fa-inbox mr-2 text-indigo-500"></i>Inbox</h3>
+                <button onclick="loadHeadSupervisorInbox()" class="text-gray-400 hover:text-indigo-600 transition"><i class="fas fa-sync-alt"></i></button>
+              </div>
+              <div class="flex-1 overflow-y-auto p-2 space-y-2" id="head-inbox-list">
+                <div class="text-center p-6 text-gray-400 text-sm">Loading messages...</div>
+              </div>
+            </div>
+            
+            <!-- Message View / Send -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[600px]">
+              <!-- View Message Area -->
+              <div id="head-msg-view-area" class="flex-1 flex flex-col hidden">
+                <div class="p-5 border-b border-gray-100">
+                  <div class="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 class="text-xl font-bold text-gray-900" id="head-msg-subject">Subject</h3>
+                      <p class="text-sm text-gray-500 mt-1" id="head-msg-meta">From: Admin • Date</p>
+                    </div>
+                    <span id="head-msg-type-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">GENERAL</span>
+                  </div>
+                  <div id="head-msg-actions" class="flex gap-2 mt-2"></div>
+                </div>
+                <div class="p-6 overflow-y-auto flex-1 text-gray-700 bg-gray-50/30" id="head-msg-body">
+                  Message body here...
+                </div>
+              </div>
+              
+              <!-- Empty State -->
+              <div id="head-msg-empty-state" class="flex-1 flex flex-col items-center justify-center text-gray-400">
+                <i class="fas fa-envelope-open-text text-5xl mb-4 text-gray-200"></i>
+                <p>Select a message or compose a new one.</p>
+              </div>
+              
+              <!-- Compose / Reply Area -->
+              <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                <div class="flex gap-2 items-center mb-2">
+                  <span class="text-sm font-semibold text-gray-700" id="head-compose-title">Send to University Admin</span>
+                </div>
+                <div class="mb-2">
+                   <input type="text" id="head-compose-subject" placeholder="Subject..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <textarea id="head-compose-body" rows="3" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none" placeholder="Type your message here..."></textarea>
+                <div class="flex justify-between items-center mt-3">
+                  <div class="flex gap-2 items-center text-sm">
+                    <label class="text-gray-600">Type:</label>
+                    <select id="head-compose-priority" class="border-gray-300 rounded px-2 py-1 text-xs">
+                      <option value="NORMAL">General</option>
+                      <option value="URGENT">Urgent</option>
+                    </select>
+                  </div>
+                  <button onclick="sendHeadSupervisorMessage()" class="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-md hover:bg-indigo-700 transition flex items-center gap-2">
+                    <i class="fas fa-paper-plane"></i> Send Message
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -536,8 +775,8 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Official Email</label>
                 <div class="flex gap-2">
                   <input type="email" name="email" id="inputEmail"
-                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    oninput="checkVerificationStatus('email')">
+                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed focus:ring-0 focus:border-gray-300"
+                    readonly>
                   <button type="button" id="btnVerifyEmail" onclick="verifyField('email')"
                     class="hidden px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 whitespace-nowrap">
                     Verify
@@ -589,21 +828,19 @@
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Affiliated University</label>
-                <select name="university" id="inputUniversity"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                  <option value="">Select University</option>
-                  <option value="Savitribai Phule Pune University">Savitribai Phule Pune University</option>
-                  <option value="Mumbai University">Mumbai University</option>
-                  <option value="Visvesvaraya Technological University">Visvesvaraya Technological University (VTU)
-                  </option>
-                  <option value="Anna University">Anna University</option>
-                  <option value="Jawaharlal Nehru Technological University">JNTU Hyderabad</option>
-                  <option value="Other">Other</option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Affiliated University
+                  <span class="ml-2 text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><i
+                      class="fas fa-lock mr-1"></i>Assigned by Admin</span>
+                </label>
+                <div id="inputUniversityDisplay"
+                  class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium text-sm flex items-center gap-2">
+                  <i class="fas fa-university text-indigo-400"></i>
+                  <span id="inputUniversityText">—</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Your university assignment is managed by the university admin.</p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">College / Exam Center
+                <label class="block text-sm font-medium text-gray-700 mb-1">College
                   <span class="ml-2 text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><i
                       class="fas fa-lock mr-1"></i>Assigned by Admin</span>
                 </label>
@@ -615,14 +852,13 @@
                 <p class="text-xs text-gray-400 mt-1">Your college assignment is managed by the university admin.</p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Designation / Role</label>
-                <select name="designation" id="inputDesignation"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                  <option value="Room Invigilator">Room Invigilator</option>
-                  <option value="Chief Supervisor">Chief Supervisor</option>
-                  <option value="Flying Squad">Flying Squad</option>
-                  <option value="Support Staff">Observer / Support Staff</option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Supervisor Role
+                  <span class="ml-2 text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><i
+                      class="fas fa-lock mr-1"></i>Assigned by Admin</span>
+                </label>
+                <input type="text" id="inputSupervisorType"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed focus:ring-0 focus:border-gray-300"
+                  readonly value="Exam Supervisor">
               </div>
             </div>
           </div>
@@ -638,20 +874,6 @@
                 <input type="text" name="employeeId" id="inputEmployeeId" placeholder="e.g. EMP-2025-X99"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Appointment Letter</label>
-                <div class="flex gap-4 items-center">
-                  <div class="flex-1">
-                    <input type="file" name="appointmentLetter" id="authLetterFile" accept=".pdf,.jpg,.png"
-                      class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                  </div>
-                  <div id="authLetterStatus"
-                    class="flex items-center text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
-                    <span class="status-text">Pending</span>
-                  </div>
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Official letter issued by the University/Exam Authority.</p>
               </div>
             </div>
           </div>
@@ -781,6 +1003,37 @@
     </div>
   </div>
 
+  <!-- Create Hall Modal -->
+  <div id="create-hall-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[70] items-center justify-center p-4" onclick="if(event.target===this)closeCreateHallModal()">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl p-8">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Add Exam Hall</h3>
+        <button onclick="closeCreateHallModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times"></i></button>
+      </div>
+      <form id="create-hall-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Hall Name (e.g., Block A - Room 101)</label>
+          <input type="text" id="hall-name" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Hall Prefix (e.g., A)</label>
+          <input type="text" id="hall-prefix" required maxlength="5" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Capacity</label>
+          <input type="number" id="hall-capacity" required min="1" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Assigned Exam Supervisor</label>
+          <select id="hall-supervisor" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+            <option value="">— Select Supervisor —</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold mt-2">Save Hall</button>
+      </form>
+    </div>
+  </div>
+
   <!-- ===== Exam Details Modal ===== -->
   <div id="examDetailsModal"
     class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-center justify-center z-[70] p-4"
@@ -875,9 +1128,9 @@
         <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
           <button onclick="closeExamDetailsModal()"
             class="px-5 py-2.5 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 font-medium transition-colors text-sm">Close</button>
-          <button id="edModalSuperviseBtn"
+          <button id="edModalActionBtn"
             class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow transition-all text-sm flex items-center gap-2">
-            <i class="fas fa-eye"></i> Supervise Exam
+            <i class="fas fa-eye"></i> View Details
           </button>
         </div>
       </div>
@@ -934,20 +1187,43 @@
         (cap ? Math.max(1, Math.ceil(Number(cap) / 30)) + ' (est.)' : 'Not specified');
       document.getElementById('edModalHalls').textContent = halls;
 
-      // Student count (live from assigned list if available, else capacity)
-      const stu = ex.studentCount || ex.totalStudents ||
-        (cap ? cap + ' (max)' : 'Not specified');
-      document.getElementById('edModalStudents').textContent = stu;
+      // Student count — fetch live from the same endpoint used by the monitoring table
+      const edModalStudentsEl = document.getElementById('edModalStudents');
+      edModalStudentsEl.textContent = '...';
+      fetch(`/api/supervisor/students?examId=${ex.id}`, { headers: authHeaders() })
+        .then(r => r.json())
+        .then(students => {
+          edModalStudentsEl.textContent = students.length > 0 ? students.length : '0';
+        })
+        .catch(() => {
+          const cap = ex.centerCapacity || ex.maxStudents;
+          edModalStudentsEl.textContent = cap ? cap + ' (max)' : '0';
+        });
 
       // Exam ID
       document.getElementById('edModalId').textContent = '#' + ex.id;
 
-      // Wire Supervise button
-      const supBtn = document.getElementById('edModalSuperviseBtn');
-      supBtn.onclick = () => {
-        closeExamDetailsModal();
-        openExamDetail(ex.id, ex.title, ex.date, ex.startTime, ex.mode, ex.location, ex.status, ex.duration || 0);
-      };
+      // Wire Action button based on exam status
+      const actionBtn = document.getElementById('edModalActionBtn');
+      const exStatus = (ex.status || '').toUpperCase();
+      const exDateObj = new Date(ex.date);
+      const nowObj = new Date();
+      const exIsCompleted = exStatus === 'COMPLETED' || (exStatus !== 'LIVE' && exStatus !== 'ONGOING' && exDateObj < nowObj && ex.date !== new Date().toDateString());
+      const exIsLive = exStatus === 'LIVE' || exStatus === 'ONGOING';
+
+      if (exIsCompleted) {
+        actionBtn.innerHTML = '<i class="fas fa-download mr-2"></i> Download Report';
+        actionBtn.className = 'px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow transition-all text-sm flex items-center gap-2';
+        actionBtn.onclick = () => { closeExamDetailsModal(); downloadExamReport(ex.id); };
+      } else if (exIsLive) {
+        actionBtn.innerHTML = '<i class="fas fa-broadcast-tower mr-2"></i> Monitor Hall';
+        actionBtn.className = 'px-5 py-2.5 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 shadow transition-all text-sm flex items-center gap-2 animate-pulse';
+        actionBtn.onclick = () => { closeExamDetailsModal(); openMonitorHall(ex.id, ex.title); };
+      } else {
+        actionBtn.innerHTML = '<i class="fas fa-user-check mr-2"></i> Verify Students';
+        actionBtn.className = 'px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow transition-all text-sm flex items-center gap-2';
+        actionBtn.onclick = () => { closeExamDetailsModal(); showTab('qr'); };
+      }
 
       // Show modal
       document.getElementById('examDetailsModal').classList.remove('hidden');
@@ -1022,7 +1298,7 @@
         const payload = field === 'email' ? { email: value } : { phone: value };
 
         showToast(`Sending OTP to ${value}...`, 'info');
-        const res = await fetch(`http://localhost:8080${endpoint}`, {
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -1039,7 +1315,7 @@
         const verifyEndpoint = field === 'email' ? '/api/otp/verify/email' : '/api/otp/verify/phone';
         const verifyPayload = field === 'email' ? { email: value, otp: otp } : { phone: value, otp: otp };
 
-        const vRes = await fetch(`http://localhost:8080${verifyEndpoint}`, {
+        const vRes = await fetch(verifyEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(verifyPayload)
@@ -1081,7 +1357,9 @@
       document.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('tab-' + tabName).classList.remove('hidden');
-      event.target.classList.add('active');
+      
+      const navBtn = document.querySelector(`.tab-btn[onclick="showTab('${tabName}')"]`);
+      if (navBtn) navBtn.classList.add('active');
 
       // Lazy load data per tab
       if (tabName === 'profile') loadProfile();
@@ -1089,25 +1367,157 @@
       if (tabName === 'approvals') loadExamForms();
       if (tabName === 'students') loadStudents();
       if (tabName === 'qr') initQrScanner();
+      if (tabName === 'head-overview') loadHeadOverview();
     }
 
-    // Initial: show exams tab by default
-    document.getElementById('tab-exams').classList.remove('hidden');
-    loadExams();
+    // Initial: show profile tab by default
+    showTab('profile');
     loadProfile(); // Init stats immediately
 
-    // Fetch and render pending exam registrations
+    // ── Head Supervisor: Exam Overview Loader ─────────────────────────────────
+    async function loadHeadOverview() {
+      const tbody = document.getElementById('headExamScheduleBody');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-400 py-10"><i class="fas fa-spinner fa-spin mr-2"></i>Loading exams...</td></tr>';
+
+      try {
+        const res = await fetch('/api/supervisor/exams', { headers: authHeaders() });
+        const exams = await res.json();
+
+        // Update college badge
+        const profRes = await fetch('/api/supervisor/profile', { headers: authHeaders() });
+        const prof = await profRes.json();
+        const colEl = document.getElementById('headCollegeName');
+        if (colEl) colEl.textContent = prof.collegeName || prof.college || 'SRCOE';
+
+        if (!exams || exams.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-400 py-12 italic">No exams found for your college.</td></tr>';
+          document.getElementById('headStatExams').textContent = '0';
+          document.getElementById('headStatStudents').textContent = '0';
+          document.getElementById('headStatActive').textContent = '0';
+          return;
+        }
+
+        const statusBadge = s => {
+          const map = { LIVE: 'bg-green-100 text-green-700', UPCOMING: 'bg-blue-100 text-blue-700',
+                        COMPLETED: 'bg-gray-100 text-gray-500', PENDING: 'bg-yellow-100 text-yellow-700' };
+          const cls = map[(s || '').toUpperCase()] || 'bg-slate-100 text-slate-500';
+          return `<span class="px-2 py-0.5 rounded-full text-xs font-bold ${cls}">${s || 'N/A'}</span>`;
+        };
+
+        let totalStudents = 0;
+        let activeCount = 0;
+        const rows = await Promise.all(exams.map(async ex => {
+          // Fetch student count per exam
+          let stuCount = '—';
+          try {
+            const sr = await fetch(`/api/supervisor/students?examId=${ex.id}`, { headers: authHeaders() });
+            const studs = await sr.json();
+            stuCount = studs.length;
+            totalStudents += studs.length;
+          } catch(_) {}
+          const st = (ex.status || '').toUpperCase();
+          if (st === 'LIVE' || st === 'UPCOMING') activeCount++;
+
+          const timeStr = ex.startTime ? ex.startTime.toString().slice(0,5) : '—';
+          const dateStr = ex.date ? new Date(ex.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+          const center  = ex.centerName || ex.location || '—';
+
+          return `<tr class="hover:bg-slate-50 transition">
+            <td class="px-5 py-3 font-semibold text-gray-800">${ex.title || '—'}</td>
+            <td class="px-5 py-3 text-gray-600">${dateStr}</td>
+            <td class="px-5 py-3 text-gray-600">${timeStr}</td>
+            <td class="px-5 py-3"><span class="text-xs font-medium text-gray-700">${ex.mode || 'OFFLINE'}</span></td>
+            <td class="px-5 py-3">${statusBadge(ex.status)}</td>
+            <td class="px-5 py-3 font-bold text-indigo-700">${stuCount}</td>
+            <td class="px-5 py-3 text-gray-500 text-xs">${center}</td>
+          </tr>`;
+        }));
+
+        tbody.innerHTML = rows.join('');
+        document.getElementById('headStatExams').textContent = exams.length;
+        document.getElementById('headStatStudents').textContent = totalStudents;
+        document.getElementById('headStatActive').textContent = activeCount;
+      } catch(e) {
+        console.error('loadHeadOverview error', e);
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-red-400 py-10 italic">Failed to load exam data.</td></tr>';
+      }
+    }
+    // All loaded forms stored globally for client-side filtering
+    let _allExamForms = [];
+
     async function loadExamForms() {
       const container = document.getElementById('approvalsListContainer');
       container.innerHTML = '<div class="text-center text-gray-500 my-8"><i class="fas fa-spinner fa-spin text-3xl"></i><p class="mt-2">Loading forms...</p></div>';
 
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/exam-forms', { headers: authHeaders() });
+        const res = await fetch('/api/supervisor/exam-forms', { headers: authHeaders() });
         if (!res.ok) throw new Error('Failed to fetch approvals');
         const forms = await res.json();
+        _allExamForms = forms;
+
+        // Populate filter dropdowns dynamically from data
+        populateFormFilterDropdowns(forms);
+
+        renderExamForms(forms);
+      } catch (err) {
+        console.error('Error loading exam forms:', err);
+        container.innerHTML = '<p class="text-red-500 italic">Failed to load exam forms. Please try again.</p>';
+      }
+    }
+
+    function populateFormFilterDropdowns(forms) {
+      const deptSel = document.getElementById('filterDepartment');
+      const semSel = document.getElementById('filterSemester');
+      if (!deptSel || !semSel) return;
+
+      const depts = [...new Set(forms.map(f => f.department || f.course).filter(Boolean))].sort();
+      const sems  = [...new Set(forms.map(f => f.semester  || f.examSession).filter(Boolean))].sort();
+
+      const currentDept = deptSel.value;
+      const currentSem  = semSel.value;
+
+      deptSel.innerHTML = '<option value="">All Departments</option>' +
+        depts.map(d => `<option value="${d}" ${d === currentDept ? 'selected' : ''}>${d}</option>`).join('');
+      semSel.innerHTML  = '<option value="">All Semesters</option>' +
+        sems.map(s => `<option value="${s}" ${s === currentSem ? 'selected' : ''}>${s}</option>`).join('');
+    }
+
+    function applyFormFilters() {
+      const dept   = (document.getElementById('filterDepartment')?.value || '').toLowerCase().trim();
+      const sem    = (document.getElementById('filterSemester')?.value   || '').toLowerCase().trim();
+      const status = (document.getElementById('filterStatus')?.value     || '').toUpperCase().trim();
+
+      const filtered = _allExamForms.filter(f => {
+        const fDept   = ((f.department || f.course || '').toLowerCase());
+        const fSem    = ((f.semester   || f.examSession || '').toLowerCase());
+        const fStatus = (f.status || '').toUpperCase();
+        return (!dept   || fDept.includes(dept)) &&
+               (!sem    || fSem.includes(sem))   &&
+               (!status || fStatus === status);
+      });
+
+      const countEl = document.getElementById('filterResultCount');
+      if (countEl) countEl.textContent = filtered.length + ' of ' + _allExamForms.length + ' forms';
+      renderExamForms(filtered);
+    }
+
+    function clearFormFilters() {
+      const d = document.getElementById('filterDepartment');
+      const s = document.getElementById('filterSemester');
+      const st = document.getElementById('filterStatus');
+      if (d) d.value = '';
+      if (s) s.value = '';
+      if (st) st.value = '';
+      const countEl = document.getElementById('filterResultCount');
+      if (countEl) countEl.textContent = '';
+      renderExamForms(_allExamForms);
+    }
+
+    function renderExamForms(forms) {
+      const container = document.getElementById('approvalsListContainer');
 
         if (!forms || forms.length === 0) {
-          // Build a descriptive empty state using the supervisor's college if available
           const collegeName = window._supervisorCollege || 'your college';
           container.innerHTML = `
             <div class="p-10 text-center bg-gray-50 rounded-2xl border border-gray-200">
@@ -1115,15 +1525,20 @@
                 <i class="fas fa-clipboard-check text-3xl"></i>
               </div>
               <h3 class="text-lg font-bold text-gray-700 mb-1">All caught up!</h3>
-              <p class="text-gray-500 text-sm">No pending exam forms from <span class="font-semibold text-indigo-600">${collegeName}</span> students at this time.</p>
+              <p class="text-gray-500 text-sm">No exam forms match the current filters for <span class="font-semibold text-indigo-600">${collegeName}</span>.</p>
             </div>`;
           return;
         }
 
-        container.innerHTML = forms.map(form => `
-                <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow relative transition-all group">
-                    <div class="absolute top-4 right-4 text-xs font-bold px-3 py-1 rounded-full ${form.status === 'APPLIED' || form.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}">
-                        ${form.status}
+        container.innerHTML = forms.map(form => {
+            const isCompleted = form.examStatus === 'COMPLETED';
+            return `
+                <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow relative transition-all group ${isCompleted ? 'opacity-70 bg-gray-50' : ''}">
+                    <div class="absolute top-4 right-4 flex gap-2">
+                        ${isCompleted ? `<span class="text-xs font-bold px-3 py-1 rounded-full bg-gray-200 text-gray-700"><i class="fas fa-lock mr-1"></i>Exam Completed</span>` : ''}
+                        <span class="text-xs font-bold px-3 py-1 rounded-full ${form.status === 'APPLIED' || form.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}">
+                            ${form.status}
+                        </span>
                     </div>
                     <div class="flex items-start gap-4">
                         <div class="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-xl flex-shrink-0">
@@ -1146,22 +1561,27 @@
                         </div>
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end gap-3">
-                        <button onclick="alert('View full form feature coming soon.')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                        <button onclick="viewFullFormDetails(${form.id})" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
                             <i class="fas fa-eye mr-1"></i> View Details
                         </button>
-                        ${(form.status === 'APPLIED' || form.status === 'PENDING') ? `
+                        ${isCompleted ? `
+                            <button onclick="deleteExamForm(${form.id}, this)" class="px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-lg shadow-sm transition-colors" title="Delete completed form">
+                                <i class="fas fa-trash-alt mr-1"></i> Remove Form
+                            </button>
+                        ` : `
+                            <button onclick="deleteExamForm(${form.id}, this)" class="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg shadow-sm transition-colors">
+                                <i class="fas fa-trash mr-1"></i> Delete
+                            </button>
+                        `}
+                        ${(form.status === 'APPLIED' || form.status === 'PENDING') && !isCompleted ? `
                             <button onclick="acceptExamForm(${form.id}, this)" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">
-                                <i class="fas fa-check mr-1"></i> Accept & Verify
+                                <i class="fas fa-check mr-1"></i> Accept &amp; Verify
                             </button>
                         ` : ''}
                     </div>
                 </div>
-            `).join('');
-
-      } catch (err) {
-        console.error('Error loading exam forms:', err);
-        container.innerHTML = '<p class="text-red-500 italic">Failed to load exam forms. Please try again.</p>';
-      }
+            `;
+        }).join('');
     }
 
     async function acceptExamForm(id, btnElement) {
@@ -1172,7 +1592,7 @@
       btnElement.disabled = true;
 
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam-forms/${id}/accept`, {
+        const res = await fetch(`/api/supervisor/exam-forms/${id}/accept`, {
           method: 'POST',
           headers: authHeaders()
         });
@@ -1194,12 +1614,116 @@
       }
     }
 
+    async function deleteExamForm(id, btnElement) {
+      if (!confirm('Are you sure you want to DELETE this exam form? This action cannot be undone.')) return;
+      const originalHtml = btnElement.innerHTML;
+      btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+      btnElement.disabled = true;
+      try {
+        const res = await fetch(`/api/supervisor/exam-forms/${id}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || 'Form deleted successfully', 'success');
+          // Remove from local array and re-render
+          _allExamForms = _allExamForms.filter(f => f.id !== id);
+          applyFormFilters();
+          populateFormFilterDropdowns(_allExamForms);
+        } else {
+          showToast(data.message || 'Failed to delete form', 'error');
+          btnElement.innerHTML = originalHtml;
+          btnElement.disabled = false;
+        }
+      } catch (err) {
+        console.error('Error deleting form:', err);
+        showToast('An error occurred while deleting.', 'error');
+        btnElement.innerHTML = originalHtml;
+        btnElement.disabled = false;
+      }
+    }
+
+    window.viewFullFormDetails = function(id) {
+        const form = _allExamForms.find(f => f.id === id);
+        if (!form) return;
+
+        let modalOverlay = document.getElementById('supervisor-reg-modal');
+        if (!modalOverlay) {
+            modalOverlay = document.createElement('div');
+            modalOverlay.id = 'supervisor-reg-modal';
+            modalOverlay.className = 'fixed inset-0 z-[100] bg-gray-900/50 backdrop-blur-sm overflow-y-auto flex items-center justify-center p-4';
+            document.body.appendChild(modalOverlay);
+        }
+
+        const subjectsHtml = (form.selectedSubjects || []).map(s => 
+            `<span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1 rounded-full text-sm font-medium">${s}</span>`
+        ).join('') || '<span class="text-gray-400 italic">None selected</span>';
+
+        modalOverlay.innerHTML = `
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden animate-fade-in-up">
+                <div class="bg-indigo-600 px-6 py-4 flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fas fa-file-signature"></i> Student Exam Form
+                    </h3>
+                    <button onclick="document.getElementById('supervisor-reg-modal').remove()" class="text-indigo-200 hover:text-white transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6 md:p-8">
+                    <div class="flex items-start justify-between border-b pb-6 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-black text-gray-900 mb-1">${form.fullName || 'Unknown'}</h2>
+                            <div class="flex items-center gap-3 text-sm text-gray-500 font-medium">
+                                <span class="bg-gray-100 px-2.5 py-1 rounded-md"><i class="fas fa-id-card text-indigo-400 mr-1"></i> ${form.prn || 'N/A'}</span>
+                                <span><i class="fas fa-graduation-cap text-indigo-400 mr-1"></i> ${form.course || 'N/A'}</span>
+                            </div>
+                        </div>
+                        <span class="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest ${form.status === 'APPLIED' || form.status === 'PENDING' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-green-100 text-green-700 border border-green-200'}">
+                            ${form.status}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                            <span class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Exam Session</span>
+                            <span class="block text-gray-800 font-medium">${form.examSession || 'N/A'}</span>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                            <span class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Target Exam</span>
+                            <span class="block text-gray-800 font-medium">${form.examName || 'N/A'}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <span class="block text-sm font-bold text-gray-700 mb-3 border-b pb-2">Selected Subjects</span>
+                        <div class="flex flex-wrap gap-2">
+                            ${subjectsHtml}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t">
+                    <button onclick="document.getElementById('supervisor-reg-modal').remove()" class="px-5 py-2.5 text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl font-medium transition-colors shadow-sm">
+                        Close
+                    </button>
+                    ${(form.status === 'APPLIED' || form.status === 'PENDING') ? `
+                    <button onclick="document.getElementById('supervisor-reg-modal').remove(); acceptExamForm(${form.id}, document.createElement('button'))" class="px-6 py-2.5 text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2">
+                        <i class="fas fa-check"></i> Verify Form
+                    </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    };
+
     // Fetch and render profile
     async function loadProfile() {
       const profileBox = document.getElementById('tab-profile');
       // if (profileBox.dataset.loaded) return; // Removed to allow auto-refresh
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/profile', { headers: authHeaders() });
+        const res = await fetch('/api/supervisor/profile', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-profile');
         const p = await res.json();
         document.getElementById('profileAvatar').src = p.avatar || 'placeholder-avatar.png';
@@ -1214,6 +1738,48 @@
         document.getElementById('profileEmail').innerText = p.email || '';
         document.getElementById('profileDepartment').innerText = p.department || 'Not Assigned';
 
+        // Show/hide sidebar items based on supervisor type
+        const isHead = p.supervisorType === 'HEAD';
+        const navApprovals = document.getElementById('navApprovals');
+        const navCommunication = document.getElementById('navCommunication');
+        const navHalls = document.getElementById('navHalls');
+        if (navApprovals) {
+          if (isHead) navApprovals.classList.remove('hidden');
+          else navApprovals.classList.add('hidden');
+        }
+        if (navCommunication) {
+          if (isHead) navCommunication.classList.remove('hidden');
+          else navCommunication.classList.add('hidden');
+        }
+        if (navHalls) {
+          if (isHead) navHalls.classList.remove('hidden');
+          else navHalls.classList.add('hidden');
+        }
+
+        // HEAD-specific UI adjustments
+        const statsRow = document.getElementById('statsRowWrapper');
+        const navExamsLabel = document.getElementById('navExamsLabel');
+        const navExamsIcon = document.getElementById('navExamsIcon');
+        const navExamsBtn = document.getElementById('navExams');
+        if (isHead) {
+          // Hide the EXAM-supervisor stat blocks
+          if (statsRow) statsRow.classList.add('hidden');
+          // Rename sidebar nav item
+          if (navExamsLabel) navExamsLabel.textContent = 'Exams Overview';
+          if (navExamsIcon) navExamsIcon.className = 'fa-solid fa-chart-bar w-5';
+          // Override click to go to head-overview tab
+          if (navExamsBtn) navExamsBtn.onclick = () => showTab('head-overview');
+          // Load head overview on first profile load
+          loadHeadOverview();
+          showTab('head-overview');
+        } else {
+          // Restore EXAM supervisor defaults
+          if (statsRow) statsRow.classList.remove('hidden');
+          if (navExamsLabel) navExamsLabel.textContent = 'Exams Assigned';
+          if (navExamsIcon) navExamsIcon.className = 'fa-solid fa-tasks w-5';
+          if (navExamsBtn) navExamsBtn.onclick = () => showTab('exams');
+        }
+
         // Update Header Profile
         document.getElementById('headerProfileName').innerText = p.name || 'Supervisor';
         document.getElementById('headerProfileAvatar').src = p.avatar || 'placeholder-avatar.png';
@@ -1227,10 +1793,118 @@
         document.getElementById('statScans').innerText = p.scansToday ?? '--'; // Total Scans
         document.getElementById('statPending').innerText = p.pendingVerifications ?? '--'; // Pending
 
+        // Force password change on first login
+        if (p.firstLogin === true) {
+            showForcePasswordChangeModal();
+        }
+
         const docs = document.getElementById('profileDocs'); docs.innerHTML = '';
         (p.documents || []).forEach(d => { const li = document.createElement('li'); li.innerText = d.filename; docs.appendChild(li); });
         profileBox.dataset.loaded = '1';
       } catch (e) { console.warn('Profile load failed', e); }
+    }
+
+    // First Login Password Change Modal for Supervisors
+    function showForcePasswordChangeModal() {
+        if (document.getElementById('force-password-modal')) return;
+
+        const modalHtml = `
+            <div id="force-password-modal" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center">
+                <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl relative">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Security Update Required</h2>
+                        <p class="text-sm text-gray-500 mt-2">As this is your first time logging in, you must change your default password to continue.</p>
+                    </div>
+                    
+                    <form id="force-password-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Password (Default)</label>
+                            <input type="password" id="force-current-password" required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+                            <input type="password" id="force-new-password" required minlength="6"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm New Password</label>
+                            <input type="password" id="force-confirm-password" required minlength="6"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        
+                        <div id="force-password-alert" class="hidden text-sm p-3 rounded-xl font-medium"></div>
+                        
+                        <button type="submit" id="force-password-submit"
+                            class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all mt-4">
+                            Update Password & Continue
+                        </button>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        document.getElementById('force-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('force-current-password').value;
+            const newPassword = document.getElementById('force-new-password').value;
+            const confirmPassword = document.getElementById('force-confirm-password').value;
+            const alertBox = document.getElementById('force-password-alert');
+            const submitBtn = document.getElementById('force-password-submit');
+
+            if (newPassword !== confirmPassword) {
+                alertBox.textContent = "New passwords do not match!";
+                alertBox.className = "text-sm p-3 rounded-xl font-medium bg-red-50 text-red-600 block";
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+
+            try {
+                const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
+                const res = await fetch('/api/profile/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+
+                let data;
+                try {
+                    data = await res.json();
+                } catch(e) {
+                    data = { message: await res.text() };
+                }
+                
+                if (res.ok) {
+                    alertBox.textContent = "Password updated successfully!";
+                    alertBox.className = "text-sm p-3 rounded-xl font-medium bg-green-50 text-green-600 block";
+                    
+                    setTimeout(() => {
+                        localStorage.clear();
+                        window.location.href = 'index.html?msg=password_changed';
+                    }, 1500);
+                } else {
+                    alertBox.textContent = data.error || data.message || "Failed to update password.";
+                    alertBox.className = "text-sm p-3 rounded-xl font-medium bg-red-50 text-red-600 block";
+                }
+            } catch (err) {
+                alertBox.textContent = "Network error. Try again.";
+                alertBox.className = "text-sm p-3 rounded-xl font-medium bg-red-50 text-red-600 block";
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Update Password & Continue";
+            }
+        });
     }
 
     // Auto-refresh stats every 3 seconds for realtime updates
@@ -1242,7 +1916,7 @@
       if (container.dataset.loaded) return;
       container.innerHTML = '<div class="muted">Loading exams...</div>';
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/exams', { headers: authHeaders() });
+        const res = await fetch('/api/supervisor/exams', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-exams');
         let arr = await res.json();
 
@@ -1258,42 +1932,63 @@
         arr.forEach(ex => {
           const div = document.createElement('div'); div.className = 'exam-row card';
 
-          // Date Logic: Allow access if exam is TODAY (or Live status)
+          // === STATUS BADGE ===
+          // Trust DB status first (set by scheduler), fallback to date comparison
+          let computedStatus = ex.status ? ex.status.toUpperCase() : '';
           const examDateObj = new Date(ex.date);
           const todayObj = new Date();
           const isToday = examDateObj.toDateString() === todayObj.toDateString();
 
-          // Logic for Status Badge
-          let statusBadge = '';
-          const isLive = ex.status === 'LIVE' || ex.status === 'ONGOING';
+          // If DB says LIVE or COMPLETED, trust it. Otherwise use date logic.
+          const isLive = computedStatus === 'LIVE' || computedStatus === 'ONGOING';
+          const isCompleted = computedStatus === 'COMPLETED' || (!isLive && examDateObj < todayObj && !isToday);
+          const isUpcoming = !isLive && !isCompleted;
 
-          if (isLive || isToday) statusBadge = `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold animate-pulse">● LIVE</span>`;
-          else if (examDateObj > todayObj) statusBadge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">UPCOMING</span>`;
+          let statusBadge = '';
+          if (isLive) statusBadge = `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold animate-pulse">● LIVE</span>`;
+          else if (isUpcoming) statusBadge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">UPCOMING</span>`;
           else statusBadge = `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">COMPLETED</span>`;
 
           // Mode Badge
           const modeBadge = `<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-semibold border border-indigo-100"><i class="fas fa-wifi mr-1"></i>${ex.mode || 'OFFLINE'}</span>`;
 
-          // Button Logic
-          // Supervise is ALWAYS active
-          const superviseBtn = `
-        <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition-all font-medium text-sm flex items-center" 
-                         onclick="openExamDetail('${ex.id}', '${ex.title.replace(/'/g, "\\'")}', '${ex.date}', '${ex.startTime}', '${ex.mode}', '${ex.location}', '${ex.status}', ${ex.duration || 0})">
-          <i class="fas fa-eye mr-2"></i>Supervise Exam
-                </button>`;
-
-          // Scanning is CONDITIONAL
+          // === BUTTONS based on exam status ===
+          let actionBtn = '';
           let scanBtn = '';
-          if (isToday || isLive) {
+
+          if (isCompleted) {
+            // COMPLETED: View Report + Download Report
+            actionBtn = `
+              <button class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 shadow-md transition-all font-medium text-sm flex items-center gap-1"
+                onclick="openExamReport('${ex.id}')">
+                <i class="fas fa-chart-bar"></i> View Report
+              </button>
+              <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-md transition-all font-medium text-sm flex items-center gap-1"
+                onclick="downloadExamReport('${ex.id}')">
+                <i class="fas fa-download"></i> Download Report
+              </button>`;
+          } else if (isLive) {
+            // LIVE: Monitor Hall
+            actionBtn = `
+              <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md transition-all font-medium text-sm flex items-center gap-1 animate-pulse"
+                onclick="openMonitorHall('${ex.id}', '${ex.title.replace(/'/g, "\\'")}')"> 
+                <i class="fas fa-broadcast-tower"></i> Monitor Hall
+              </button>`;
             scanBtn = `
-          <button class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 border border-gray-200 text-sm" onclick="showTab('qr')" title="Start Scanning Immediately">
-            <i class="fas fa-qrcode"></i>
-                </button>`;
+              <button class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 border border-gray-200 text-sm" onclick="showTab('qr')" title="Start Scanning">
+                <i class="fas fa-qrcode"></i>
+              </button>`;
           } else {
+            // UPCOMING: Verify Students
+            actionBtn = `
+              <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition-all font-medium text-sm flex items-center gap-1"
+                onclick="showTab('qr')">
+                <i class="fas fa-user-check"></i> Verify Students
+              </button>`;
             scanBtn = `
-          <button disabled class="px-3 py-2 bg-gray-50 text-gray-300 rounded-lg cursor-not-allowed border border-gray-100 text-sm" title="Not Active">
-            <i class="fas fa-qrcode"></i>
-                </button>`;
+              <button disabled class="px-3 py-2 bg-gray-50 text-gray-300 rounded-lg cursor-not-allowed border border-gray-100 text-sm" title="Not Active Yet">
+                <i class="fas fa-qrcode"></i>
+              </button>`;
           }
           // Store full exam data for the details modal
           window._examDataMap = window._examDataMap || {};
@@ -1305,7 +2000,7 @@
           <i class="fas fa-info-circle mr-2"></i>View Details
         </button>`;
 
-          let buttonsHTML = viewDetailsBtn + superviseBtn + scanBtn;
+          let buttonsHTML = viewDetailsBtn + actionBtn + scanBtn;
 
           div.innerHTML = `
           <div class="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -1361,7 +2056,89 @@
 
     function toggleNotifications() {
       const panel = document.getElementById('notificationPanel');
+      const isHidden = panel.classList.contains('hidden');
       panel.classList.toggle('hidden');
+      // Load real backend notifications whenever panel opens
+      if (isHidden) {
+        loadBackendNotifications();
+      }
+    }
+
+    async function loadBackendNotifications() {
+      const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
+      if (!token) return;
+      try {
+        const res = await fetch('/api/supervisor/notifications', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) return;
+
+        const list = document.getElementById('notificationList');
+        const badge = document.getElementById('notificationBadge');
+
+        // Remove "no notifications" placeholder if present
+        if (list.innerText.includes('No exams assigned') || list.innerText.includes('No new notifications')) {
+          list.innerHTML = '';
+        }
+
+        const readIds = new Set(JSON.parse(localStorage.getItem('supervisorReadNotifIds') || '[]'));
+        let newUnread = 0;
+
+        // Prepend backend notifications (most recent first, at top)
+        const fragment = document.createDocumentFragment();
+        data.forEach(n => {
+          const backendId = 'backend-' + n.id;
+          if (list.querySelector(`[data-backend-id="${backendId}"]`)) return; // already rendered
+
+          const isRead = n.isRead === true || readIds.has(String(n.id));
+          if (!isRead) newUnread++;
+
+          const item = document.createElement('div');
+          item.className = `p-4 border-b border-gray-100 flex gap-3 transition-colors ${!isRead ? 'bg-indigo-50/30' : ''}`;
+          item.dataset.backendId = backendId;
+          item.innerHTML = `
+            <div class="mt-1 flex-shrink-0 relative">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-indigo-600 bg-indigo-100">
+                <i class="fas fa-bell text-sm"></i>
+              </div>
+              ${!isRead ? '<span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-600 rounded-full border-2 border-white"></span>' : ''}
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-bold text-gray-800 leading-tight">${n.title || 'Notification'}</p>
+              <p class="text-xs text-gray-600 mt-1">${n.message || ''}</p>
+              <p class="text-[10px] text-gray-400 mt-1.5 font-medium">
+                <i class="far fa-clock mr-1"></i>${n.createdAt ? new Date(n.createdAt).toLocaleString('en-GB') : ''}
+              </p>
+            </div>`;
+          item.onclick = async () => {
+            // Mark single notification read on backend
+            try {
+              await fetch(`/api/student/notifications/${n.id}/read`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+            } catch (_) {}
+            readIds.add(String(n.id));
+            localStorage.setItem('supervisorReadNotifIds', JSON.stringify([...readIds]));
+            item.classList.remove('bg-indigo-50/30');
+            const dot = item.querySelector('.absolute');
+            if (dot) dot.remove();
+          };
+          fragment.prepend ? fragment.appendChild(item) : fragment.appendChild(item);
+        });
+
+        // Prepend all backend items before existing local ones
+        list.prepend(fragment);
+
+        if (newUnread > 0) {
+          badge.classList.remove('hidden');
+          unreadCount += newUnread;
+        }
+      } catch (e) {
+        console.warn('Could not load supervisor backend notifications:', e);
+      }
     }
 
     function processNotifications(exams) {
@@ -1511,7 +2288,7 @@
       const list = document.getElementById('notificationList');
       if (list.innerText.includes('No exams assigned') || list.innerText.includes('No new notifications')) return;
 
-      const res = fetch('http://localhost:8080/api/supervisor/exams', { headers: authHeaders() })
+      const res = fetch('/api/supervisor/exams', { headers: authHeaders() })
         .then(r => r.json())
         .then(arr => {
           let read = JSON.parse(localStorage.getItem('readNotifications') || '[]');
@@ -1647,8 +2424,8 @@
 
       try {
         const url = examId
-          ? `http://localhost:8080/api/supervisor/students?examId=${examId}`
-          : 'http://localhost:8080/api/supervisor/students';
+          ? `/api/supervisor/students?examId=${examId}`
+          : '/api/supervisor/students';
         const res = await fetch(url, { headers: authHeaders() });
         const arr = await res.json();
 
@@ -1757,7 +2534,7 @@
       }
 
       // call backend to verify token (secured with JWT)
-      fetch('http://localhost:8080/api/qr/verify', {
+      fetch('/api/qr/verify', {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ qrToken: decodedText })
@@ -1812,7 +2589,7 @@
                         <div class="relative inline-block">
                             <!-- Profile Image -->
                             <div class="w-28 h-28 rounded-full border-4 border-emerald-100 p-1 mx-auto overflow-hidden bg-gray-50">
-                                <img src="${student.photoUrl || 'placeholder-avatar.png'}" class="w-full h-full rounded-full object-cover">
+                                <img src="${student.photoUrl ? student.photoUrl.replace(/\\\\/g, '/') : 'placeholder-avatar.png'}" onclick="window.open(this.src, '_blank')" class="w-full h-full rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity" title="Click to enlarge">
                             </div>
                             <!-- Verification Tag Overlay -->
                             <div class="absolute bottom-0 right-0 bg-emerald-500 text-white p-1.5 rounded-full border-2 border-white">
@@ -1823,7 +2600,7 @@
                         </div>
 
                         <h1 class="mt-3 text-xl font-bold text-gray-800 uppercase tracking-tight">${student.name || 'Unknown'}</h1>
-                        <p class="text-emerald-600 font-semibold text-xs tracking-widest mt-1">ID: ${student.rollNo || student.prn || student.id || '--'}</p>
+                        <p class="text-emerald-600 font-semibold text-xs tracking-widest mt-1">${student.courseInfo || 'CANDIDATE'}</p>
                         <div class="mt-2">
                           <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold ${bioBadgeClass} uppercase tracking-widest">
                             <i class="fas fa-fingerprint mr-1"></i>${bioBadgeText}
@@ -1835,9 +2612,9 @@
               <div class="px-6 pb-6 space-y-4">
 
                 <!-- Personal Info -->
-                <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                  <p class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Aadhaar Card Number</p>
-                  <p class="text-gray-700 font-mono font-medium text-sm">${student.aadharMasked || 'XXXX-XXXX-XXXX'}</p>
+                <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100 shadow-inner flex flex-col items-center justify-center">
+                  <p class="text-[10px] uppercase font-bold text-indigo-400 tracking-widest mb-1">Permanent Registration Number</p>
+                  <p class="text-indigo-700 font-mono font-bold text-lg tracking-wider">${student.rollNo || student.prn || student.id || '--'}</p>
                 </div>
 
                 <!-- Exam Details Card -->
@@ -1854,8 +2631,8 @@
                       <span class="text-xs font-semibold truncate max-w-[150px]">${exam.subject || 'N/A'}</span>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-                      <span class="text-xs text-slate-400">Subject Code</span>
-                      <span class="text-xs font-semibold">CS-50${(student.id % 9) + 1}</span> <!-- Dynamic-ish fallback -->
+                      <span class="text-xs text-slate-400">Subject Code(s)</span>
+                      <span class="text-xs font-semibold">${(exam.subject || 'N/A').split(',').map((s, i) => 'CS-' + (501 + i)).join(', ')}</span>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                       <span class="text-xs text-slate-400">Exam Hall</span>
@@ -1942,7 +2719,7 @@
     }
 
     window.verifyStudentQR = async function (studentId) {
-      const res = await fetch('http://localhost:8080/api/qr/generate?studentId=' + encodeURIComponent(studentId) + '&examId=1');
+      const res = await fetch('/api/qr/generate?studentId=' + encodeURIComponent(studentId) + '&examId=1');
       if (res.ok) alert('QR generated (simulate scanning)'); else alert('QR generate failed');
     }
 
@@ -1969,7 +2746,7 @@
         await delay(1000); // Wait 1s for "verifying"
 
         // Step 4: Verify
-        const res = await fetch('http://localhost:8080/api/supervisor/verify-student-biometric', {
+        const res = await fetch('/api/supervisor/verify-student-biometric', {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
@@ -2010,7 +2787,7 @@
 
         await delay(2000); // Simulate hardware scan time
 
-        const res = await fetch('http://localhost:8080/api/biometric/capture', {
+        const res = await fetch('/api/biometric/capture', {
           method: 'POST',
           headers: authHeaders()
         });
@@ -2122,22 +2899,63 @@
         await delay(1500);
         scanStatusText.textContent = "MATCHING SERVER HASH...";
 
+        if (!window.biometricAttempts) window.biometricAttempts = {};
+        let isFirstAttempt = !window.biometricAttempts[studentId];
+        
         // 2. Simulation: Capture (Deterministic Generation)
-        const deterministicHash = "PHYSICAL_MINUTIAE_" + studentId.toString();
+        let deterministicHash = "PHYSICAL_MINUTIAE_" + studentId.toString();
+
+        if (isFirstAttempt) {
+            deterministicHash = "BAD_NOISE_SIMULATION"; // Artificially corrupt first scan
+        }
 
         await delay(1200);
 
         // 4. Verification from Backend
-        const res = await fetch('http://localhost:8080/api/supervisor/verify-student-biometric', {
-          method: 'POST',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({
-            studentId: studentId.toString(),
-            fingerprint: deterministicHash,
-            examId: currentExamId ? currentExamId.toString() : ""
-          })
-        });
-        const js = await res.json();
+        const verifyCall = async (hash) => {
+            const response = await fetch('/api/supervisor/verify-student-biometric', {
+                method: 'POST',
+                headers: authHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({
+                    studentId: studentId.toString(),
+                    fingerprint: hash,
+                    examId: currentExamId ? currentExamId.toString() : ""
+                })
+            });
+            return await response.json();
+        };
+
+        let js = await verifyCall(deterministicHash);
+
+        if (isFirstAttempt && !js.success) {
+            // --- Realistic Mismatch & Retry Animation ---
+            scanLaser.classList.add('hidden');
+            scanIcon.className = "fas fa-fingerprint text-7xl text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]";
+            scanStatusText.textContent = "MISMATCH: PARTIAL PRINT DETECTED";
+            scanStatusText.className = "text-sm font-black tracking-widest text-red-600 uppercase";
+            
+            await delay(1800);
+            
+            scanStatusText.textContent = "RE-INITIALIZING SCANNER...";
+            scanStatusText.className = "text-sm font-bold tracking-wide text-amber-500 animate-pulse uppercase";
+            scanIcon.className = "fas fa-fingerprint text-7xl text-amber-500";
+            
+            await delay(1000);
+            
+            scanLaser.classList.remove('hidden');
+            scanStatusText.textContent = "ACQUIRING MINUTIAE (RETRY)...";
+            scanStatusText.className = "text-sm font-bold tracking-wide text-amber-600 animate-pulse uppercase";
+            
+            await delay(1500);
+            scanStatusText.textContent = "MATCHING SERVER HASH...";
+            
+            // Second try: Provide correct hash
+            deterministicHash = "PHYSICAL_MINUTIAE_" + studentId.toString();
+            window.biometricAttempts[studentId] = true;
+            
+            await delay(1200);
+            js = await verifyCall(deterministicHash);
+        }
 
         scanLaser.classList.add('hidden');
         const attendanceStatus = js.attendanceStatus; // PRESENT / ABSENT (if server recorded it)
@@ -2244,7 +3062,7 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
         btn.disabled = true;
 
-        const res = await fetch('http://localhost:8080/api/supervisor/update-profile', {
+        const res = await fetch('/api/supervisor/update-profile', {
           method: 'POST',
           headers: authHeaders(),
           body: formData // Content-Type handled automatically with boundary
@@ -2277,12 +3095,17 @@
 
       const profileBox = document.getElementById('tab-profile');
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/profile', { headers: authHeaders() });
+        const res = await fetch('/api/supervisor/profile', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-profile');
         const p = await res.json();
 
+        // Force password change on first login
+        if (p.firstLogin === true) {
+            showForcePasswordChangeModal();
+        }
+
         // 1. Dashboard Stats & Info
-        const avatarSrc = p.avatar ? (p.avatar.startsWith('http') ? p.avatar : `http://localhost:8080/${p.avatar}`) : 'placeholder-avatar.png';
+        const avatarSrc = p.avatar ? (p.avatar.startsWith('http') ? p.avatar : `/${p.avatar}`) : 'placeholder-avatar.png';
 
         document.getElementById('profileAvatar').src = avatarSrc;
         document.getElementById('profileName').innerText = p.name || 'Supervisor Name';
@@ -2296,6 +3119,42 @@
         document.getElementById('profileEmail').innerText = p.email || '';
         document.getElementById('headerProfileName').innerText = p.name || 'Supervisor';
         document.getElementById('headerProfileAvatar').src = avatarSrc;
+
+        // Show/hide sidebar items based on supervisor type
+        const isHead2 = p.supervisorType === 'HEAD';
+        const navApprovals2 = document.getElementById('navApprovals');
+        const navCommunication2 = document.getElementById('navCommunication');
+        const navHalls2 = document.getElementById('navHalls');
+        
+        if (navApprovals2) {
+          if (isHead2) navApprovals2.classList.remove('hidden');
+          else navApprovals2.classList.add('hidden');
+        }
+        if (navCommunication2) {
+          if (isHead2) navCommunication2.classList.remove('hidden');
+          else navCommunication2.classList.add('hidden');
+        }
+        if (navHalls2) {
+          if (isHead2) navHalls2.classList.remove('hidden');
+          else navHalls2.classList.add('hidden');
+        }
+
+        // HEAD-specific UI: hide stat blocks, rename nav, redirect exams button
+        const statsRow2 = document.getElementById('statsRowWrapper');
+        const navExamsLabel2 = document.getElementById('navExamsLabel');
+        const navExamsIcon2 = document.getElementById('navExamsIcon');
+        const navExamsBtn2 = document.getElementById('navExams');
+        if (isHead2) {
+          if (statsRow2) statsRow2.classList.add('hidden');
+          if (navExamsLabel2) navExamsLabel2.textContent = 'Exams Overview';
+          if (navExamsIcon2) navExamsIcon2.className = 'fa-solid fa-chart-bar w-5';
+          if (navExamsBtn2) navExamsBtn2.onclick = () => showTab('head-overview');
+        } else {
+          if (statsRow2) statsRow2.classList.remove('hidden');
+          if (navExamsLabel2) navExamsLabel2.textContent = 'Exams Assigned';
+          if (navExamsIcon2) navExamsIcon2.className = 'fa-solid fa-tasks w-5';
+          if (navExamsBtn2) navExamsBtn2.onclick = () => showTab('exams');
+        }
 
         document.getElementById('profileAssigned').innerText = p.assignedExamsCount ?? '--';
         document.getElementById('profileStudents').innerText = p.studentsCount ?? '--';
@@ -2332,11 +3191,14 @@
           document.getElementById('inputName').value = p.name || '';
           document.getElementById('inputEmail').value = p.email || '';
           document.getElementById('inputPhone').value = p.phone || '';
-          document.getElementById('inputUniversity').value = p.university || '';
+          // University is read-only — show in display div, not editable dropdown
+          const universityText = document.getElementById('inputUniversityText');
+          if (universityText) universityText.textContent = p.university || '(Not assigned yet)';
+
           // College is read-only — show in display div, not editable input
           const collegeText = document.getElementById('inputCollegeText');
           if (collegeText) collegeText.textContent = p.college || '(Not assigned yet)';
-          document.getElementById('inputDesignation').value = p.designation || 'Room Invigilator';
+          document.getElementById('inputSupervisorType').value = p.supervisorType === 'HEAD' ? 'Head Supervisor' : 'Exam Supervisor';
           document.getElementById('inputEmployeeId').value = p.employeeId || '';
 
           // --- OTP Verification Init ---
@@ -2353,13 +3215,7 @@
         }
 
         // Update document status indicators in modal
-        const authStatus = p.documents.find(d => d.filename === 'Appointment Letter')?.status;
         const idStatus = p.documents.find(d => d.filename === 'ID Proof')?.status;
-
-        if (authStatus === 'Uploaded') {
-          document.getElementById('authLetterStatus').innerHTML = '<i class="fas fa-check-circle mr-1"></i> Uploaded';
-          document.getElementById('authLetterStatus').className = "flex items-center text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full";
-        }
         if (idStatus === 'Uploaded') {
           document.getElementById('idProofStatus').innerHTML = '<i class="fas fa-check-circle mr-1"></i> Uploaded';
           document.getElementById('idProofStatus').className = "flex items-center text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full";
@@ -2433,7 +3289,7 @@
 
       // 2. Call Backend
       try {
-        const res = await fetch('http://localhost:8080/api/supervisor/enroll-biometric', {
+        const res = await fetch('/api/supervisor/enroll-biometric', {
           method: 'POST',
           headers: authHeaders()
         });
@@ -2653,7 +3509,7 @@
 
     async function executeStatusChange(newStatus) {
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/status`, {
+        const res = await fetch(`/api/supervisor/exam/${currentExamId}/status`, {
           method: 'PUT',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ status: newStatus })
@@ -2672,7 +3528,7 @@
       if (!msg) return alert('Enter a message');
 
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/broadcast`, {
+        const res = await fetch(`/api/supervisor/exam/${currentExamId}/broadcast`, {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ message: msg })
@@ -2686,7 +3542,7 @@
     async function fetchLiveStudents() {
       try {
         // Pass examId to filter (simulated api call)
-        const res = await fetch(`http://localhost:8080/api/supervisor/students?examId=${currentExamId}`, {
+        const res = await fetch(`/api/supervisor/students?examId=${currentExamId}`, {
           headers: authHeaders()
         });
         const students = await res.json();
@@ -2742,7 +3598,7 @@
              <button onclick="forceSubmit(${s.id}, '${s.name}')" class="text-amber-600 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-3 py-1 rounded transition-colors mr-2" title="Force Submit">
                 <i class="fas fa-upload"></i>
              </button>
-             ${!s.biometricVerified ? `<button onclick="verifyIdentityForScan('${s.id}', '${s.name}', this)" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded"><i class="fas fa-fingerprint"></i> Verify</button>` : ''}`;
+             ${!s.biometricVerified ? `<button onclick="showTab('qr')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded"><i class="fas fa-qrcode"></i> Scan QR</button>` : ''}`;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -2785,7 +3641,7 @@
     // --- Phase 4: Exam Summary Logic ---
     async function fetchExamSummary() {
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/summary`, {
+        const res = await fetch(`/api/supervisor/exam/${currentExamId}/summary`, {
           headers: authHeaders()
         });
         if (res.ok) {
@@ -2810,7 +3666,7 @@
       if (!reason) return;
 
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/incident`, {
+        const res = await fetch(`/api/supervisor/incident`, {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
@@ -2828,7 +3684,7 @@
     async function fetchAlerts() {
       if (!currentExamId) return;
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/alerts`, {
+        const res = await fetch(`/api/supervisor/exam/${currentExamId}/alerts`, {
           headers: authHeaders()
         });
         const alerts = await res.json();
@@ -2861,7 +3717,7 @@
 
       // Fetch latest student data
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/students?examId=${currentExamId}`, { headers: authHeaders() });
+        const res = await fetch(`/api/supervisor/students?examId=${currentExamId}`, { headers: authHeaders() });
         const students = await res.json();
 
         let y = 60;
@@ -2920,7 +3776,7 @@
       doc.text(`Supervisor: ${document.getElementById('headerProfileName').innerText}`, 14, 44);
 
       try {
-        const res = await fetch(`http://localhost:8080/api/supervisor/exam/${currentExamId}/alerts`, { headers: authHeaders() });
+        const res = await fetch(`/api/supervisor/exam/${currentExamId}/alerts`, { headers: authHeaders() });
         const alerts = await res.json();
 
         let y = 60;
@@ -3004,7 +3860,7 @@
         formData.append('currentPassword', currentPassword);
         formData.append('newPassword', newPassword);
 
-        const res = await fetch('http://localhost:8080/api/supervisor/update-password', {
+        const res = await fetch('/api/supervisor/update-password', {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
           body: formData.toString()
@@ -3038,7 +3894,357 @@
       }
     }
   </script>
+  <!-- ================= MONITOR HALL MODAL ================= -->
+  <div id="monitorHallModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeMonitorHall()"></div>
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative transform transition-all">
+      
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-red-600 to-rose-600 px-6 py-4 flex justify-between items-center text-white">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-broadcast-tower animate-pulse"></i> 
+            Live Hall Monitor
+          </h2>
+          <p id="mhExamTitle" class="text-sm text-red-100 mt-1 opacity-90">Loading exam...</p>
+        </div>
+        <button onclick="closeMonitorHall()" class="text-white hover:text-red-200 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Controls -->
+      <div class="px-6 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-4 items-center justify-between">
+        <div class="flex items-center gap-3 flex-1 min-w-[300px]">
+          <div class="relative flex-1">
+             <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+             <input type="text" id="mhSearch" placeholder="Search by name, roll, PRN, or seat..." 
+                class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all">
+          </div>
+          <select id="mhHallFilter" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none min-w-[150px]">
+            <option value="ALL">All Halls</option>
+          </select>
+        </div>
+        <div class="text-sm font-medium text-gray-500 flex items-center gap-2">
+          <i class="fas fa-users text-gray-400"></i>
+          <span id="mhStudentCount">0</span> Students
+        </div>
+      </div>
+
+      <!-- Content Table -->
+      <div class="flex-1 overflow-auto bg-gray-50/50 p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Seat / Hall</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Student Details</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">IDs</th>
+                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody id="mhTableBody" class="bg-white divide-y divide-gray-200">
+              <tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Loading student allocations...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+        <button onclick="closeMonitorHall()" class="px-5 py-2.5 rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 font-medium transition-colors text-sm shadow-sm">
+          Close Monitor
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DOWNLOAD REPORT MODAL ================= -->
+  <div id="reportModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeExamReport()"></div>
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col relative transform transition-all">
+      
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 flex justify-between items-center text-white print:hidden">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-file-invoice"></i> 
+            Exam Completion Report
+          </h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="printReport()" class="px-4 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+            <i class="fas fa-print"></i> Print / PDF
+          </button>
+          <button onclick="closeExamReport()" class="text-white hover:text-emerald-200 transition-colors ml-2">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable Area -->
+      <div id="printableReportArea" class="flex-1 overflow-auto p-8 bg-white text-gray-800">
+        <div id="reportLoading" class="text-center py-12 text-gray-500">
+          <i class="fas fa-circle-notch fa-spin text-3xl mb-3 text-emerald-500"></i>
+          <p>Generating official report...</p>
+        </div>
+        
+        <div id="reportContent" class="hidden">
+          <!-- Official Header -->
+          <div class="text-center border-b-2 border-gray-800 pb-6 mb-8">
+            <div class="flex justify-between items-start mb-4">
+               <img src="images/logo.png" alt="University Logo" class="h-16 opacity-90" onerror="this.style.display='none'">
+               <div class="text-right text-sm">
+                 <p class="font-bold">EXAM AUTHENTICATION SYSTEM</p>
+                 <p>Generated: <span id="repGenDate" class="font-mono"></span></p>
+               </div>
+            </div>
+            <h1 class="text-2xl font-black uppercase tracking-widest text-gray-900">Official Exam Report</h1>
+            <p class="text-gray-600 font-medium mt-1">Supervisor Final Submission</p>
+          </div>
+          
+          <!-- Exam Meta Data -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-200">
+             <div>
+               <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Exam Name</p>
+               <p id="repExamName" class="font-semibold text-gray-900">--</p>
+             </div>
+             <div>
+               <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Date & Time</p>
+               <p id="repExamDateTime" class="font-semibold text-gray-900">--</p>
+             </div>
+             <div>
+               <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Center</p>
+               <p id="repExamCenter" class="font-semibold text-gray-900">--</p>
+             </div>
+             <div>
+               <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total Present</p>
+               <p id="repExamTotal" class="font-bold text-emerald-600 text-lg">--</p>
+             </div>
+          </div>
+          
+          <!-- Seating Data -->
+          <div class="mb-8">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 border-l-4 border-emerald-500 pl-3">Verified Student Attendance</h3>
+            <table class="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr class="bg-gray-100 text-gray-700">
+                  <th class="border border-gray-300 px-4 py-2">Sr.</th>
+                  <th class="border border-gray-300 px-4 py-2">Hall / Room</th>
+                  <th class="border border-gray-300 px-4 py-2">Seat No.</th>
+                  <th class="border border-gray-300 px-4 py-2">Roll Number</th>
+                  <th class="border border-gray-300 px-4 py-2">Student Name</th>
+                  <th class="border border-gray-300 px-4 py-2 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="repTableBody">
+                 <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Signatures -->
+          <div class="flex justify-between mt-16 pt-8 border-t border-gray-200 text-center">
+            <div>
+               <div class="h-16 border-b border-gray-400 w-48 mx-auto"></div>
+               <p class="mt-2 font-bold text-sm">Exam Supervisor</p>
+               <p class="text-xs text-gray-500">Sign & Stamp</p>
+            </div>
+            <div>
+               <div class="h-16 border-b border-gray-400 w-48 mx-auto"></div>
+               <p class="mt-2 font-bold text-sm">Head of Center</p>
+               <p class="text-xs text-gray-500">Sign & Stamp</p>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // MONITOR HALL LOGIC
+    // ==========================================
+    let currentMonitorData = [];
+
+    function openMonitorHall(examId, title) {
+      document.getElementById('monitorHallModal').classList.remove('hidden');
+      document.getElementById('mhExamTitle').textContent = title;
+      document.getElementById('mhTableBody').innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading live allocations...</td></tr>';
+      document.getElementById('mhStudentCount').textContent = '0';
+      document.getElementById('mhHallFilter').innerHTML = '<option value="ALL">All Halls</option>';
+      document.getElementById('mhSearch').value = '';
+
+      // Fetch seat allocations (re-using the report endpoint as it has exactly what we need)
+      fetch(`/api/supervisor/exam/${examId}/report`, { headers: authHeaders() })
+        .then(res => res.json())
+        .then(data => {
+          if(data.error) throw new Error(data.error);
+          currentMonitorData = data.students || [];
+          
+          // Populate halls dropdown
+          const halls = data.halls || [];
+          const hallSelect = document.getElementById('mhHallFilter');
+          halls.forEach(h => {
+             const opt = document.createElement('option');
+             opt.value = h; opt.textContent = h;
+             hallSelect.appendChild(opt);
+          });
+          
+          renderMonitorTable();
+        })
+        .catch(err => {
+          document.getElementById('mhTableBody').innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Error loading data: ${err.message}</td></tr>`;
+        });
+    }
+
+    function closeMonitorHall() {
+      document.getElementById('monitorHallModal').classList.add('hidden');
+      currentMonitorData = [];
+    }
+
+    function renderMonitorTable() {
+      const q = document.getElementById('mhSearch').value.toLowerCase();
+      const hFilter = document.getElementById('mhHallFilter').value;
+      const tbody = document.getElementById('mhTableBody');
+      
+      const filtered = currentMonitorData.filter(s => {
+         const matchH = hFilter === 'ALL' || s.hallName === hFilter;
+         const matchQ = !q || (s.studentName||'').toLowerCase().includes(q) || 
+                              (s.rollNumber||'').toLowerCase().includes(q) || 
+                              (s.prn||'').toLowerCase().includes(q) ||
+                              (s.seatNumber||'').toLowerCase().includes(q);
+         return matchH && matchQ;
+      });
+
+      document.getElementById('mhStudentCount').textContent = filtered.length;
+
+      if(filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">No students found matching criteria.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(s => `
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-6 py-4 whitespace-nowrap">
+             <div class="font-bold text-gray-900">${s.seatNumber}</div>
+             <div class="text-xs text-gray-500 mt-0.5"><i class="fas fa-door-open mr-1"></i>${s.hallName}</div>
+          </td>
+          <td class="px-6 py-4">
+             <div class="font-semibold text-indigo-700">${s.studentName}</div>
+             <div class="text-xs text-gray-500 mt-0.5">${s.collegeName}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
+             <div>Roll: <span class="font-bold text-gray-800">${s.rollNumber}</span></div>
+             <div class="text-xs mt-0.5">PRN: ${s.prn}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-center">
+             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+               <i class="fas fa-check-circle mr-1.5"></i> Allocated
+             </span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Attach listeners
+    document.getElementById('mhSearch').addEventListener('input', renderMonitorTable);
+    document.getElementById('mhHallFilter').addEventListener('change', renderMonitorTable);
+
+
+    // ==========================================
+    // DOWNLOAD REPORT LOGIC
+    // ==========================================
+    function openExamReport(examId) {
+      document.getElementById('reportModal').classList.remove('hidden');
+      document.getElementById('reportLoading').classList.remove('hidden');
+      document.getElementById('reportContent').classList.add('hidden');
+      
+      // We also use this to view the report before downloading
+      fetch(`/api/supervisor/exam/${examId}/report`, { headers: authHeaders() })
+        .then(res => res.json())
+        .then(data => {
+          if(data.error) throw new Error(data.error);
+          
+          document.getElementById('repGenDate').textContent = new Date().toLocaleString();
+          document.getElementById('repExamName').textContent = data.examName || '--';
+          
+          // Format date time
+          let dtStr = data.examDate || '--';
+          if(data.startTime !== 'N/A') dtStr += ' | ' + data.startTime.substring(0,5);
+          document.getElementById('repExamDateTime').textContent = dtStr;
+          
+          document.getElementById('repExamCenter').textContent = data.centerName || data.college || '--';
+          document.getElementById('repExamTotal').textContent = data.totalStudents || '0';
+          
+          const tbody = document.getElementById('repTableBody');
+          if(data.students && data.students.length > 0) {
+             tbody.innerHTML = data.students.map((s, idx) => `
+               <tr class="border-b border-gray-200 hover:bg-gray-50">
+                 <td class="border border-gray-300 px-4 py-2 text-center text-gray-500">${idx+1}</td>
+                 <td class="border border-gray-300 px-4 py-2 font-medium">${s.hallName}</td>
+                 <td class="border border-gray-300 px-4 py-2 font-bold">${s.seatNumber}</td>
+                 <td class="border border-gray-300 px-4 py-2 font-mono text-sm">${s.rollNumber}</td>
+                 <td class="border border-gray-300 px-4 py-2">${s.studentName}</td>
+                 <td class="border border-gray-300 px-4 py-2 text-center text-green-700 font-semibold text-xs uppercase"><i class="fas fa-check mr-1"></i>Verified</td>
+               </tr>
+             `).join('');
+          } else {
+             tbody.innerHTML = `<tr><td colspan="6" class="border border-gray-300 px-4 py-8 text-center text-gray-500 italic">No attendance data available for this exam.</td></tr>`;
+          }
+          
+          document.getElementById('reportLoading').classList.add('hidden');
+          document.getElementById('reportContent').classList.remove('hidden');
+        })
+        .catch(err => {
+          document.getElementById('reportLoading').innerHTML = `<div class="text-red-500"><i class="fas fa-exclamation-triangle text-3xl mb-3"></i><p>Failed to load report: ${err.message}</p></div>`;
+        });
+    }
+
+    function closeExamReport() {
+      document.getElementById('reportModal').classList.add('hidden');
+    }
+
+    function downloadExamReport(examId) {
+       openExamReport(examId);
+       // Give it a second to render then trigger direct PDF download
+       setTimeout(() => {
+           const element = document.getElementById('printableReportArea');
+           const opt = {
+             margin:       [0.5, 0.5, 0.5, 0.5],
+             filename:     'Exam_Report_' + examId + '.pdf',
+             image:        { type: 'jpeg', quality: 0.98 },
+             html2canvas:  { scale: 2, useCORS: true },
+             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+           };
+           
+           if (typeof html2pdf !== 'undefined') {
+               html2pdf().set(opt).from(element).save();
+           } else {
+               printReport();
+           }
+       }, 1500);
+    }
+    
+    function printReport() {
+       const printContents = document.getElementById('printableReportArea').innerHTML;
+       const originalContents = document.body.innerHTML;
+       
+       document.body.innerHTML = printContents;
+       document.body.classList.add('bg-white');
+       
+       window.print();
+       
+       document.body.innerHTML = originalContents;
+       document.body.classList.remove('bg-white');
+       // Reload to restore event listeners
+       window.location.reload();
+    }
+  </script>
   <script src="script.js"></script>
+  <script src="js/supervisor/communication.js"></script>
+  <script src="js/supervisor/halls.js"></script>
 </body>
 
 </html>

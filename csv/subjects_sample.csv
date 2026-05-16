@@ -235,3 +235,17 @@ BE802,Radar Systems,8,7,B.E
 BE803,Satellite Comm,8,7,B.E
 BE804,Machine Learning,8,7,B.E
 BE805,Big Data,8,7,B.E
+
+CS-BE-101,C Programming (B.E),1,1,B.E
+CS-BE-201,Data Structures (B.E),2,1,B.E
+CS-BE-301,OOP (B.E),3,1,B.E
+CS-BE-401,OS (B.E),4,1,B.E
+CS-BE-501,AI (B.E),5,1,B.E
+CS-BE-601,ML (B.E),6,1,B.E
+CS-BE-701,Cloud Computing (B.E),7,1,B.E
+CS-BE-801,Project I (B.E),8,1,B.E
+
+CS-BE-802,High Performance Computing,8,1,B.E
+CS-BE-803,Distributed Systems,8,1,B.E
+CS-BE-804,Information Security,8,1,B.E
+CS-BE-805,Data Science,8,1,B.E

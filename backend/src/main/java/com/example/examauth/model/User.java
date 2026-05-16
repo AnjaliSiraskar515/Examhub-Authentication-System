@@ -84,6 +84,10 @@ public class User {
     private Boolean qrVerified = false;
     private Boolean biometricVerified = false;
 
+    // Communication restriction
+    @Column(columnDefinition = "boolean default false")
+    private Boolean communicationBlocked = false;
+
     public Boolean getQrVerified() {
         return qrVerified;
     }
@@ -106,6 +110,14 @@ public class User {
 
     public void setBiometricEnrolled(boolean biometricEnrolled) {
         this.biometricEnrolled = biometricEnrolled;
+    }
+
+    public Boolean getCommunicationBlocked() {
+        return communicationBlocked == null ? false : communicationBlocked;
+    }
+
+    public void setCommunicationBlocked(Boolean communicationBlocked) {
+        this.communicationBlocked = communicationBlocked;
     }
 
     public String getBiometricTemplateHash() {
@@ -171,7 +183,6 @@ public class User {
 
     private String institutionCode; // To uniquely link to Institution record
     private String universityLogoPath; // filename stored in uploads/logo/
-    private String designation; // e.g. Chief Supervisor, Room Invigilator
     private String employeeId;
     private String appointmentLetterPath;
 
@@ -229,14 +240,6 @@ public class User {
 
     public void setInstitutionCode(String institutionCode) {
         this.institutionCode = institutionCode;
-    }
-
-    public String getDesignation() {
-        return designation;
-    }
-
-    public void setDesignation(String designation) {
-        this.designation = designation;
     }
 
     public String getEmployeeId() {

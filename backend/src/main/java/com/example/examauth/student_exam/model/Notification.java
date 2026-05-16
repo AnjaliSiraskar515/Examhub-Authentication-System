@@ -28,6 +28,9 @@ public class Notification {
     private Long studentId;
 
     @Column(nullable = false)
+    private Boolean isRead = false;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @PrePersist

@@ -35,12 +35,49 @@ public class UniversityController {
     @Autowired
     private ExamRegistrationRepository examRegistrationRepository;
 
+    @Autowired
+    private com.example.examauth.student_exam.university.repo.ExamCollegeMappingRepository examCollegeMappingRepository;
+
+    @Autowired
+    private com.example.examauth.student_exam.service.NotificationService notificationService;
+
+    // Helper: get the university name of the currently authenticated UNIVERSITY_ADMIN
+    private String getCurrentAdminUniversityName() {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        String role = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+        com.example.examauth.model.User admin = userRepository.findFirstByEmailAndRole(email, role).orElse(null);
+        if (admin != null && "UNIVERSITY_ADMIN".equals(admin.getRole())) {
+            String n = admin.getUniversityName(); return n != null ? n.trim() : null;
+        }
+        return null; // Not a UNIVERSITY_ADMIN — SUPER_ADMIN passes through
+    }
+
+    private String getCurrentAdminInstitutionCode() {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        String role = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+        com.example.examauth.model.User admin = userRepository.findFirstByEmailAndRole(email, role).orElse(null);
+        if (admin != null && "UNIVERSITY_ADMIN".equals(admin.getRole())) {
+            String c = admin.getInstitutionCode(); return c != null ? c.trim() : null;
+        }
+        return null;
+    }
+
     // GET /api/university/{id}/students
     @GetMapping("/{id}/students")
     public ResponseEntity<?> getStudents(@PathVariable Long id) {
-        // In a real app, filter by university ID. For now returning all students.
+        String myUniv = getCurrentAdminUniversityName();
+        boolean isUnivAdmin = myUniv != null; // null means SUPER_ADMIN
+
         List<Map<String, Object>> students = userRepository.findAll().stream()
                 .filter(u -> "STUDENT".equalsIgnoreCase(u.getRole()))
+                .filter(u -> {
+                    if (!isUnivAdmin) return true; // SUPER_ADMIN sees all
+                    // UNIVERSITY_ADMIN: if no universityName set in their profile, block everything
+                    if (myUniv.isEmpty()) return false;
+                    String userUniv = u.getUniversityName() != null ? u.getUniversityName().trim() : "";
+                    String colUniv = (u.getCollege() != null && u.getCollege().getUniversityName() != null) ? u.getCollege().getUniversityName().trim() : "";
+                    return myUniv.equalsIgnoreCase(userUniv) || myUniv.equalsIgnoreCase(colUniv);
+                })
                 .map(u -> {
                     Map<String, Object> map = new java.util.HashMap<>();
                     map.put("userId", u.getUserId());
@@ -59,9 +96,18 @@ public class UniversityController {
     // GET /api/university/{id}/staff
     @GetMapping("/{id}/staff")
     public ResponseEntity<?> getStaff(@PathVariable Long id) {
-        // Returning supervisors
+        String myUniv = getCurrentAdminUniversityName();
+        boolean isUnivAdmin = myUniv != null;
+
         List<Map<String, Object>> staff = userRepository.findAll().stream()
                 .filter(u -> "SUPERVISOR".equalsIgnoreCase(u.getRole()))
+                .filter(u -> {
+                    if (!isUnivAdmin) return true;
+                    if (myUniv.isEmpty()) return false;
+                    String userUniv = u.getUniversityName() != null ? u.getUniversityName().trim() : "";
+                    String colUniv = (u.getCollege() != null && u.getCollege().getUniversityName() != null) ? u.getCollege().getUniversityName().trim() : "";
+                    return myUniv.equalsIgnoreCase(userUniv) || myUniv.equalsIgnoreCase(colUniv);
+                })
                 .map(u -> {
                     Map<String, Object> map = new java.util.HashMap<>();
                     map.put("userId", u.getUserId());
@@ -70,6 +116,7 @@ public class UniversityController {
                     map.put("status", u.getStatus());
                     map.put("department", u.getDepartment());
                     map.put("role", u.getRole());
+                    map.put("supervisorType", u.getSupervisorType());
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -119,10 +166,24 @@ public class UniversityController {
     // GET /api/university/{id}/exam
     @GetMapping("/{id}/exam")
     public ResponseEntity<?> getExams(@PathVariable Long id) {
+        String myUniv = getCurrentAdminUniversityName();
+        String myInstCode = getCurrentAdminInstitutionCode();
+        boolean isUnivAdmin = (myUniv != null || myInstCode != null);
+
         List<ExamResponseDTO> unifiedExams = new ArrayList<>();
 
-        // 1. Fetch Legacy Exams
+        // 1. Fetch Legacy Exams - filter by institutionName matching universityName
         List<Exam> legacyExams = examService.getAllExams();
+        if (isUnivAdmin) {
+            // Fail-closed: if universityName is blank/null, show nothing
+            if (myUniv == null || myUniv.isEmpty()) {
+                legacyExams = new ArrayList<>();
+            } else {
+                legacyExams = legacyExams.stream()
+                    .filter(e -> e.getInstitutionName() != null && myUniv.equalsIgnoreCase(e.getInstitutionName().trim()))
+                    .collect(java.util.stream.Collectors.toList());
+            }
+        }
         for (Exam e : legacyExams) {
             unifiedExams.add(ExamResponseDTO.builder()
                     .sourceId("LEGACY_" + e.getExamId())
@@ -138,8 +199,17 @@ public class UniversityController {
                     .build());
         }
 
-        // 2. Fetch University Exams (New)
+        // 2. Fetch University Exams (New) - filter by institutionCode
         List<UniversityExam> universityExams = universityExamRepository.findAll();
+        if (isUnivAdmin) {
+            if (myInstCode == null || myInstCode.isEmpty()) {
+                universityExams = new ArrayList<>();
+            } else {
+                universityExams = universityExams.stream()
+                    .filter(e -> e.getInstitutionCode() != null && myInstCode.equalsIgnoreCase(e.getInstitutionCode().trim()))
+                    .collect(java.util.stream.Collectors.toList());
+            }
+        }
         for (UniversityExam ue : universityExams) {
             unifiedExams.add(ExamResponseDTO.builder()
                     .sourceId("UNIV_" + ue.getId())
@@ -148,14 +218,32 @@ public class UniversityController {
                     .examName(ue.getSessionName())
                     .date(ue.getSchedule() != null ? ue.getSchedule().getExamDate() : null)
                     .startTime(ue.getSchedule() != null ? ue.getSchedule().getStartTime() : null)
-                    .durationMinutes(0) // Default as per requirement
+                    .durationMinutes(0)
                     .status(ue.getStatus())
                     .mode(ue.getMode())
                     .location(ue.getCenterName() != null ? ue.getCenterName() : "N/A")
                     .build());
         }
 
-        // 3. Sort by Date + Time (Latest first)
+        // 3. Mark exams dynamically based on date and time constraints
+        LocalDateTime now = LocalDateTime.now();
+        for (ExamResponseDTO dto : unifiedExams) {
+            if (dto.getDate() != null && !"DRAFT".equalsIgnoreCase(dto.getStatus())) {
+                LocalDateTime examDateTime = LocalDateTime.of(dto.getDate(), dto.getStartTime() != null ? dto.getStartTime() : java.time.LocalTime.MIN);
+                int duration = dto.getDurationMinutes() != null && dto.getDurationMinutes() > 0 ? dto.getDurationMinutes() : 180; // default 3 hours
+                LocalDateTime examEndTime = examDateTime.plusMinutes(duration);
+                
+                if (now.isBefore(examDateTime)) {
+                    dto.setStatus("UPCOMING");
+                } else if (now.isAfter(examEndTime)) {
+                    dto.setStatus("COMPLETED");
+                } else {
+                    dto.setStatus("LIVE");
+                }
+            }
+        }
+
+        // 4. Sort by Date + Time (Latest first)
         unifiedExams.sort(Comparator.comparing((ExamResponseDTO e) -> {
             if (e.getDate() == null)
                 return LocalDateTime.MIN;
@@ -187,15 +275,37 @@ public class UniversityController {
     @PostMapping("/release-hallticket/{examId}")
     public ResponseEntity<?> releaseHallticket(@PathVariable Long examId) {
         try {
-            List<ExamRegistration> registrations = examRegistrationRepository.findByExamIdAndRegistrationStatus(examId, ExamRegistration.RegistrationStatus.APPROVED);
-            
-            // FALLBACK FOR MOCK DATA MISMATCH: if the university clicks release but the mock student registered to a deleted/phantom exam ID.
-            if (registrations.isEmpty()) {
-                registrations = examRegistrationRepository.findByRegistrationStatus(ExamRegistration.RegistrationStatus.APPROVED);
+            // Validation: Ensure at least one college has generated seats
+            List<com.example.examauth.student_exam.university.model.ExamCollegeMapping> mappings = examCollegeMappingRepository.findAllByExamId(examId);
+            if (!mappings.isEmpty()) {
+                boolean hasSeatsGenerated = mappings.stream()
+                    .anyMatch(m -> m.getStatus() == com.example.examauth.student_exam.university.model.ExamCollegeMapping.MappingStatus.SEATS_GENERATED || 
+                                   m.getStatus() == com.example.examauth.student_exam.university.model.ExamCollegeMapping.MappingStatus.COMPLETED);
+                
+                if (!hasSeatsGenerated) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Cannot release hall tickets. Hall and seat allocation must be completed for at least one college first."));
+                }
             }
-            
+
+            List<ExamRegistration> registrations = examRegistrationRepository.findByExamIdAndRegistrationStatus(examId,
+                    ExamRegistration.RegistrationStatus.APPROVED);
+
+            // FALLBACK FOR MOCK DATA MISMATCH: if the university clicks release but the
+            // mock student registered to a deleted/phantom exam ID.
+            if (registrations.isEmpty()) {
+                registrations = examRegistrationRepository
+                        .findByRegistrationStatus(ExamRegistration.RegistrationStatus.APPROVED);
+            }
+
             for (ExamRegistration reg : registrations) {
                 reg.setHallTicketReleased(true);
+                // Trigger notification for the student
+                String examName = reg.getExamSession() != null ? reg.getExamSession() : "your exam";
+                notificationService.createNotification(
+                    reg.getStudentId(), 
+                    "Hall Ticket Released", 
+                    "Your hall ticket for " + examName + " has been released. Please download it from your dashboard."
+                );
             }
             examRegistrationRepository.saveAll(registrations);
             return ResponseEntity.ok(Map.of("message", "Hall Ticket released successfully"));

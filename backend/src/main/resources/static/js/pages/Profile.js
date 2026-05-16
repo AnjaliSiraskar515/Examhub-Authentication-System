@@ -6,6 +6,24 @@ export const Profile = {
     async init() {
         try {
             const data = await API.getProfile();
+            
+            // Check biometric status
+            let isVerified = !!data.verified;
+            try {
+                const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
+                const bioResponse = await fetch('/api/student-profile/biometric/status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (bioResponse.ok) {
+                    const bioData = await bioResponse.json();
+                    if (bioData.success && bioData.enrolled) {
+                        isVerified = true;
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to check biometric status:", e);
+            }
+
             // Map backend data to frontend structure if necessary
             this.userData = {
                 ...data,
@@ -17,8 +35,8 @@ export const Profile = {
                 lastExam: data.lastExam || "N/A",
                 hallTicket: data.upcomingExams > 0 ? "Generated" : "N/A",
                 phone: data.phoneNumber || "N/A",
-                status: data.profileCompleted ? "Active" : "Incomplete",
-                isVerified: !!data.verified && !!data.profileLocked,
+                status: isVerified ? "Verified" : (data.profileCompleted ? "Active" : "Incomplete"),
+                isVerified: isVerified,
                 documents: data.documents || { aadhar: false, marks10: false, marks12: false, ug: false, pg: false, biometric: false, passportPhoto: false },
                 profileCompleted: data.profileCompleted || false
             };
@@ -134,8 +152,8 @@ export const Profile = {
                                         <span class="badge rounded-pill px-3 py-1" style="background:rgba(255,255,255,0.15);color:#fff;backdrop-filter:blur(4px);">
                                             <i class="fas fa-calendar me-1"></i>${data.year || 'N/A'} · ${data.semester || ''}
                                         </span>
-                                        <span class="badge rounded-pill px-3 py-1 ${data.status === 'Active' ? '' : ''}" style="background:${data.status === 'Active' ? 'rgba(34,197,94,0.75)' : 'rgba(251,191,36,0.75)'};color:#fff;backdrop-filter:blur(4px);">
-                                            <i class="fas fa-circle me-1" style="font-size:7px;vertical-align:middle;"></i>${data.status || 'Incomplete'}
+                                        <span class="badge rounded-pill px-3 py-1" style="background:${data.status === 'Verified' || data.status === 'Active' ? 'rgba(34,197,94,0.75)' : 'rgba(251,191,36,0.75)'};color:#fff;backdrop-filter:blur(4px);">
+                                            <i class="fas ${data.status === 'Verified' ? 'fa-check-circle' : 'fa-circle'} me-1" style="${data.status === 'Verified' ? '' : 'font-size:7px;vertical-align:middle;'}"></i>${data.status || 'Incomplete'}
                                         </span>
                                     </div>
                                 </div>
@@ -151,23 +169,39 @@ export const Profile = {
                                         class="rounded-circle border border-4 border-white shadow-lg bg-white"
                                         alt="Profile Photo"
                                         style="width:120px;height:120px;object-fit:cover;">
-                                    <input type="file" id="profileUpload" accept="image/*" class="d-none">
-                                    <button onclick="document.getElementById('profileUpload').click()"
-                                        class="btn btn-sm btn-dark position-absolute bottom-0 end-0 rounded-circle shadow"
-                                        style="width:32px;height:32px;" title="Change Photo">
-                                        <i class="fas fa-camera text-white" style="font-size:12px;"></i>
-                                    </button>
+                                    ${!data.passportPhotoPath ? `
+                                        <input type="file" id="profileUpload" accept="image/*" class="d-none">
+                                        <button onclick="document.getElementById('profileUpload').click()"
+                                            class="btn btn-sm btn-dark position-absolute bottom-0 end-0 rounded-circle shadow"
+                                            style="width:32px;height:32px;" title="Change Photo">
+                                            <i class="fas fa-camera text-white" style="font-size:12px;"></i>
+                                        </button>
+                                    ` : ''}
                                 </div>
                                 <!-- Verification action -->
-                                <div class="pb-1 pt-5">
+                                <div class="pb-1 pt-4">
                                     ${data.isVerified
-                ? `<span class="badge bg-success py-2 px-3 rounded-pill fs-6 shadow-sm"><i class="fas fa-check-circle me-1"></i> Profile Verified &amp; Locked</span>`
-                : `<button onclick="window.dispatchEvent(new CustomEvent('navigate',{detail:{page:'face-verification'}}))"
+                                        ? `<span class="badge bg-success py-2 px-3 rounded-pill fs-6 shadow-sm"><i class="fas fa-check-circle me-1"></i> Biometric Verified</span>`
+                                        : `<button onclick="window.dispatchEvent(new CustomEvent('navigate',{detail:{page:'biometric-verification'}}))"
                                                 class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow-sm">
-                                                <i class="fas fa-camera me-2"></i> Complete Face Verification
+                                                <i class="fas fa-fingerprint me-2"></i> Complete Biometric Verification
                                            </button>`
-            }
+                                    }
                                 </div>
+                            </div>
+
+                            <!-- Photo Upload Note -->
+                            <div class="mt-4 alert alert-info d-flex align-items-center p-3 mb-0 border-0 shadow-sm" style="background-color: #f0f9ff; border-radius: 12px;">
+                                <i class="fas fa-exclamation-circle text-primary fs-3 me-3"></i>
+                                <div>
+                                    <h6 class="mb-1 fw-bold text-primary" style="font-size: 0.95rem;">Important: Profile Photo Guidelines</h6>
+                                    <p class="mb-0 text-dark" style="font-size: 0.85rem;">
+                                        ${data.passportPhotoPath 
+                                            ? '<i class="fas fa-lock me-1 text-secondary"></i> Your profile photo is permanently locked and will be used for all future verifications.' 
+                                            : 'Please upload a <strong>clear, front-facing image</strong>. This image will be strictly used for biometric and AI face verification during your exams. <strong class="text-danger">You can upload your profile photo ONLY ONCE.</strong>'}
+                                    </p>
+                                </div>
+                            </div>
                             </div>
                         </div>
 
@@ -246,6 +280,10 @@ export const Profile = {
                             </div>
                             <div class="card-body pt-0">
                                 <div class="row g-3">
+                                    <div class="col-12">
+                                        <small class="text-muted d-block" style="font-size:0.72rem;font-weight:700;">COLLEGE NAME</small>
+                                        <span class="fs-6 text-dark fw-semibold">${data.collegeName || 'N/A'}</span>
+                                    </div>
                                     <div class="col-md-6">
                                         <small class="text-muted d-block" style="font-size:0.72rem;font-weight:700;">COURSE / DEGREE</small>
                                         <span class="fs-6 text-dark fw-semibold">${data.course || 'N/A'}</span>
@@ -302,7 +340,7 @@ export const Profile = {
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Full Name</label>
-                                        <input type="text" id="editName" class="form-control rounded-3" value="${data.name || ''}" placeholder="Your full name">
+                                        <input type="text" id="editName" class="form-control rounded-3 ${data.name ? 'bg-light text-muted' : ''}" value="${data.name || ''}" placeholder="Your full name" ${data.name ? 'readonly' : ''}>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Phone Number</label>
@@ -326,15 +364,15 @@ export const Profile = {
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Course / Degree</label>
-                                        <input type="text" id="editCourse" class="form-control rounded-3" value="${data.course || ''}" placeholder="e.g. B.Tech, B.E.">
+                                        <input type="text" id="editCourse" class="form-control rounded-3 ${data.course ? 'bg-light text-muted' : ''}" value="${data.course || ''}" placeholder="e.g. B.Tech, B.E." ${data.course ? 'readonly' : ''}>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Branch / Department</label>
-                                        <input type="text" id="editBranch" class="form-control rounded-3" value="${data.branch || ''}" placeholder="e.g. Computer Engineering">
+                                        <input type="text" id="editBranch" class="form-control rounded-3 ${data.branch ? 'bg-light text-muted' : ''}" value="${data.branch || ''}" placeholder="e.g. Computer Engineering" ${data.branch ? 'readonly' : ''}>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Year</label>
-                                        <select id="editYear" class="form-select rounded-3">
+                                        <select id="editYear" class="form-select rounded-3 ${data.year ? 'bg-light text-muted' : ''}" ${data.year ? 'disabled' : ''}>
                                             <option value="" ${!data.year ? 'selected' : ''}>-- Select Year --</option>
                                             <option value="First Year" ${data.year === 'First Year' ? 'selected' : ''}>1st Year</option>
                                             <option value="Second Year" ${data.year === 'Second Year' ? 'selected' : ''}>2nd Year</option>
@@ -344,18 +382,18 @@ export const Profile = {
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Current Semester</label>
-                                        <select id="editSemester" class="form-select rounded-3">
+                                        <select id="editSemester" class="form-select rounded-3 ${data.semester ? 'bg-light text-muted' : ''}" ${data.semester ? 'disabled' : ''}>
                                             <option value="" ${!data.semester ? 'selected' : ''}>-- Select Semester --</option>
                                             ${[1, 2, 3, 4, 5, 6, 7, 8].map(n => `<option value="Semester ${n}" ${data.semester === `Semester ${n}` ? 'selected' : ''}>${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'} Semester</option>`).join('')}
                                         </select>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">Enrollment No</label>
-                                        <input type="text" id="editEnrollmentNo" class="form-control rounded-3" value="${data.enrollmentNo || ''}" placeholder="Your enrollment number">
+                                        <input type="text" id="editEnrollmentNo" class="form-control rounded-3 ${data.enrollmentNo ? 'bg-light text-muted' : ''}" value="${data.enrollmentNo || ''}" placeholder="Your enrollment number" ${data.enrollmentNo ? 'readonly' : ''}>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold" style="font-size:0.82rem;">CGPA</label>
-                                        <input type="number" id="editCgpa" class="form-control rounded-3" min="0" max="10" step="0.1" value="${data.cgpa || ''}" placeholder="e.g. 8.5">
+                                        <input type="number" id="editCgpa" class="form-control rounded-3 ${data.cgpa ? 'bg-light text-muted' : ''}" min="0" max="10" step="0.1" value="${data.cgpa || ''}" placeholder="e.g. 8.5" ${data.cgpa ? 'readonly' : ''}>
                                     </div>
                                 </div>
                             </div>
@@ -455,30 +493,29 @@ export const Profile = {
                 const formData = new FormData();
                 formData.append('passportPhoto', file);
 
-                // Show loading state
-                const btn = input.nextElementSibling; // The button
-                const icon = btn.querySelector('i');
-                const originalClass = icon.className;
-
-                icon.className = "fas fa-spinner fa-spin text-white";
-                btn.disabled = true;
+                // Show loading state safely - find camera button by selector, not by sibling
+                const camBtn = document.querySelector('button[onclick*="profileUpload"]');
+                if (camBtn) {
+                    camBtn.disabled = true;
+                    camBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-white" style="font-size:12px;"></i>';
+                }
 
                 try {
                     await API.uploadDocuments(formData);
-                    // Refresh profile data to show new image
+                    alert("✅ Profile photo updated successfully!");
+                    // Refresh and re-render to show new image and lock the button
                     await this.init();
-                    // Re-render
                     const container = document.getElementById('page-container');
                     if (container) container.innerHTML = this.render();
-                    this.afterRender(); // Re-attach listeners
-
-                    alert("✅ Profile photo updated successfully!");
+                    this.afterRender();
                 } catch (error) {
-                    alert(`❌ Failed to update profile photo: ${error.message}`);
+                    const msg = error?.message || 'An unknown error occurred. Please try again.';
+                    alert(`❌ Failed to update profile photo: ${msg}`);
                     console.error("Upload failed:", error);
-                } finally {
-                    icon.className = originalClass;
-                    btn.disabled = false;
+                    if (camBtn) {
+                        camBtn.disabled = false;
+                        camBtn.innerHTML = '<i class="fas fa-camera text-white" style="font-size:12px;"></i>';
+                    }
                 }
             });
         }

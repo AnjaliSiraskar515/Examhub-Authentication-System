@@ -100,24 +100,26 @@ public class OtpService {
         System.out.println("🔐 GENERATED MOBILE OTP for " + cleanPhone + ": " + otp);
 
         try {
-            if (fast2SmsApiKey == null || fast2SmsApiKey.contains("YOUR_FAST2SMS_API_KEY")) {
-                System.out
-                        .println("⚠️ Fast2SMS API Key is not set. SMS to " + cleanPhone + " : " + otp + " (SIMULATED)");
+            if (fast2SmsApiKey == null || fast2SmsApiKey.isBlank() || fast2SmsApiKey.contains("YOUR_FAST2SMS_API_KEY")) {
+                System.out.println("⚠️ Fast2SMS API Key is not set. SMS to " + cleanPhone + " : " + otp + " (SIMULATED)");
                 return true;
             }
 
-            // Fast2SMS API Call
+            // Fast2SMS API Call — using 'q' (Quick) route
             String url = "https://www.fast2sms.com/dev/bulkV2";
-            String message = "Your ExamHub OTP is: " + otp;
+            String smsMessage = "Your ExamHub OTP is: " + otp;
 
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.set("authorization", fast2SmsApiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            headers.set("Accept", "*/*");
 
+            // 'q' route
             String requestJson = String.format(
-                    "{\"route\" : \"q\", \"message\" : \"%s\", \"language\" : \"english\", \"flash\" : 0, \"numbers\" : \"%s\"}",
-                    message, cleanPhone);
+                    "{\"route\":\"q\",\"message\":\"%s\",\"language\":\"english\",\"flash\":0,\"numbers\":\"%s\"}",
+                    smsMessage, cleanPhone);
 
             HttpEntity<String> entity = new HttpEntity<>(requestJson, headers);
 
@@ -127,6 +129,10 @@ public class OtpService {
 
             return response.getStatusCode().is2xxSuccessful();
 
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            System.err.println("❌ Fast2SMS API Error: " + e.getResponseBodyAsString());
+            e.printStackTrace();
+            return false;
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("❌ Failed to send SMS to: " + cleanPhone);

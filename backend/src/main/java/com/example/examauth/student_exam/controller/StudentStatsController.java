@@ -23,7 +23,7 @@ public class StudentStatsController {
         }
 
         String email = authentication.getName();
-        com.example.examauth.model.User user = userRepository.findByEmail(email)
+        com.example.examauth.model.User user = userRepository.findFirstByEmailAndRole(email, authentication.getAuthorities().iterator().next().getAuthority().replace("ROLE_", ""))
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         StudentStatsDTO stats = examRegistrationService.getStudentStats(user.getUserId());

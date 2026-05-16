@@ -28,13 +28,12 @@ public class AdminSupervisorController {
             String name = (String) payload.get("name");
             String email = (String) payload.get("email");
             String phone = (String) payload.get("phone");
-            String designation = (String) payload.get("designation");
             String department = (String) payload.get("department");
             Object collegeIdObj = payload.get("collegeId");
             Long collegeId = collegeIdObj != null ? Long.valueOf(collegeIdObj.toString()) : null;
             String supervisorType = (String) payload.get("supervisorType");
             
-            userManagementService.createSupervisor(name, email, phone, designation, department, collegeId, supervisorType);
+            userManagementService.createSupervisor(name, email, phone, department, collegeId, supervisorType);
             return ResponseEntity.ok("Supervisor created successfully. Credentials emailed.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -55,12 +54,11 @@ public class AdminSupervisorController {
                 String name = row[0];
                 String email = row[1];
                 String phone = row[2];
-                String designation = row[3];
-                String department = row.length > 4 ? row[4] : null;
-                String supervisorType = row.length > 5 && row[5] != null && !row[5].trim().isEmpty() ? row[5].trim() : "EXAM";
+                String department = row[3];
+                String supervisorType = row.length > 4 && row[4] != null && !row[4].trim().isEmpty() ? row[4].trim() : "EXAM";
                 
                 try {
-                    userManagementService.createSupervisor(name, email, phone, designation, department, collegeId, supervisorType);
+                    userManagementService.createSupervisor(name, email, phone, department, collegeId, supervisorType);
                     processedCount++;
                 } catch (Exception ignored) {
                     // Skip existing supervisors

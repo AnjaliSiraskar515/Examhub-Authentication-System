@@ -23,13 +23,49 @@ public class AdminCollegeController {
     @Autowired
     private com.example.examauth.service.CsvProcessingService csvProcessingService;
 
+    // Helper: get the university name of the currently authenticated UNIVERSITY_ADMIN
+    private String getCurrentAdminUniversityName() {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        String role = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+        com.example.examauth.model.User admin = userRepository.findFirstByEmailAndRole(email, role).orElse(null);
+        if (admin != null && "UNIVERSITY_ADMIN".equals(admin.getRole())) {
+            String name = admin.getUniversityName();
+            return name != null ? name.trim() : null;
+        }
+        return null; // Not a UNIVERSITY_ADMIN
+    }
+
+    private boolean isUniversityAdmin() {
+        String role = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+        return "UNIVERSITY_ADMIN".equals(role);
+    }
+
     @GetMapping
     public ResponseEntity<List<College>> getAllColleges() {
-        return ResponseEntity.ok(collegeRepository.findAll());
+        String myUniv = getCurrentAdminUniversityName();
+        boolean isUnivAdmin = isUniversityAdmin();
+
+        List<College> colleges = collegeRepository.findAll();
+        if (isUnivAdmin) {
+            if (myUniv == null || myUniv.isEmpty()) {
+                return ResponseEntity.ok(new java.util.ArrayList<>()); // Fail-closed
+            }
+            colleges = colleges.stream()
+                .filter(c -> myUniv.equalsIgnoreCase(c.getUniversityName() != null ? c.getUniversityName().trim() : null))
+                .collect(java.util.stream.Collectors.toList());
+        }
+        return ResponseEntity.ok(colleges);
     }
 
     @PostMapping
     public ResponseEntity<?> createCollege(@RequestBody Map<String, String> body) {
+        String myUniv = getCurrentAdminUniversityName();
+        boolean isUnivAdmin = isUniversityAdmin();
+
+        if (isUnivAdmin && (myUniv == null || myUniv.isEmpty())) {
+            return ResponseEntity.status(403).body(Map.of("error", "University Admin profile incomplete. Cannot create college."));
+        }
+
         String name = body.get("name");
         if (name == null || name.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "College name is required"));
@@ -43,7 +79,12 @@ public class AdminCollegeController {
         College college = new College();
         college.setName(name);
         college.setCode(body.get("code"));
-        college.setUniversityName(body.get("universityName"));
+
+        if (isUnivAdmin) {
+            college.setUniversityName(myUniv);
+        } else {
+            college.setUniversityName(body.get("universityName"));
+        }
 
         return ResponseEntity.ok(collegeRepository.save(college));
     }
@@ -51,8 +92,16 @@ public class AdminCollegeController {
     @PostMapping("/upload")
     public ResponseEntity<?> uploadCollegeCsv(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        
+        String myUniv = getCurrentAdminUniversityName();
+        boolean isUnivAdmin = isUniversityAdmin();
+
+        if (isUnivAdmin && (myUniv == null || myUniv.isEmpty())) {
+            return ResponseEntity.status(403).body(Map.of("error", "University Admin profile incomplete. Cannot upload colleges."));
+        }
+
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("Please upload a CSV file!");
+            return ResponseEntity.badRequest().body(Map.of("error", "Please upload a CSV file!"));
         }
         try {
             List<String[]> rows = csvProcessingService.parseCsv(file);
@@ -67,6 +116,11 @@ public class AdminCollegeController {
                     College c = new College();
                     c.setName(name);
                     c.setCode(code);
+                    if (isUnivAdmin) {
+                        c.setUniversityName(myUniv);
+                    } else if (row.length > 2) {
+                        c.setUniversityName(row[2].trim()); // SUPER_ADMIN can provide universityName in column 3
+                    }
                     collegeRepository.save(c);
                     processedCount++;
                 }
@@ -74,15 +128,24 @@ public class AdminCollegeController {
             return ResponseEntity.ok(Map.of("message", "Successfully processed " + processedCount + " colleges."));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Failed to process CSV file.");
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to process CSV file."));
         }
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateCollege(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String myUniv = getCurrentAdminUniversityName();
+        boolean isUnivAdmin = isUniversityAdmin();
+
         College college = collegeRepository.findById(id).orElse(null);
         if (college == null)
             return ResponseEntity.notFound().build();
+
+        if (isUnivAdmin) {
+            if (myUniv == null || myUniv.isEmpty() || !myUniv.equalsIgnoreCase(college.getUniversityName() != null ? college.getUniversityName().trim() : null)) {
+                return ResponseEntity.status(403).body(Map.of("error", "Not authorized to update this college"));
+            }
+        }
 
         String name = body.get("name");
         if (name != null && !name.trim().isEmpty()) {
@@ -90,16 +153,30 @@ public class AdminCollegeController {
         }
         if (body.containsKey("code"))
             college.setCode(body.get("code"));
-        if (body.containsKey("universityName"))
+            
+        // Only allow SUPER_ADMIN to change university name
+        if (!isUnivAdmin && body.containsKey("universityName")) {
             college.setUniversityName(body.get("universityName"));
+        }
 
         return ResponseEntity.ok(collegeRepository.save(college));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCollege(@PathVariable Long id) {
-        if (!collegeRepository.existsById(id))
+        String myUniv = getCurrentAdminUniversityName();
+        boolean isUnivAdmin = isUniversityAdmin();
+
+        College college = collegeRepository.findById(id).orElse(null);
+        if (college == null)
             return ResponseEntity.notFound().build();
+
+        if (isUnivAdmin) {
+            if (myUniv == null || myUniv.isEmpty() || !myUniv.equalsIgnoreCase(college.getUniversityName() != null ? college.getUniversityName().trim() : null)) {
+                return ResponseEntity.status(403).body(Map.of("error", "Not authorized to delete this college"));
+            }
+        }
+
         collegeRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("message", "College deleted successfully"));
     }
