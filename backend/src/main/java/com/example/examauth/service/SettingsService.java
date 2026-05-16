@@ -158,7 +158,8 @@ public class SettingsService {
             case KEY_BACKUP_SCHEDULE -> {
                 Set<String> allowed = Set.of("Hourly", "Daily", "Weekly", "Monthly");
                 if (!allowed.contains(value)) {
-                    throw new IllegalArgumentException("maintenance.backup.schedule must be Hourly/Daily/Weekly/Monthly");
+                    throw new IllegalArgumentException(
+                            "maintenance.backup.schedule must be Hourly/Daily/Weekly/Monthly");
                 }
             }
             case KEY_LAST_BACKUP_AT -> {
@@ -221,7 +222,7 @@ public class SettingsService {
         Map<String, String> defaults = new LinkedHashMap<>();
         defaults.put(KEY_SYSTEM_NAME, "ExamHub Authentication System");
         defaults.put(KEY_ADMIN_CONTACT_EMAIL, "admin@examhub.com");
-        defaults.put(KEY_SESSION_TIMEOUT_MINUTES, "15");
+        defaults.put(KEY_SESSION_TIMEOUT_MINUTES, "480");
         defaults.put(KEY_DEFAULT_TIMEZONE, "IST (Indian Standard Time)");
         defaults.put(KEY_MAX_STUDENTS_PER_EXAM, "500");
         defaults.put(KEY_ENABLE_SYSTEM_LOGS, "true");

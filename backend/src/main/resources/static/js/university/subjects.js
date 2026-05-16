@@ -25,16 +25,21 @@
     async function loadDepartmentsInto(selectEl) {
         if (!selectEl) return;
         const collegeId = window.CollegeContext?.selectedCollegeId;
-        if (!collegeId) {
-            selectEl.innerHTML = '<option value="">-- Select College first --</option>';
-            return;
-        }
+        // If no college selected, load all departments across the university
+        const url = collegeId
+            ? `${ADMIN_API_BASE_URL}/departments?collegeId=${collegeId}`
+            : `${ADMIN_API_BASE_URL}/departments`;
         try {
-            const res = await authFetch(`${ADMIN_API_BASE_URL}/departments?collegeId=${collegeId}`);
+            const res = await authFetch(url);
             const depts = res.ok ? await res.json() : [];
-            let html = '<option value="">-- Select Department --</option>';
+            let html = '<option value="">All Departments</option>';
+            // Deduplicate by name when loading all depts across colleges
+            const seen = new Set();
             depts.forEach(d => {
-                html += `<option value="${d.id}">${d.name}</option>`;
+                if (!seen.has(d.name)) {
+                    seen.add(d.name);
+                    html += `<option value="${d.id}" data-name="${d.name}">${d.name}</option>`;
+                }
             });
             selectEl.innerHTML = html;
         } catch (e) {
@@ -49,13 +54,15 @@
         tb.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading subjects...</td></tr>';
 
         const course = document.getElementById('subject-filter-course')?.value || '';
-        const deptId = document.getElementById('subject-filter-dept')?.value || '';
+        const deptSelect = document.getElementById('subject-filter-dept');
+        const deptName = deptSelect ? (deptSelect.options[deptSelect.selectedIndex]?.dataset?.name || '') : '';
         const sem    = document.getElementById('subject-filter-sem')?.value || '';
 
+        // Subjects are university-wide — always filter by name, never by college-specific departmentId
         let url = `${ADMIN_API_BASE_URL}/subjects`;
         const params = [];
         if (course) params.push(`course=${encodeURIComponent(course)}`);
-        if (deptId) params.push(`departmentId=${deptId}`);
+        if (deptName) params.push(`departmentName=${encodeURIComponent(deptName)}`);
         if (sem)    params.push(`semester=${sem}`);
         if (params.length) url += '?' + params.join('&');
 
@@ -237,6 +244,9 @@
             }
         });
 
+        // Always load departments for filter (university-wide) on startup
+        loadDepartmentsInto(filterDept());
+        
         // Immediate load if context already set before init
         if (window.CollegeContext?.selectedCollegeId) {
             loadDepartmentsInto(filterDept());

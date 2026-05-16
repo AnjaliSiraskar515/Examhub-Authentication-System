@@ -8,9 +8,7 @@ export const Sidebar = {
                 <!-- Logo Area -->
                 <div class="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/30">
-                            EH
-                        </div>
+                        <img src="/logo.png" alt="Logo" class="w-8 h-8 object-contain rounded-lg shadow-sm bg-white p-0.5">
                         <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
                             ExamHub
                         </span>
@@ -23,7 +21,6 @@ export const Sidebar = {
                     ${this.renderNavItem('exams', 'Available Exams', 'fas fa-globe')}
                     ${this.renderNavItem('registered', 'My Exams', 'fas fa-file-signature')}
                     ${this.renderNavItem('profile', 'Profile', 'fas fa-user-circle')}
-                    ${this.renderNavItem('face-verification', 'Face Verification', 'fas fa-user-check')}
                     ${this.renderNavItem('biometric-verification', 'Biometric Verification', 'fas fa-fingerprint')}
                     ${this.renderNavItem('notifications', 'Notifications', 'fas fa-bell', false, 0, true)}
                     

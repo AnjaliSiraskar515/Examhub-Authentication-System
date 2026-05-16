@@ -10,4 +10,6 @@ public interface StudentBacklogRepository extends JpaRepository<StudentBacklog, 
     List<StudentBacklog> findByStudentId(Long studentId);
     Optional<StudentBacklog> findByStudentIdAndSubjectId(Long studentId, Long subjectId);
     List<StudentBacklog> findBySubjectId(Long subjectId);
+    List<StudentBacklog> findBySubjectNameIgnoreCase(String subjectName);
+    void deleteByStudentId(Long studentId);
 }

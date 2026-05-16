@@ -29,6 +29,9 @@ public class CommunicationMessage {
     private Long parentMessageId;
     private LocalDateTime createdAt;
 
+    @Transient
+    private String senderDetails;
+
     public Long getId() {
         return id;
     }
@@ -147,5 +150,13 @@ public class CommunicationMessage {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getSenderDetails() {
+        return senderDetails;
+    }
+
+    public void setSenderDetails(String senderDetails) {
+        this.senderDetails = senderDetails;
     }
 }

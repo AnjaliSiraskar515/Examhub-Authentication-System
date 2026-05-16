@@ -14,4 +14,5 @@ public class NotificationResponseDTO {
     private String title;
     private String message;
     private String createdAt;
+    private Boolean isRead;
 }

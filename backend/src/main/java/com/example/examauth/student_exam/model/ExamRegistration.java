@@ -58,7 +58,7 @@ public class ExamRegistration {
      * Stored as JSON in database
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "selected_subjects", columnDefinition = "json")
+    @Column(name = "selected_subjects", columnDefinition = "json", updatable = false)
     private List<String> selectedSubjects = new ArrayList<>();
 
     /**
@@ -129,7 +129,7 @@ public class ExamRegistration {
      */
     public enum PaymentStatus {
         PENDING, // Payment not yet completed
-        SUCCESS // Payment successfully processed
+        PAID // Payment successfully processed
     }
 
     /**

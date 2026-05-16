@@ -93,7 +93,28 @@ public class UserManagementService {
 
         // Map remaining fields
         user.setCourse(course); // seamlessly updates major
-        user.setSemester(semester);
+
+        // Normalize semester: CSV gives raw number (e.g. "6"), frontend expects "Semester 6"
+        String normalizedSemester = semester;
+        int semNum = 0;
+        if (semester != null && !semester.trim().isEmpty()) {
+            String rawSemDigits = semester.trim().replaceAll("[^0-9]", "");
+            if (!rawSemDigits.isEmpty()) {
+                semNum = Integer.parseInt(rawSemDigits);
+                normalizedSemester = "Semester " + semNum;
+            }
+        }
+        user.setSemester(normalizedSemester);
+
+        // Derive year from semester (1-2 → 1st, 3-4 → 2nd, 5-6 → 3rd, 7-8 → Final)
+        if (semNum > 0) {
+            String derivedYear;
+            if (semNum <= 2)       derivedYear = "First Year";
+            else if (semNum <= 4)  derivedYear = "Second Year";
+            else if (semNum <= 6)  derivedYear = "Third Year";
+            else                   derivedYear = "Final Year";
+            user.setYear(derivedYear);
+        }
 
         String normalizedDept = normalizeDepartment(department);
         Department deptEntity = departmentRepository.findByNameIgnoreCaseAndCollegeId(normalizedDept, collegeId)
@@ -109,11 +130,12 @@ public class UserManagementService {
 
         user.setCollege(college);
         user.setCollegeName(college.getName());
+        user.setUniversityName(college.getUniversityName());
 
         user.setRole("STUDENT");
         user.setUsername(prn); // Use PRN as username
 
-        String plainPassword = prn + "@123";
+        String plainPassword = prn; // Default password is PRN
         user.setPassword(passwordEncoder.encode(plainPassword));
 
         user.setFirstLogin(true);
@@ -125,20 +147,23 @@ public class UserManagementService {
         boolean hasBacklogs = false;
         List<StudentBacklog> backlogList = new ArrayList<>();
         java.util.Set<String> unique = new java.util.HashSet<>();
-        
+
         if (backlogs != null && !backlogs.trim().isEmpty()) {
             String[] backlogItems = backlogs.split(";");
             for (String b : backlogItems) {
                 b = b.trim();
-                if (b.isEmpty()) continue;
-                
+                if (b.isEmpty())
+                    continue;
+
                 String[] parts = b.split("-");
-                if (parts.length < 2) continue; // Prevent runtime crashes on invalid format
-                
+                if (parts.length < 2)
+                    continue; // Prevent runtime crashes on invalid format
+
                 hasBacklogs = true;
                 String bCode = parts[0].trim();
-                
-                // Strip non-digits from semester to keep it consistently numeric (e.g. "Sem 4" -> "4")
+
+                // Strip non-digits from semester to keep it consistently numeric (e.g. "Sem 4"
+                // -> "4")
                 String bSemStr = parts[1].trim().replaceAll("[^0-9]", "");
                 Integer bSem = null;
                 try {
@@ -147,24 +172,37 @@ public class UserManagementService {
                     System.out.println("Warning: Invalid semester format in backlog: " + parts[1]);
                     continue;
                 }
-                
+
                 String key = bCode + "-" + bSem;
-                
+
                 if (!unique.contains(key)) {
                     unique.add(key);
-                    
-                    // Fallback create Subject if needed
+
+                    // Step 1: exact lookup by (code, semester, dept, course)
                     Integer finalBSem = bSem;
-                    com.example.examauth.model.Subject subject = subjectRepository.findByCodeAndSemesterAndDepartmentEntityIdAndCourse(bCode, bSem, deptEntity.getId(), course).orElseGet(() -> {
-                        System.out.println("Auto-creating Subject from Backlog mapping: Code=" + bCode + " Sem=" + finalBSem + " Dept=" + deptEntity.getName() + " Course=" + course);
-                        com.example.examauth.model.Subject newSub = new com.example.examauth.model.Subject();
-                        newSub.setCode(bCode);
-                        newSub.setName(bCode); // Name defaults to code for fallback
-                        newSub.setSemester(finalBSem);
-                        newSub.setCourse(course);
-                        newSub.setDepartmentEntity(deptEntity);
-                        return subjectRepository.save(newSub);
-                    });
+                    com.example.examauth.model.Subject subject =
+                            subjectRepository.findByCodeAndSemesterAndDepartmentEntityIdAndCourse(
+                                    bCode, bSem, deptEntity.getId(), course)
+                            .orElseGet(() -> {
+                                // Step 2: find any subject with this code (safest fallback
+                                // — handles orphaned subjects from previous uploads/deletions)
+                                java.util.List<com.example.examauth.model.Subject> byCode =
+                                        subjectRepository.findAllByCode(bCode);
+                                if (!byCode.isEmpty()) {
+                                    return byCode.get(0); // reuse existing
+                                }
+                                // Step 3: truly not found — create it
+                                System.out.println("Auto-creating Subject from Backlog mapping: Code=" + bCode
+                                        + " Sem=" + finalBSem + " Dept=" + deptEntity.getName()
+                                        + " Course=" + course);
+                                com.example.examauth.model.Subject newSub = new com.example.examauth.model.Subject();
+                                newSub.setCode(bCode);
+                                newSub.setName(bCode);
+                                newSub.setSemester(finalBSem);
+                                newSub.setCourse(course);
+                                newSub.setDepartmentEntity(deptEntity);
+                                return subjectRepository.save(newSub);
+                            });
 
                     StudentBacklog sb = new StudentBacklog();
                     sb.setSubjectName(subject.getName());
@@ -184,10 +222,19 @@ public class UserManagementService {
             sb.setStudentId(savedUser.getUserId());
             studentBacklogRepository.save(sb);
         }
+
+        // Send welcome email with login details for new student
+        alertNotificationService.sendStudentWelcomeEmail(
+            user.getEmail(), 
+            user.getName(), 
+            user.getUniversityName(), 
+            user.getCollegeName(), 
+            prn
+        );
     }
 
     @Transactional
-    public void createSupervisor(String name, String email, String phone, String designation, String department,
+    public void createSupervisor(String name, String email, String phone, String department,
             Long collegeId, String supervisorType) {
         if (collegeId == null) {
             throw new IllegalArgumentException("College ID is mandatory for new supervisors.");
@@ -196,11 +243,10 @@ public class UserManagementService {
         College college = collegeRepository.findById(collegeId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid College ID provided."));
 
-        User user = userRepository.findByEmail(email).orElse(new User());
+        User user = userRepository.findFirstByEmailAndRole(email, "SUPERVISOR").orElse(new User());
         user.setName(name);
         user.setEmail(email);
         user.setPhoneNumber(phone);
-        user.setDesignation(designation);
         user.setSupervisorType(supervisorType != null ? supervisorType.toUpperCase() : "EXAM");
 
         String normalizedDept = normalizeDepartment(department);
@@ -217,8 +263,10 @@ public class UserManagementService {
 
         user.setCollege(college);
         user.setCollegeName(college.getName());
+        user.setUniversityName(college.getUniversityName());
 
         user.setRole("SUPERVISOR");
+        user.setStatus("active");
         if (user.getUsername() == null) {
             user.setUsername(email);
         }
@@ -229,10 +277,18 @@ public class UserManagementService {
         }
 
         if (user.getPassword() == null) {
-            String plainPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
+            // Default password: Examhub@<last4digits of phone>
+            String last4 = (phone != null && phone.length() >= 4)
+                ? phone.substring(phone.length() - 4)
+                : "0000";
+            String plainPassword = "Examhub@" + last4;
             user.setPassword(passwordEncoder.encode(plainPassword));
             user.setFirstLogin(true);
-            alertNotificationService.sendSupervisorCredentials(email, name, plainPassword);
+            alertNotificationService.sendSupervisorCredentials(
+                email, name, plainPassword,
+                college.getName(),
+                college.getUniversityName() != null ? college.getUniversityName() : "Your University"
+            );
         }
 
         userRepository.save(user);

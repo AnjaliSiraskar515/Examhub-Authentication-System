@@ -42,14 +42,18 @@ function renderExamsTable(exams) {
         const examNameDisplay = exam.examName || exam.sessionName || 'Unnamed Exam';
 
         let timeDisplay = exam.startTime || '--:--';
-        if (exam.startTime && exam.durationMinutes) {
+        if (exam.startTime) {
             try {
+                const duration = (exam.durationMinutes && exam.durationMinutes > 0) ? exam.durationMinutes : 180;
                 const [h, m] = exam.startTime.split(':').map(Number);
                 const start = new Date();
                 start.setHours(h, m, 0);
-                const end = new Date(start.getTime() + exam.durationMinutes * 60000);
-                const endStr = end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-                timeDisplay = `${exam.startTime} - ${endStr}`;
+                const end = new Date(start.getTime() + duration * 60000);
+                
+                const formatOpts = { hour12: true, hour: '2-digit', minute: '2-digit' };
+                const startStr = start.toLocaleTimeString('en-US', formatOpts);
+                const endStr = end.toLocaleTimeString('en-US', formatOpts);
+                timeDisplay = `${startStr} - ${endStr}`;
             } catch (e) { }
         }
 
@@ -69,21 +73,17 @@ function renderExamsTable(exams) {
             <td class="px-6 py-4">${formatDate(exam.examDate || exam.date)}</td>
             <td class="px-6 py-4">${timeDisplay}</td>
             <td class="px-6 py-4 capitalize">${(exam.examType || exam.mode || 'Regular').toLowerCase()}</td>
-            <td class="px-6 py-4 capitalize">${exam.location || 'N/A'}</td>
             <td class="px-6 py-4">
-                <select onchange="updateExamStatus('${exam.sourceId}', this.value)" class="text-xs font-semibold rounded-lg px-2 py-1 outline-none cursor-pointer border ${getStatusColor(currentStatus)}">
-                    <option value="UPCOMING" ${currentStatus === 'UPCOMING' ? 'selected' : ''}>UPCOMING</option>
-                    <option value="DRAFT" ${currentStatus === 'DRAFT' ? 'selected' : ''}>DRAFT</option>
-                    <option value="OPEN" ${currentStatus === 'OPEN' ? 'selected' : ''}>OPEN</option>
-                    <option value="LIVE" ${currentStatus === 'LIVE' ? 'selected' : ''}>LIVE</option>
-                    <option value="COMPLETED" ${currentStatus === 'COMPLETED' ? 'selected' : ''}>COMPLETED</option>
-                    <option value="CANCELLED" ${currentStatus === 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
-                </select>
+                <span class="text-xs font-bold uppercase rounded-md px-2.5 py-1 border ${getStatusColor(currentStatus)}">
+                    ${currentStatus}
+                </span>
             </td>
             <td class="px-6 py-4 text-right">
+                ${currentStatus !== 'COMPLETED' ? `
                 <button onclick="releaseHallTicket(${exam.id})" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors" title="Release Hall Ticket"><i class="fas fa-paper-plane"></i></button>
                 <button onclick="editExam('${exam.sourceId}')" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors" title="Edit Exam"><i class="fas fa-edit"></i> Edit</button>
                 <button onclick="confirmDeleteExam('${exam.sourceId}')" class="text-red-600 hover:text-red-900 transition-colors" title="Delete Exam"><i class="fas fa-trash"></i></button>
+                ` : `<span class="text-gray-400 text-sm font-medium"><i class="fas fa-lock mr-1"></i> Locked</span>`}
             </td>
         </tr>
     `}).join('');

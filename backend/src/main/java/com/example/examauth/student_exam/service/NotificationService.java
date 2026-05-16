@@ -5,7 +5,6 @@ import com.example.examauth.student_exam.model.Notification;
 import com.example.examauth.student_exam.repo.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,8 +34,25 @@ public class NotificationService {
         notification.setStudentId(studentId);
         notification.setTitle(title);
         notification.setMessage(message);
+        notification.setIsRead(false);
         Notification saved = notificationRepository.save(notification);
         log.info("Notification saved successfully with ID: {} for studentId: {}", saved.getId(), studentId);
+    }
+
+    public void markAsRead(Long notificationId) {
+        notificationRepository.findById(notificationId).ifPresent(n -> {
+            n.setIsRead(true);
+            notificationRepository.save(n);
+        });
+    }
+
+    public void markAllAsRead(Long studentId) {
+        List<Notification> unread = notificationRepository.findByStudentIdOrderByCreatedAtDesc(studentId)
+                .stream()
+                .filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
+                .collect(Collectors.toList());
+        unread.forEach(n -> n.setIsRead(true));
+        notificationRepository.saveAll(unread);
     }
 
     private NotificationResponseDTO mapToDTO(Notification notification) {
@@ -44,6 +60,8 @@ public class NotificationService {
                 notification.getId(),
                 notification.getTitle(),
                 notification.getMessage(),
-                notification.getCreatedAt().toString());
+                notification.getCreatedAt().toString(),
+                Boolean.TRUE.equals(notification.getIsRead()));
     }
 }
+

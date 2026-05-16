@@ -896,51 +896,7 @@
                 </div>
               </div>
 
-              <!-- 2FA -->
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Two-Factor Authentication</h3>
-                <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-100">
-                  <div>
-                    <p class="font-medium text-blue-900">Enable 2FA via Email/SMS</p>
-                    <p class="text-sm text-blue-700">Protect your account with an extra layer of security.</p>
-                  </div>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" value="" class="sr-only peer">
-                    <div
-                      class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                    </div>
-                  </label>
-                </div>
-              </div>
 
-              <!-- Login History -->
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Recent Login Activity</h3>
-                <table class="w-full text-sm text-left text-gray-500">
-                  <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr>
-                      <th class="px-4 py-2">Device</th>
-                      <th class="px-4 py-2">Location</th>
-                      <th class="px-4 py-2">Time</th>
-                      <th class="px-4 py-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr class="bg-white border-b">
-                      <td class="px-4 py-2">Windows PC (Chrome)</td>
-                      <td class="px-4 py-2">Mumbai, India</td>
-                      <td class="px-4 py-2">Just now</td>
-                      <td class="px-4 py-2 text-green-600 font-medium">Active Now</td>
-                    </tr>
-                    <tr class="bg-white border-b">
-                      <td class="px-4 py-2">Windows PC (Edge)</td>
-                      <td class="px-4 py-2">Pune, India</td>
-                      <td class="px-4 py-2">Yesterday, 4:00 PM</td>
-                      <td class="px-4 py-2 text-gray-500">Logged Out</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
             </div>
           </div>
 
@@ -2123,7 +2079,7 @@
 
       try {
         // Fetch only once or on demand, optimization: fetch all always for now
-        const response = await authFetch('http://localhost:8080/api/institution/all');
+        const response = await authFetch('/api/institution/all');
         if (!response.ok) throw new Error("Failed to fetch");
 
         allInstitutions = await response.json();
@@ -2149,6 +2105,9 @@
       // Toggle Views
       document.getElementById('institutions-list-view').classList.add('hidden');
       document.getElementById('communication-hub-view').classList.remove('hidden');
+      
+      // Load history
+      loadCommunicationHistory();
     }
 
     function toggleDeadlineField() {
@@ -2161,52 +2120,144 @@
       }
     }
 
-    function sendOfficialMessage() {
+    async function sendOfficialMessage() {
       const type = document.getElementById('msgType').value;
-      const recipient = document.getElementById('msgRecipient').value;
+      const recipientInput = document.getElementById('msgRecipient').value;
       const subject = document.getElementById('msgSubject').value;
-      const body = document.getElementById('msgBody').value; // In a real app, this would be sent
+      const body = document.getElementById('msgBody').value;
+      const priority = document.getElementById('msgPriority') ? document.getElementById('msgPriority').value : 'NORMAL';
 
-      if (!recipient || !subject) {
-        alert("Please fill in Recipient and Subject.");
+      if (!recipientInput || !subject || !body) {
+        alert("Please fill in Recipient, Subject, and Message.");
         return;
       }
 
-      // Simulate Sending
-      alert(`Message Sent Successfully to ${recipient}`);
+      // Extract institution code if format is "Name (CODE)"
+      const match = recipientInput.match(/\((.*?)\)/);
+      const recipientCode = match ? match[1] : recipientInput.trim();
 
-      // Add to history
-      const typeBadge = type === 'Warning' ? 'bg-red-100 text-red-800' : (type === 'Broadcast' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800');
+      const btn = event.target || document.querySelector('#communication-hub-view button.primary-btn');
+      const oldText = btn.innerText;
+      btn.innerText = 'Sending...';
+      btn.disabled = true;
 
-      const newMsg = {
-        date: new Date().toISOString().split('T')[0],
-        type: type.toUpperCase(),
-        typeClass: typeBadge,
-        recipient: recipient,
-        subject: subject,
-        status: 'Sent',
-        statusClass: 'text-gray-400',
-        icon: 'check'
-      };
+      try {
+        const res = await authFetch('/api/admin/communication/send', {
+          method: 'POST',
+          body: JSON.stringify({
+            subject: subject,
+            message: body,
+            recipient: recipientCode,
+            type: type.toUpperCase(),
+            priority: priority.toUpperCase()
+          })
+        });
+        if (!res.ok) {
+           const errorText = await res.text();
+           console.error("Server returned non-OK status:", res.status, errorText);
+           alert("Server error: " + res.status + "\n" + (errorText.length > 100 ? errorText.substring(0, 100) + '...' : errorText));
+           return;
+        }
+        const data = await res.json();
+        if (data.success) {
+          alert(`Message Sent Successfully to ${recipientCode}`);
+          // Reset Form
+          document.getElementById('msgRecipient').value = '';
+          document.getElementById('msgSubject').value = '';
+          document.getElementById('msgBody').value = '';
+          // Refresh history
+          loadCommunicationHistory();
+        } else {
+          alert("Failed to send message: " + data.message);
+        }
+      } catch (err) {
+        console.error("Error sending message:", err);
+        alert("Error sending message: " + err.message);
+      } finally {
+        btn.innerText = oldText;
+        btn.disabled = false;
+      }
+    }
 
-      // Prepend to mock history (for demo)
+    async function loadCommunicationHistory() {
       const tbody = document.getElementById('msgHistoryBody');
-      const tr = document.createElement('tr');
-      tr.className = "hover:bg-gray-50 animate-pulse";
-      tr.innerHTML = `
-            <td class="p-3 text-xs text-gray-500">${newMsg.date}</td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${newMsg.typeClass}">${newMsg.type}</span></td>
-            <td class="p-3 text-gray-800">${newMsg.recipient}</td>
-            <td class="p-3 text-gray-600">${newMsg.subject}</td>
-            <td class="p-3"><span class="${newMsg.statusClass} text-xs"><i class="fas fa-${newMsg.icon}"></i> ${newMsg.status}</span></td>
-        `;
-      tbody.insertBefore(tr, tbody.firstChild);
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading history...</td></tr>';
+      
+      try {
+        const res = await authFetch('/api/admin/communication/history');
+        const data = await res.json();
+        if (data.success) {
+          const history = data.data || [];
+          tbody.innerHTML = '';
+          if (history.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">No communication history found.</td></tr>';
+            return;
+          }
 
-      // Reset Form
-      document.getElementById('msgRecipient').value = '';
-      document.getElementById('msgSubject').value = '';
-      document.getElementById('msgBody').value = '';
-      setTimeout(() => tr.classList.remove('animate-pulse'), 1000);
+          history.forEach(msg => {
+            const dateStr = new Date(msg.createdAt).toLocaleDateString();
+            const typeBadge = msg.type === 'WARNING' ? 'bg-red-100 text-red-800' : (msg.type === 'BROADCAST' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800');
+            const isReply = msg.senderRole === 'UNIVERSITY_ADMIN';
+            
+            let statusClass = 'text-gray-500';
+            if (msg.status === 'READ') statusClass = 'text-blue-600';
+            else if (msg.status === 'APPROVED') statusClass = 'text-green-600';
+            else if (msg.status === 'REQUESTED') statusClass = 'text-yellow-600';
+            
+            let actions = '';
+            if (msg.status === 'REQUESTED') {
+              actions = `<button onclick="handleReplyRequest(${msg.id}, 'approve')" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded mr-1 hover:bg-green-200">Approve</button>` +
+                        `<button onclick="handleReplyRequest(${msg.id}, 'reject')" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200">Reject</button>`;
+            } else if (msg.status === 'APPROVED' && msg.replyAllowed) {
+              actions = `<span class="text-xs text-green-600 font-bold">Reply Allowed</span>`;
+            } else if (msg.senderRole === 'SUPER_ADMIN') {
+               actions = `<button onclick="deleteCommMessage(${msg.id})" class="text-xs text-red-600 hover:underline">Delete</button>`;
+            } else if (isReply) {
+               actions = `<span class="text-xs text-blue-600 font-bold">Received Reply</span>`;
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="p-3 text-xs text-gray-500">${dateStr}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${typeBadge}">${msg.type || 'GENERAL'}</span></td>
+              <td class="p-3 text-gray-800">${isReply ? 'From: ' + msg.senderEmail : 'To: ' + (msg.receiverInstitutionCode || msg.receiverEmail)}</td>
+              <td class="p-3 text-gray-600" title="${msg.message}">${msg.subject}</td>
+              <td class="p-3"><span class="${statusClass} text-xs font-semibold">${msg.status}</span></td>
+              <td class="p-3">${actions}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-red-500">Error loading history</td></tr>';
+      }
+    }
+
+    async function handleReplyRequest(msgId, action) {
+       try {
+         const res = await authFetch(`/api/admin/communication/reply-requests/${msgId}/${action}`, { method: 'POST' });
+         const data = await res.json();
+         if (data.success) {
+            alert(`Reply request ${action}d.`);
+            loadCommunicationHistory();
+         } else {
+            alert('Error: ' + data.message);
+         }
+       } catch (err) {
+         alert('Error processing request.');
+       }
+    }
+    
+    async function deleteCommMessage(msgId) {
+       if(!confirm('Are you sure you want to delete this message?')) return;
+       try {
+         const res = await authFetch(`/api/admin/communication/${msgId}`, { method: 'DELETE' });
+         if (res.ok) loadCommunicationHistory();
+       } catch (err) {
+         alert('Error deleting message.');
+       }
     }
 
     function prefillMessage(recipientName) {
@@ -2300,7 +2351,7 @@
       if (!confirm("Are you sure you want to approve this institution?")) return;
 
       try {
-        const response = await authFetch(`http://localhost:8080/api/institution/approve/${id}`, {
+        const response = await authFetch(`/api/institution/approve/${id}`, {
           method: 'POST'
         });
         if (response.ok) {
@@ -2318,7 +2369,7 @@
     async function rejectInstitution(id) {
       if (!confirm("Are you sure you want to REJECT this institution?")) return;
       try {
-        const response = await authFetch(`http://localhost:8080/api/institution/reject/${id}`, { method: 'POST' });
+        const response = await authFetch(`/api/institution/reject/${id}`, { method: 'POST' });
         if (response.ok) {
           alert("Institution rejected.");
           fetchInstitutionRequests();
@@ -2334,7 +2385,7 @@
     async function removeInstitution(id) {
       if (!confirm("Are you sure you want to REMOVE this institution request permanently?")) return;
       try {
-        const response = await authFetch(`http://localhost:8080/api/institution/remove/${id}`, { method: 'DELETE' });
+        const response = await authFetch(`/api/institution/remove/${id}`, { method: 'DELETE' });
         if (response.ok) {
           alert("Institution removed.");
           fetchInstitutionRequests();
@@ -2381,7 +2432,7 @@
 
         // 1. Fetch Admin Summary (Existing Endpoint)
         try {
-          const sumResp = await authFetch('http://localhost:8080/api/admin/summary');
+          const sumResp = await authFetch('/api/admin/summary');
           if (sumResp.ok) {
             const data = await sumResp.json();
             document.getElementById('total-exams-count').innerText = data.exams || 0;
@@ -2414,7 +2465,7 @@
       if (typeof Chart === 'undefined') return;
 
       try {
-        const response = await authFetch('http://localhost:8080/api/admin/analytics');
+        const response = await authFetch('/api/admin/analytics');
         if (!response.ok) throw new Error("Failed to fetch analytics");
         const data = await response.json();
 
@@ -2535,7 +2586,7 @@
       tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><i class="fas fa-spinner fa-spin text-indigo-600"></i> Loading activities...</td></tr>';
 
       try {
-        const response = await authFetch(`http://localhost:8080/api/admin/activity-log?page=${page}&size=5`);
+        const response = await authFetch(`/api/admin/activity-log?page=${page}&size=5`);
         if (!response.ok) throw new Error("Failed to fetch activity log");
         const data = await response.json();
         const activities = data.content;
@@ -2576,7 +2627,7 @@
 
         // 1. Fetch Admin Summary (Existing Endpoint)
         try {
-          const sumResp = await authFetch('http://localhost:8080/api/admin/summary');
+          const sumResp = await authFetch('/api/admin/summary');
           if (sumResp.ok) {
             const data = await sumResp.json();
             document.getElementById('total-exams-count').innerText = data.exams || "1,205";
@@ -2889,13 +2940,13 @@
         // Fetch live summary data to include in report
         let summaryData = {};
         try {
-          const sumResp = await authFetch('http://localhost:8080/api/admin/summary');
+          const sumResp = await authFetch('/api/admin/summary');
           if (sumResp.ok) summaryData = await sumResp.json();
         } catch(e) { /* use defaults */ }
 
         let institutionsData = [];
         try {
-          const instResp = await authFetch('http://localhost:8080/api/institution/all');
+          const instResp = await authFetch('/api/institution/all');
           if (instResp.ok) institutionsData = await instResp.json();
         } catch(e) { /* ignore */ }
 
@@ -2940,7 +2991,7 @@
       btn.disabled = true;
 
       try {
-        const response = await fetch('http://localhost:8080/api/admin/reports/system/csv');
+        const response = await fetch('/api/admin/reports/system/csv');
         if (response.ok) {
           const blob = await response.blob();
           const url = window.URL.createObjectURL(blob);
@@ -3008,7 +3059,7 @@
       }
 
       try {
-        const response = await fetch('http://localhost:8080' + endpoint);
+        const response = await fetch('' + endpoint);
         if (response.ok) {
           const blob = await response.blob();
           const url = window.URL.createObjectURL(blob);
@@ -3134,7 +3185,7 @@
     let currentVerificationType = null;
     let isEmailVerified = true;
     let isPhoneVerified = true;
-    const API_BASE_URL = 'http://localhost:8080/api/otp';
+    const API_BASE_URL = '/api/otp';
 
     // Initialize on load to separate from global scope execution
     document.addEventListener('DOMContentLoaded', () => {
@@ -3159,7 +3210,7 @@
         const headers = {};
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
-        const response = await fetch('http://localhost:8080/api/profile/info', { headers });
+        const response = await fetch('/api/profile/info', { headers });
         if (response.ok) {
           const data = await response.json();
 
@@ -3201,7 +3252,7 @@
           
           if (data.photoPath && data.photoPath !== 'null') {
             const errorHandler = `this.parentElement.style.background='linear-gradient(135deg,#4f46e5,#7c3aed)'; this.parentElement.style.border='none'; this.outerHTML='<span style=\\'font-size:inherit;font-weight:700;color:#fff;line-height:1\\'>${fallbackInitials}</span>';`;
-            const imgHtml = `<img src="http://localhost:8080/uploads/${data.photoPath}" alt="Profile" class="w-full h-full object-cover rounded-full" onerror="${errorHandler}">`;
+            const imgHtml = `<img src="/uploads/${data.photoPath}" alt="Profile" class="w-full h-full object-cover rounded-full" onerror="${errorHandler}">`;
             
             profilePhotoContainer.innerHTML = imgHtml;
             profilePhotoContainer.classList.remove('bg-indigo-600', 'bg-gray-200', 'text-4xl', 'text-white', 'font-bold');
@@ -3430,7 +3481,7 @@
         if (token) headers['Authorization'] = 'Bearer ' + token;
         // For basic auth demo, credentials might be needed, but usually session based in this context
 
-        const response = await fetch('http://localhost:8080/api/profile/update', {
+        const response = await fetch('/api/profile/update', {
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
@@ -3489,7 +3540,7 @@
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
-        const response = await fetch('http://localhost:8080/api/profile/change-password', {
+        const response = await fetch('/api/profile/change-password', {
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
@@ -3661,7 +3712,7 @@
         const headers = {};
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
-        const response = await fetch('http://localhost:8080/api/profile/upload', {
+        const response = await fetch('/api/profile/upload', {
           method: 'POST',
           headers: headers,
           body: formData

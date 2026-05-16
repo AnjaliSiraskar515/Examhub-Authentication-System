@@ -66,12 +66,12 @@ export const Navbar = {
                     <div class="h-8 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
 
                     <!-- Profile Status -->
-                    <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+                    <div id="nav-verif-container" class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
                          <div class="hidden md:block text-right">
-                             <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">Pending</p>
-                             <p class="text-[10px] text-orange-500 font-bold tracking-wide uppercase">Verification</p>
+                             <p id="nav-verif-title" class="text-xs font-semibold text-gray-700 dark:text-gray-200">Pending</p>
+                             <p id="nav-verif-subtitle" class="text-[10px] text-orange-500 font-bold tracking-wide uppercase">Verification</p>
                          </div>
-                         <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                         <div id="nav-verif-dot" class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
                     </div>
                 </div>
             </div>
@@ -99,7 +99,8 @@ export const Navbar = {
                 title: n.title || 'Notification',
                 message: n.message || '',
                 createdAt: n.createdAt || n.timestamp || new Date().toISOString(),
-                read: n.read || false,
+                // isRead from backend is authoritative
+                read: n.isRead === true || n.read === true,
                 type: n.type || 'info'
             };
         };
@@ -165,10 +166,11 @@ export const Navbar = {
             const readIds = new Set(JSON.parse(localStorage.getItem('read-notification-ids') || '[]'));
             const merged = new Map();
 
-            // 1. API as base
+            // 1. API as base — backend isRead is authoritative
             notifications.forEach(n => {
                 const norm = normalizeNotification(n);
-                if (readIds.has(norm.id)) norm.read = true;
+                // Only override to read via localStorage if backend doesn't already say read
+                if (!norm.read && readIds.has(norm.id)) norm.read = true;
                 merged.set(norm.id, norm);
             });
 
@@ -242,6 +244,15 @@ export const Navbar = {
 
         // Mark all read
         markReadBtn.addEventListener('click', async () => {
+            // Persist to backend FIRST so next poll returns isRead=true
+            try {
+                const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
+                await fetch('/api/student/notifications/mark-all-read', {
+                    method: 'POST',
+                    headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+                });
+            } catch (e) { console.warn('mark-all-read API failed:', e); }
+
             const all = await loadNotifications(true);
             const readIds = new Set(JSON.parse(localStorage.getItem('read-notification-ids') || '[]'));
 
@@ -281,6 +292,34 @@ export const Navbar = {
             } else {
                 dot.classList.add('hidden');
                 if (unreadLabel) unreadLabel.textContent = 'All caught up!';
+            }
+        });
+
+        // Verification Status Listener
+        window.addEventListener('verification-status', (e) => {
+            const verified = e.detail.verified;
+            const title = document.getElementById('nav-verif-title');
+            const subtitle = document.getElementById('nav-verif-subtitle');
+            const verifDot = document.getElementById('nav-verif-dot');
+            
+            if (verified) {
+                if (title) title.textContent = 'Status';
+                if (subtitle) {
+                    subtitle.textContent = 'Verified';
+                    subtitle.className = 'text-[10px] text-green-500 font-bold tracking-wide uppercase';
+                }
+                if (verifDot) {
+                    verifDot.className = 'w-2 h-2 rounded-full bg-green-500';
+                }
+            } else {
+                if (title) title.textContent = 'Pending';
+                if (subtitle) {
+                    subtitle.textContent = 'Verification';
+                    subtitle.className = 'text-[10px] text-orange-500 font-bold tracking-wide uppercase';
+                }
+                if (verifDot) {
+                    verifDot.className = 'w-2 h-2 rounded-full bg-orange-500 animate-pulse';
+                }
             }
         });
 

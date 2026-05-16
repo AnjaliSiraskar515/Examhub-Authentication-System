@@ -254,6 +254,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (role === "UNIVERSITY_ADMIN") {
       password = get("institutionLoginKey")?.value.trim();
     }
+    
+    // Check if email OTP is verified for authorities
+    if (!emailVerified) {
+      alert("Please verify your email OTP before logging in.");
+      return;
+    }
+    
     await loginRequest(email, password, role, null, institutionCode);
   });
 });
@@ -298,7 +305,7 @@ async function loginRequest(identifier, password, role = "STUDENT", prn = null, 
         case "STUDENT": location.href = "student_dashboard.html"; break;
         case "SUPERVISOR": location.href = "supervisor_dashboard.html"; break;
         case "UNIVERSITY_ADMIN": location.href = "university_dashboard.html"; break;
-        case "SUPERADMIN": location.href = "super_admin_dashboard.html"; break;
+        case "SUPER_ADMIN": location.href = "super_admin_dashboard.html"; break;
         default: alert("Unknown role: " + userRole);
       }
     } else {

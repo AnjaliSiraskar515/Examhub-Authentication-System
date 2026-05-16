@@ -189,7 +189,7 @@
 
     .sig-table td {
       border: none;
-      width: 33.33%;
+      width: 50%;
       padding: 0 10px;
     }
 
@@ -378,10 +378,6 @@
             <div class="sig-text">Candidate's Signature</div>
           </td>
           <td>
-            <div class="sig-line"></div>
-            <div class="sig-text">Principal Stamp & Sign</div>
-          </td>
-          <td>
             <div class="sig-line">
               <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Signature_of_John_Hancock.svg" alt="Sign"
                 style="height: 35px; opacity: 0.8; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);">
@@ -395,7 +391,7 @@
   </div>
 
   <script>
-    const API_BASE = 'http://localhost:8080';
+    const API_BASE = '';
 
     function setQrFromPayload(qrCode) {
       const qrImage = document.getElementById('qrImage');

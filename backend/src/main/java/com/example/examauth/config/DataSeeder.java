@@ -4,17 +4,142 @@ import com.example.examauth.model.User;
 import com.example.examauth.repo.UserRepository;
 import com.example.examauth.repo.ExamRepository;
 import com.example.examauth.repo.InstitutionRepository;
+import com.example.examauth.repo.SystemSettingRepository;
 import com.example.examauth.model.Exam;
+import com.example.examauth.model.SystemSetting;
 import com.example.examauth.student_exam.university.model.UniversityExam;
 import com.example.examauth.student_exam.university.repo.UniversityExamRepository;
+import com.example.examauth.student_exam.model.ExamHall;
+import com.example.examauth.student_exam.model.ExamSeatAllocation;
+import com.example.examauth.student_exam.repo.ExamHallRepository;
+import com.example.examauth.student_exam.repo.ExamSeatAllocationRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Configuration
 public class DataSeeder {
+
+    /**
+     * On startup: ensure session.timeout.minutes is at least 480 (8 hours) in the
+     * DB.
+     * This overrides any legacy 15-minute value that was previously stored.
+     */
+    @Bean(name = "fixSessionTimeout")
+    public CommandLineRunner fixSessionTimeout(SystemSettingRepository systemSettingRepo) {
+        return args -> {
+            try {
+                SystemSetting setting = systemSettingRepo.findByKey("session.timeout.minutes")
+                        .orElseGet(SystemSetting::new);
+                String current = setting.getValue();
+                int currentVal = -1;
+                try {
+                    currentVal = Integer.parseInt(current != null ? current.trim() : "0");
+                } catch (Exception ignored) {
+                }
+                if (currentVal < 60) {
+                    setting.setKey("session.timeout.minutes");
+                    setting.setValue("480");
+                    setting.setUpdatedBy("system");
+                    setting.setUpdatedAt(java.time.LocalDateTime.now());
+                    systemSettingRepo.save(setting);
+                    System.out.println("✅ Session timeout updated to 480 minutes (8 hours).");
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Could not update session timeout: " + e.getMessage());
+            }
+        };
+    }
+
+    @Bean(name = "fixNullStatusUsers")
+    public CommandLineRunner fixNullStatusUsers(UserRepository userRepository) {
+        return args -> {
+            List<User> nullStatusUsers = userRepository.findAll().stream()
+                    .filter(u -> u.getStatus() == null || u.getStatus().trim().isEmpty())
+                    .toList();
+            if (!nullStatusUsers.isEmpty()) {
+                nullStatusUsers.forEach(u -> u.setStatus("active"));
+                userRepository.saveAll(nullStatusUsers);
+                System.out.println(
+                        "✅ Retroactively fixed " + nullStatusUsers.size() + " users with null status to 'active'.");
+            }
+        };
+    }
+
+    /**
+     * Seeds a sample Hall + 10 Student Seat Allocations for the first COMPLETED
+     * UniversityExam so the Download Report feature has real demo data.
+     */
+    @Bean(name = "seedCompletedExamData")
+    public CommandLineRunner seedCompletedExamData(
+            UniversityExamRepository universityExamRepo,
+            ExamHallRepository examHallRepo,
+            ExamSeatAllocationRepository seatAllocationRepo) {
+        return args -> {
+            try {
+                // Find first completed exam
+                UniversityExam completed = universityExamRepo.findAll().stream()
+                        .filter(e -> "COMPLETED".equalsIgnoreCase(e.getStatus()))
+                        .findFirst().orElse(null);
+                if (completed == null)
+                    return;
+
+                Long examId = completed.getId();
+                Long collegeId = completed.getCollegeId() != null ? completed.getCollegeId() : 1L;
+
+                // Skip if data already exists
+                long existingHalls = examHallRepo.findAllByExamIdAndCollegeId(examId, collegeId).size();
+                if (existingHalls > 0)
+                    return;
+
+                // Create a demo hall
+                ExamHall hall = new ExamHall();
+                hall.setExamId(examId);
+                hall.setCollegeId(collegeId);
+                hall.setHallName("Hall A - Room 201");
+                hall.setHallPrefix("A");
+                hall.setCapacity(30);
+                hall.setExamSupervisorName("AKS Supervisor");
+                ExamHall savedHall = examHallRepo.save(hall);
+
+                // Seed 10 sample seat allocations
+                String[] names = { "Riya Sharma", "Amit Patil", "Sneha Joshi", "Rahul Desai",
+                        "Pooja Kulkarni", "Vikas Rao", "Ananya Gupta", "Arjun Nair",
+                        "Kavya Singh", "Omkar Bhat" };
+                String[] prns = { "22260001", "22260002", "22260003", "22260004", "22260005",
+                        "22260006", "22260007", "22260008", "22260009", "22260010" };
+
+                for (int i = 0; i < names.length; i++) {
+                    // Avoid duplicate seat allocations (use a fake registrationId per student)
+                    long fakeRegId = examId * 1000 + (i + 1);
+                    boolean exists = seatAllocationRepo.existsByRegistrationIdAndExamId(fakeRegId, examId);
+                    if (exists)
+                        continue;
+
+                    ExamSeatAllocation seat = new ExamSeatAllocation();
+                    seat.setRegistrationId(fakeRegId);
+                    seat.setStudentId((long) (900 + i));
+                    seat.setPrn(prns[i]);
+                    seat.setStudentName(names[i]);
+                    seat.setExamId(examId);
+                    seat.setCollegeId(collegeId);
+                    seat.setCollegeName(completed.getCollegeId() != null ? "Demo College" : "SRCOE");
+                    seat.setHall(savedHall);
+                    seat.setHallName(savedHall.getHallName());
+                    seat.setSeatNumber("A-" + String.format("%03d", i + 1));
+                    seat.setRollNumber("CLG/2026/" + String.format("%03d", i + 1));
+                    seat.setSerialInCollege(i + 1);
+                    seatAllocationRepo.save(seat);
+                }
+                System.out.println("✅ Seeded Hall + 10 seat allocations for completed exam ID: " + examId);
+            } catch (Exception e) {
+                System.err.println("⚠️ Could not seed completed exam data: " + e.getMessage());
+            }
+        };
+    }
 
     @Bean(name = "backfillUniversityExamInstitution")
     public CommandLineRunner backfillUniversityExamInstitution(
@@ -25,41 +150,45 @@ public class DataSeeder {
             List<UniversityExam> nullCodeExams = universityExamRepo.findAll().stream()
                     .filter(e -> e.getInstitutionCode() == null || e.getInstitutionCode().isEmpty())
                     .toList();
-            if (nullCodeExams.isEmpty()) return;
+            if (nullCodeExams.isEmpty())
+                return;
 
-            // Build a map: supervisorId → institutionCode (via supervisor user → institution lookup)
+            java.util.Set<Long> supervisorIds = nullCodeExams.stream()
+                    .map(UniversityExam::getSupervisorId)
+                    .filter(id -> id != null)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            if (supervisorIds.isEmpty())
+                return;
+
+            // Build a map: supervisorId → institutionCode (via supervisor user →
+            // institution lookup)
             java.util.Map<Long, String> supervisorToInstitutionCode = new java.util.HashMap<>();
-            userRepo.findAll().stream()
-                    .filter(u -> u.getUserId() != null)
-                    .forEach(u -> {
-                        com.example.examauth.model.Institution inst = null;
-                        if (u.getInstitutionCode() != null && !u.getInstitutionCode().isEmpty()) {
-                            inst = institutionRepo.findFirstByInstitutionCode(u.getInstitutionCode()).orElse(null);
-                        }
-                        if (inst == null) {
-                            inst = institutionRepo.findFirstByAdminEmail(u.getEmail()).orElse(null);
-                        }
-                        if (inst == null) {
-                            inst = institutionRepo.findFirstByContactEmail(u.getEmail()).orElse(null);
-                        }
-                        if (inst != null && inst.getInstitutionCode() != null) {
-                            supervisorToInstitutionCode.put(u.getUserId(), inst.getInstitutionCode());
-                        }
-                    });
+            userRepo.findAllById(supervisorIds).forEach(u -> {
+                com.example.examauth.model.Institution inst = null;
+                if (u.getInstitutionCode() != null && !u.getInstitutionCode().isEmpty()) {
+                    inst = institutionRepo.findFirstByInstitutionCode(u.getInstitutionCode()).orElse(null);
+                }
+                if (inst == null && u.getEmail() != null && !u.getEmail().trim().isEmpty()) {
+                    inst = institutionRepo.findFirstByAdminEmail(u.getEmail()).orElse(null);
+                }
+                if (inst == null && u.getEmail() != null && !u.getEmail().trim().isEmpty()) {
+                    inst = institutionRepo.findFirstByContactEmail(u.getEmail()).orElse(null);
+                }
+                if (inst != null && inst.getInstitutionCode() != null) {
+                    supervisorToInstitutionCode.put(u.getUserId(), inst.getInstitutionCode());
+                }
+            });
 
             boolean anyUpdated = false;
             for (UniversityExam exam : nullCodeExams) {
-                String code = null;
                 if (exam.getSupervisorId() != null) {
-                    code = supervisorToInstitutionCode.get(exam.getSupervisorId());
-                }
-                if (code == null) {
-                    // Fallback removed: we should not aggressively reassign exams to random institutions.
-                }
-                if (code != null) {
-                    exam.setInstitutionCode(code);
-                    universityExamRepo.save(exam);
-                    anyUpdated = true;
+                    String code = supervisorToInstitutionCode.get(exam.getSupervisorId());
+                    if (code != null) {
+                        exam.setInstitutionCode(code);
+                        universityExamRepo.save(exam);
+                        anyUpdated = true;
+                    }
                 }
             }
             if (anyUpdated) {
@@ -75,7 +204,8 @@ public class DataSeeder {
         return args -> {
             // Cleanup specific colliding email if it exists (Fix for user request)
             // COMMENTED OUT TO PREVENT DELETING THE ACTIVE USER
-            // userRepository.findByEmail("anjali.siraskar05@gmail.com").ifPresent(u -> {
+            // userRepository.findFirstByEmail("anjali.siraskar05@gmail.com").ifPresent(u ->
+            // {
             // System.out.println("⚠️ Removing conflicting user:
             // anjali.siraskar05@gmail.com");
             // userRepository.delete(u);
@@ -119,7 +249,7 @@ public class DataSeeder {
             }
 
             // Seed real student: its972025@gmail.com / PRN: 72260829C
-            if (userRepository.findByEmail("its972025@gmail.com").isEmpty()) {
+            if (userRepository.findFirstByEmail("its972025@gmail.com").isEmpty()) {
                 User realStudent = new User();
                 realStudent.setName("Student");
                 realStudent.setEmail("its972025@gmail.com");
@@ -137,7 +267,8 @@ public class DataSeeder {
             // Advanced Java Programming, Theory of Computation, and Operating System were
             // test/demo exams only. The real exam module (university wizard) is now in use.
             // To delete old records from DB:
-            //   DELETE FROM exams WHERE exam_name IN ('Advanced Java Programming','Theory of Computation','Operating System');
+            // DELETE FROM exams WHERE exam_name IN ('Advanced Java Programming','Theory of
+            // Computation','Operating System');
             // ─────────────────────────────────────────────────────────────────────────
 
             // Seed 5 Random Students (kept for student registration / testing flows)
@@ -181,11 +312,32 @@ public class DataSeeder {
                     userRepository.save(s);
                 }
             }
-            System.out.println("✅ Test students seeded");
+
+            // Seed 30 Test Students for Phase 5 E2E Capacity & Pagination Testing
+            for (int i = 1; i <= 30; i++) {
+                String prn = String.format("E2E%03d", i);
+                if (userRepository.findByPrn(prn).isEmpty()) {
+                    User s = new User();
+                    s.setName("E2E Student " + i);
+                    s.setEmail("e2e" + i + "@examhub.edu");
+                    s.setUsername("e2e_student" + i);
+                    s.setPrn(prn);
+                    s.setPassword(passwordEncoder.encode("password"));
+                    s.setRole("STUDENT");
+                    s.setStatus("APPROVED");
+                    s.setProfileCompleted(true);
+                    s.setDepartment("Computer Science");
+                    s.setYear("Final Year");
+                    s.setPhotoPath("https://ui-avatars.com/api/?name=E2E+" + i + "&background=random");
+                    userRepository.save(s);
+                }
+            }
+
+            System.out.println("✅ Test students seeded (including 30 E2E students)");
 
             // Seed Super Admin
             if (userRepository.findByUsername("super_admin").isEmpty()
-                    && userRepository.findByEmail("admin@examhub.com").isEmpty()) {
+                    && userRepository.findFirstByEmail("admin@examhub.com").isEmpty()) {
                 User admin = new User();
                 admin.setName("Super Admin");
                 admin.setEmail("admin@examhub.com");
@@ -206,27 +358,31 @@ public class DataSeeder {
                 System.out.println("✅ Super Admin Seeded: admin@examhub.com / admin123");
             }
 
-            // Retroactively assign "toc" ("Theory of Computation") and "Java" ("Advanced Java Programming") to photosfor544@gmail.com and SPPU
-            userRepository.findByEmail("photosfor544@gmail.com").ifPresent(supervisor -> {
-                userRepository.findByEmail("starits04@gmail.com").ifPresent(university -> {
-                    List<Exam> tocExams = examRepository.findByExamName("Theory of Computation");
-                    List<Exam> javaExams = examRepository.findByExamName("Advanced Java Programming");
-                    
-                    for (Exam e : tocExams) {
-                        e.setSupervisorId(supervisor.getUserId());
-                        e.setSupervisorName(supervisor.getName());
-                        e.setInstitutionName(university.getUniversityName() != null ? university.getUniversityName() : university.getCollegeName() != null ? university.getCollegeName() : "SPPU");
-                        examRepository.save(e);
+            // Ensure Supervisor A is EXAM type and Supervisor B is HEAD type on every
+            // startup
+            try {
+                userRepository.findFirstByEmail("photosfor544@gmail.com").ifPresent(supA -> {
+                    if (!"EXAM".equals(supA.getSupervisorType())) {
+                        supA.setSupervisorType("EXAM");
+                        userRepository.save(supA);
+                        System.out.println("✅ Supervisor A set to EXAM type.");
                     }
-                    for (Exam e : javaExams) {
-                        e.setSupervisorId(supervisor.getUserId());
-                        e.setSupervisorName(supervisor.getName());
-                        e.setInstitutionName(university.getUniversityName() != null ? university.getUniversityName() : university.getCollegeName() != null ? university.getCollegeName() : "SPPU");
-                        examRepository.save(e);
-                    }
-                    System.out.println("✅ Retroactively assigned TOC and Java to " + supervisor.getEmail() + " under " + university.getEmail());
                 });
-            });
+            } catch (Exception e) {
+                System.out.println("Could not ensure Supervisor A type due to: " + e.getMessage());
+            }
+
+            try {
+                userRepository.findFirstByEmail("examhub001@gmail.com").ifPresent(supB -> {
+                    if (!"HEAD".equals(supB.getSupervisorType())) {
+                        supB.setSupervisorType("HEAD");
+                        userRepository.save(supB);
+                        System.out.println("✅ Supervisor B ensured as HEAD type.");
+                    }
+                });
+            } catch (Exception e) {
+                System.out.println("Could not ensure Supervisor B type due to: " + e.getMessage());
+            }
 
         };
     }

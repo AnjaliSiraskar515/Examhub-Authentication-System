@@ -25,12 +25,28 @@ public class StudentExamController {
     @Autowired
     private UserRepository userRepository;
 
-    @GetMapping("/eligible")
-    public ResponseEntity<?> getEligibleExams() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName(); // assuming PRN or username
+    @Autowired
+    private com.example.examauth.util.JwtUtil jwtUtil;
 
-        Optional<User> userOpt = userRepository.findByUsername(username);
+    @GetMapping("/eligible")
+    public ResponseEntity<?> getEligibleExams(jakarta.servlet.http.HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("Missing or invalid Authorization header");
+        }
+        
+        String jwt = authHeader.substring(7);
+        Long userId = jwtUtil.extractUserId(jwt);
+        
+        Optional<User> userOpt;
+        if (userId != null) {
+            userOpt = userRepository.findById(userId);
+        } else {
+            String email = jwtUtil.extractUsername(jwt);
+            String role = jwtUtil.extractRole(jwt);
+            userOpt = userRepository.findFirstByEmailAndRole(email, role);
+        }
+
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(404).body("User not found");
         }

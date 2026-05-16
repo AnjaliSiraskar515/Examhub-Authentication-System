@@ -47,6 +47,14 @@ public class ExamRegistrationService {
                 .orElseThrow(() -> new ExamNotFoundException("Exam not found with ID: " + request.getExamId()));
         examName = exam.getExamName();
 
+        // ========== VALIDATION 1.5: Max Students Capacity Check ==========
+        if (exam.getControls() != null && exam.getControls().getMaxStudents() != null) {
+            long currentRegistrations = examRegistrationRepository.countByExamId(request.getExamId());
+            if (currentRegistrations >= exam.getControls().getMaxStudents()) {
+                throw new IllegalStateException("Registration is closed: Maximum student capacity (" + exam.getControls().getMaxStudents() + ") has been reached for this exam.");
+            }
+        }
+
         // ========== VALIDATION 2: Eligible Subjects Check ==========
         if (request.getSelectedSubjects() != null && !request.getSelectedSubjects().isEmpty()) {
             // Fetch eligible student record from ExamEligibleStudent table
@@ -185,7 +193,10 @@ public class ExamRegistrationService {
         dto.setSelectedSubjects(registration.getSelectedSubjects());
         dto.setTotalFee(registration.getTotalFee());
         dto.setPaymentStatus(
-                registration.getPaymentStatus() != null ? registration.getPaymentStatus().name() : "PENDING");
+                registration.getRegistrationStatus() == ExamRegistration.RegistrationStatus.APPROVED 
+                ? "PAID" 
+                : (registration.getPaymentStatus() != null ? registration.getPaymentStatus().name() : "PENDING")
+        );
         dto.setExamType(registration.getExamType());
         dto.setRegistrationStatus(
                 registration.getRegistrationStatus() != null ? registration.getRegistrationStatus().name() : "APPLIED");

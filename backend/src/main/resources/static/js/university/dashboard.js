@@ -6,11 +6,21 @@ const UNIVERSITY_ID = 1; // Hardcoded for demo
 // Auth-aware fetch helper – attaches JWT token from localStorage
 function authFetch(url, options = {}) {
     const token = localStorage.getItem('token');
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-    };
+    
+    // Default headers
+    const headers = { ...options.headers };
+    
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Only set application/json if body is not FormData
+    if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+    } else if (headers['Content-Type'] === null) {
+        delete headers['Content-Type']; // Allow explicit removal
+    }
+
     return fetch(url, { ...options, headers });
 }
 
@@ -105,6 +115,9 @@ function setupNavigation() {
             }
             if (targetId === 'registrations-section') loadRegistrations();
             if (targetId === 'analytics-section') loadAnalytics();
+            if (targetId === 'communication-section' && typeof window.loadInboxMessages === 'function') {
+                window.loadInboxMessages();
+            }
         });
     });
 }

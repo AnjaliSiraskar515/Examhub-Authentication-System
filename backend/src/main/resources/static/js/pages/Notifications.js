@@ -49,10 +49,11 @@ export const Notifications = {
 
         const mergedMap = new Map();
 
-        // 1. Load API notifications
+        // 1. Load API notifications — use backend isRead as source of truth
         apiNotifications.forEach(n => {
             const norm = this.normalizeNotification(n);
-            if (readIds.has(norm.id)) norm.read = true;
+            // If backend says read, honor it; otherwise check localStorage
+            if (!norm.read && readIds.has(norm.id)) norm.read = true;
             mergedMap.set(String(norm.id), norm);
         });
 
@@ -179,7 +180,8 @@ export const Notifications = {
             title: n.title || 'Notification',
             message: n.message || '',
             createdAt: n.createdAt || n.timestamp || new Date().toISOString(),
-            read: n.read || false
+            // isRead from backend is authoritative; n.read for local/mock notifications
+            read: n.isRead === true || n.read === true
         };
     },
 
@@ -229,6 +231,16 @@ export const Notifications = {
                 iconBox.classList.add('bg-slate-100', 'text-slate-400', 'dark:bg-gray-700', 'dark:text-gray-500');
             }
 
+            // Persist to backend
+            try {
+                const token = localStorage.getItem('token');
+                await fetch(`/api/student/notifications/${normId}/read`, {
+                    method: 'POST',
+                    headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+                });
+            } catch (e) { console.warn('Failed to mark notification read on server:', e); }
+
+            // Also update localStorage as backup
             const readIds = new Set(JSON.parse(localStorage.getItem('read-notification-ids') || '[]'));
             readIds.add(normId);
             localStorage.setItem('read-notification-ids', JSON.stringify(Array.from(readIds)));
@@ -237,13 +249,22 @@ export const Notifications = {
         }
     },
 
-    markAllAsRead() {
+    async markAllAsRead() {
         const readIds = new Set(JSON.parse(localStorage.getItem('read-notification-ids') || '[]'));
         this.notifications.forEach(n => {
             n.read = true;
             readIds.add(n.id);
         });
         localStorage.setItem('read-notification-ids', JSON.stringify(Array.from(readIds)));
+
+        // Persist to backend
+        try {
+            const token = localStorage.getItem('token');
+            await fetch('/api/student/notifications/mark-all-read', {
+                method: 'POST',
+                headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+            });
+        } catch (e) { console.warn('Failed to mark all notifications read on server:', e); }
 
         const container = document.getElementById('notification-list');
         if (container) {

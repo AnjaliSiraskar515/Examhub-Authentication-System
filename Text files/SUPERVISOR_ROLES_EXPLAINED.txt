@@ -1,0 +1,376 @@
+
+================================================================================
+         EXAMHUB AUTHENTICATION SYSTEM — SUPERVISOR ROLES EXPLAINED
+================================================================================
+   Project: Final Year Project — Exam Authentication System
+   Written: April 2026
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                       OVERVIEW — TWO TYPES OF SUPERVISORS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In our ExamHub system, there are TWO types of supervisors.
+Both login using the same page (supervisor_dashboard.html), but they see
+different things and do different jobs.
+
+  Type 1 → HEAD SUPERVISOR   (manages the college side of things)
+  Type 2 → EXAM SUPERVISOR   (manages the exam hall on the day of exam)
+
+Think of it like this:
+  - Head Supervisor = College Manager / Administrative Head
+  - Exam Supervisor = Exam Hall Invigilator
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PART 1 — HEAD SUPERVISOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WHO IS THE HEAD SUPERVISOR?
+───────────────────────────
+The Head Supervisor is a senior person assigned to one specific college.
+For example: Head Supervisor for SRCOE college.
+
+They are responsible for the MANAGEMENT side — not for sitting in exam halls.
+They work BEFORE and AFTER the exam, not during it.
+
+
+WHAT DOES THE HEAD SUPERVISOR DO?
+──────────────────────────────────
+
+1. EXAM FORM APPROVALS
+   - When a student submits their exam form (registration), the Head Supervisor
+     reviews it.
+   - They check if the student's documents are correct, fees are paid, and
+     eligibility is met.
+   - They can APPROVE or REJECT the exam form.
+   - After approval, the student gets their admit card and QR code.
+
+2. COLLEGE EXAM OVERVIEW
+   - They can see ALL exams scheduled for their college.
+   - They see the full schedule: exam name, date, time, mode (online/offline),
+     exam center, and how many students are registered.
+   - This is like a college-wide exam timetable visible to them.
+
+3. MONITORING THE STRUCTURE
+   - They see summary stats:
+       → Total number of exams in their college
+       → Total students registered across all exams
+       → How many exams are currently LIVE or UPCOMING
+
+4. UNIVERSITY COORDINATION
+   - If there are any issues with exams (wrong center, schedule clash, etc.),
+     the Head Supervisor is the point of contact between the college and
+     the university.
+
+
+WHAT HEAD SUPERVISOR DOES NOT DO:
+──────────────────────────────────
+  ✗ Does NOT scan QR codes on exam day
+  ✗ Does NOT do biometric (fingerprint) verification of students
+  ✗ Does NOT sit in the exam hall
+  ✗ Does NOT supervise the students in real time during the exam
+
+
+WHICH COLLEGE ARE THEY ASSIGNED TO?
+────────────────────────────────────
+  - Each Head Supervisor is tied to ONE specific college (e.g., SRCOE).
+  - They can ONLY see exams and students from that college.
+  - This is controlled by the `college_id` field in the database.
+
+
+TECHNICAL DETAILS (Head Supervisor):
+──────────────────────────────────────
+  - Database field: users.supervisor_type = 'HEAD'
+  - College restriction: YES — filtered by college_id in the backend
+  - Can access: /api/supervisor/exam-forms (Exam Form Approvals API)
+  - Can access: /api/supervisor/exams (College exam list)
+  - Can access: /api/supervisor/profile (Their profile and college info)
+  - CANNOT access QR scan flow
+  - Dashboard UI: Shows "Exams Overview" tab (not "Exams Assigned")
+  - Dashboard UI: 4 stat blocks (QR Scans, Pending Verifications etc.) are HIDDEN
+  - Dashboard UI: Shows professional college-wide exam schedule table
+  - Sidebar shows: My Profile | Exams Overview | Exam Form Approvals | Logout
+  - Role badge shown in profile: 👑 Head Supervisor
+
+EXAMPLE (in our project):
+  - Name: Supervisor B
+  - Email: examhub001@gmail.com
+  - College: SRCOE
+  - supervisor_type: HEAD
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PART 2 — EXAM SUPERVISOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WHO IS THE EXAM SUPERVISOR?
+────────────────────────────
+The Exam Supervisor is the person who actually RUNS the exam on the day.
+They are assigned to specific exams by the university admin.
+They can be assigned to exams at ANY college — not restricted to one college.
+
+Think of them as the invigilator who sits in the exam hall.
+
+
+WHAT DOES THE EXAM SUPERVISOR DO?
+───────────────────────────────────
+
+1. SCANNING QR CODE
+   - When a student enters the exam hall, the Exam Supervisor scans their
+     QR code using the camera on the device.
+   - The QR code is on the student's admit card.
+   - After scanning, the student's details appear on screen (name, PRN,
+     photo, subjects, etc.)
+   - The student is marked as QR-verified in the database.
+
+2. BIOMETRIC VERIFICATION
+   - After QR scan, the Exam Supervisor does FINGERPRINT (biometric) verification.
+   - The student places their finger on the scanner.
+   - Our system is a SIMULATOR — it simulates the biometric process:
+       Step 1: "Acquiring fingerprint..." (scanning animation)
+       Step 2: "Matching print..." (comparison animation)
+       Step 3: FIRST ATTEMPT → Shows "PARTIAL PRINT DETECTED" (mismatch - red)
+       Step 4: "RE-INITIALIZING SCANNER" (retry - yellow)
+       Step 5: SECOND ATTEMPT → "VERIFIED ✓" (green - success)
+   - This retry simulation makes the process feel realistic.
+   - Once verified, student's biometric_verified = true in the database.
+
+3. LIVE MONITORING
+   - Exam Supervisor sees a LIVE table of all students in their exam:
+       → Student name, PRN, Roll No.
+       → Verification status (QR verified, Biometric verified, or Pending)
+       → Live status (APPROVED, PENDING)
+       → Activity timestamps
+       → Warning flags if student is idle too long
+   - They can report incidents (cheating, disturbance, etc.)
+
+4. EXAM CONTROLS
+   - They can PAUSE the exam (if there's an issue)
+   - They can trigger EMERGENCY LOCK (completely locks the exam)
+   - They can END the exam when time is up
+   - They can BROADCAST announcements to all students
+
+5. ATTENDANCE SHEET
+   - After the exam, they can download a PDF attendance sheet
+     showing which students were verified and present.
+
+
+WHAT EXAM SUPERVISOR DOES NOT DO:
+───────────────────────────────────
+  ✗ Does NOT approve exam forms (that's the Head Supervisor's job)
+  ✗ Does NOT have restriction to one college — can supervise any college's exam
+
+
+WHICH COLLEGE ARE THEY ASSIGNED TO?
+────────────────────────────────────
+  - EXAM supervisors have NO college restriction.
+  - They are assigned to specific EXAMS (not colleges).
+  - The university admin assigns them directly to exams.
+  - They can be sent to SRCOE, Dhole Patil, GH Raisoni, or any college.
+
+
+TECHNICAL DETAILS (Exam Supervisor):
+──────────────────────────────────────
+  - Database field: users.supervisor_type = 'EXAM'
+  - College restriction: NO — no college filter applied in backend
+  - Can access: /api/supervisor/exams (Only exams assigned to them via supervisor_id)
+  - Can access: /api/supervisor/students?examId=X (Students for specific exam)
+  - Can access: /api/supervisor/verify-qr (QR code verification endpoint)
+  - Can access: /api/supervisor/mark-attendance (Mark student present)
+  - Dashboard UI: Shows 4 stat blocks (Exams Today, Students Assigned, QR Scans, Pending)
+  - Dashboard UI: Shows "Exams Assigned" tab listing all their assigned exams
+  - Dashboard UI: Has QR scanner, Live Monitoring table, Biometric modal
+  - Sidebar shows: My Profile | Exams Assigned | Logout
+  - Role badge shown in profile: Exam Supervisor
+  - Biometric: Uses deterministicHash(studentId) simulation for fingerprint matching
+
+EXAMPLE (in our project):
+  - Name: Supervisor A
+  - Email: photosfor544@gmail.com
+  - College: SRCOE (but NOT restricted by it)
+  - supervisor_type: EXAM
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PART 3 — STUDENT VERIFICATION PROCESS (WHO DOES WHAT)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BEFORE EXAM DAY:
+────────────────
+  Student submits exam form
+        ↓
+  HEAD SUPERVISOR reviews the form
+        ↓
+  HEAD SUPERVISOR approves / rejects
+        ↓
+  If approved → Student gets Admit Card with QR Code
+
+ON EXAM DAY:
+────────────
+  Student arrives at exam hall
+        ↓
+  EXAM SUPERVISOR scans QR code on student's admit card
+        ↓
+  Student details appear on screen
+        ↓
+  EXAM SUPERVISOR initiates biometric verification
+        ↓
+  Student places finger on scanner
+        ↓
+  System simulates: Partial print → Retry → Verified ✓
+        ↓
+  Student's status = VERIFIED (both QR + Biometric)
+        ↓
+  Student is allowed to sit for exam
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PART 4 — QUICK COMPARISON TABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Feature                        | HEAD Supervisor      | EXAM Supervisor
+  -------------------------------|----------------------|--------------------
+  Role                           | Administrative Head  | Hall Invigilator
+  Assigned to                    | One specific college | Any exam (any college)
+  College restriction (backend)  | YES                  | NO
+  Approves exam forms            | YES ✓                | NO ✗
+  Scans QR codes                 | NO ✗                 | YES ✓
+  Does biometric verification    | NO ✗                 | YES ✓
+  Sees live student monitoring   | NO ✗                 | YES ✓
+  Sees exam schedule/overview    | YES ✓                | NO (different view)
+  Can pause/end exam             | NO ✗                 | YES ✓
+  Dashboard stat blocks          | HIDDEN               | VISIBLE
+  Sidebar nav                    | Exams Overview       | Exams Assigned
+  supervisor_type in DB          | 'HEAD'               | 'EXAM'
+  Profile badge                  | 👑 Head Supervisor   | Exam Supervisor
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PART 5 — HOW BIOMETRIC WORKS IN OUR SYSTEM (Technical)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Our biometric is a SIMULATOR (not a real hardware device).
+This is because in a project environment, we cannot attach real fingerprint
+scanners to every device. Instead, we simulate the entire process:
+
+HOW IT WORKS:
+  1. Supervisor clicks "Scan QR" → student details load
+  2. Supervisor clicks "Verify Biometric" button
+  3. A modal opens with an animated fingerprint scanner UI
+  4. The system follows this sequence:
+
+     Phase 1 — ACQUIRING (2 seconds)
+       → Shows animated fingerprint scanning
+       → Text: "Acquiring fingerprint data..."
+
+     Phase 2 — MATCHING (1.5 seconds)
+       → Text: "Matching against enrollment database..."
+       → Shows matching percentage climbing
+
+     Phase 3 — MISMATCH (1 second) ← FORCED FIRST ATTEMPT FAILURE
+       → Red animation
+       → Text: "PARTIAL PRINT DETECTED — Match Score: 61%"
+       → This failure is INTENTIONAL to make it look realistic
+
+     Phase 4 — RE-INITIALIZING (1.5 seconds)
+       → Yellow/amber color
+       → Text: "RE-INITIALIZING SCANNER — Please re-place finger"
+
+     Phase 5 — SECOND SCAN (1 second)
+       → Text: "Acquiring second sample..."
+
+     Phase 6 — VERIFIED (success)
+       → Green animation
+       → Text: "IDENTITY VERIFIED — Match: 98.7%"
+       → Student's biometric_verified = true stored in database
+
+WHY FORCE A MISMATCH FIRST?
+  - Real fingerprint scanners often fail on first attempt due to placement.
+  - This makes our simulator feel REALISTIC for demo and viva purposes.
+  - It shows the system handles errors gracefully and retries.
+
+DETERMINISTIC HASH:
+  - Each student has a unique simulated fingerprint hash.
+  - It is generated as: "PHYSICAL_MINUTIAE_" + hash(studentId)
+  - This means the same student always produces the same hash.
+  - So the system is consistent across sessions.
+
+REAL HARDWARE FUTURE:
+  - If real fingerprint hardware is connected later, only the
+    verifyIdentityForScan() function needs to be replaced.
+  - The rest of the UI, backend, and database remain unchanged.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PART 6 — IMPORTANT DATABASE FIELDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Table: users
+
+  Field               | Meaning
+  --------------------|------------------------------------------------------
+  supervisor_type     | 'HEAD' or 'EXAM' — determines which UI they see
+  college_id          | Which college they belong to (NULL = no restriction)
+  biometric_verified  | true/false — has this user been biometrically verified
+  qr_verified         | true/false — has this user's QR been scanned
+  biometric_hash      | Simulated fingerprint hash for matching
+  role                | 'SUPERVISOR' for both types
+
+
+  Table: exam_registrations
+
+  Field               | Meaning
+  --------------------|------------------------------------------------------
+  registration_status | APPLIED → PENDING → APPROVED (Head approves this)
+  student_id          | Which student registered
+  exam_id             | Which exam they registered for
+
+  Table: exams / new_university_exams
+
+  Field               | Meaning
+  --------------------|------------------------------------------------------
+  supervisor_id       | Which Exam Supervisor is assigned to this exam
+  college_id          | Which college this exam belongs to
+  status              | LIVE / UPCOMING / COMPLETED
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PART 7 — COMMON QUESTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Q: Can the Head Supervisor also supervise exams?
+A: No. Their role is purely administrative. They don't have the QR scanner
+   or biometric tools on their dashboard.
+
+Q: Can the Exam Supervisor approve exam forms?
+A: No. The "Exam Form Approvals" menu item is hidden for Exam Supervisors.
+   Only Head Supervisors can see and use it.
+
+Q: Who assigns the Exam Supervisor to an exam?
+A: The University Admin assigns them when creating an exam using the
+   university exam wizard (university admin dashboard).
+
+Q: Who creates the Head Supervisor account?
+A: The University Admin creates all supervisor accounts and sets the
+   supervisor_type to HEAD or EXAM.
+
+Q: Can a supervisor be of both types?
+A: No. One account = one type. If someone needs both roles, two separate
+   accounts must be created.
+
+Q: If a student has no college_id set, can the Exam Supervisor still see them?
+A: Yes! Exam Supervisors bypass the college filter. They see all students
+   registered for their assigned exams regardless of college_id on the student.
+
+Q: What happens if the biometric scan fails permanently?
+A: Currently the simulator always succeeds on second attempt. In a real system,
+   3 failed attempts could trigger a manual verification by the Head Supervisor.
+
+
+================================================================================
+   END OF DOCUMENT
+   ExamHub Authentication System — Supervisor Roles Guide
+   Prepared for: Final Year Project Documentation & Viva Reference
+================================================================================

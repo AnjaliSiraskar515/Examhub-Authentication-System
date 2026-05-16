@@ -175,23 +175,45 @@ export default function CreateExam(passedExamId = null) {
                                     <option value="8">8th Semester</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Assign Supervisor(s) <span class="text-red-500">*</span></label>
-                                <select id="supervisorIds" name="supervisorIds" multiple class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 h-24" required>
-                                    <!-- Dynamic API options -->
-                                </select>
-                                <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple supervisors.</p>
-                            </div>
+                            <!-- Supervisor assignment moved to Head Supervisor level -->
                         </div>
                     </div>
 
                     <!-- STEP 2: Subject Configuration -->
                     <div id="step2" class="step-content hidden animate-fade-in">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b-2 border-indigo-100 dark:border-gray-700 pb-3 mb-6 gap-3">
-                            <h3 class="text-xl font-bold text-gray-800 dark:text-white m-0"><i class="fas fa-book text-indigo-500 mr-2"></i>2. Subject Configuration</h3>
+                            <h3 class="text-xl font-bold text-gray-800 dark:text-white m-0"><i class="fas fa-book text-indigo-500 mr-2"></i>2. Subject & Timetable Configuration</h3>
                             <button type="button" id="addSubjectBtn" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 dark:hover:bg-indigo-800/50 px-4 py-2 rounded-lg font-bold transition-colors text-sm border border-indigo-200 dark:border-indigo-800 flex items-center shadow-sm">
                                 <i class="fas fa-plus mr-2"></i> Add Subject
                             </button>
+                        </div>
+
+                        <!-- Default Timings Panel -->
+                        <div class="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800/50 mb-6">
+                            <h4 class="text-sm font-bold text-indigo-800 dark:text-indigo-300 mb-4"><i class="fas fa-magic mr-1"></i> Smart Auto-Fill Timetable</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Session Start Date</label>
+                                    <input type="date" id="defaultStartDate" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2 text-sm shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Default Start Time</label>
+                                    <input type="time" id="defaultStartTime" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2 text-sm shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Default End Time</label>
+                                    <input type="time" id="defaultEndTime" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2 text-sm shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Gap (Days)</label>
+                                    <input type="number" id="defaultGapDays" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2 text-sm shadow-sm" value="2" min="1">
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end">
+                                <button type="button" id="applyDefaultsBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors">
+                                    Apply To All Subjects
+                                </button>
+                            </div>
                         </div>
                         <div id="subjectsContainer" class="space-y-4">
                             <!-- Dynamic Subjects Rendered Here -->
@@ -201,45 +223,25 @@ export default function CreateExam(passedExamId = null) {
 
                     <!-- STEP 3: Registration & Schedule -->
                     <div id="step3" class="step-content hidden animate-fade-in">
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="max-w-2xl mx-auto">
                             <!-- Registration Window -->
-                            <div class="bg-gray-50 dark:bg-gray-700/30 p-6 rounded-xl border border-gray-100 dark:border-gray-700">
-                                <h3 class="text-lg font-bold text-gray-800 dark:text-white border-b border-gray-200 dark:border-gray-600 pb-2 mb-4"><i class="fas fa-calendar-alt text-indigo-500 mr-2"></i>3a. Registration Window</h3>
-                                <div class="space-y-4">
-                                    <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 dark:bg-gray-700/30 p-8 rounded-xl border border-gray-100 dark:border-gray-700">
+                                <h3 class="text-xl font-bold text-gray-800 dark:text-white border-b border-gray-200 dark:border-gray-600 pb-3 mb-6"><i class="fas fa-calendar-alt text-indigo-500 mr-2"></i>3. Registration Window</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Set the dates during which students are allowed to register. Registration must close before the exams begin.</p>
+                                <div class="space-y-6">
+                                    <div class="grid grid-cols-2 gap-6">
                                         <div>
-                                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Start Date <span class="text-red-500">*</span></label>
-                                            <input type="date" id="regStartDate" name="regStartDate" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5">
+                                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Start Date <span class="text-red-500">*</span></label>
+                                            <input type="date" id="regStartDate" name="regStartDate" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-3 shadow-sm" required>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">End Date <span class="text-red-500">*</span></label>
-                                            <input type="date" id="regEndDate" name="regEndDate" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5">
+                                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">End Date <span class="text-red-500">*</span></label>
+                                            <input type="date" id="regEndDate" name="regEndDate" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-3 shadow-sm" required>
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Late Fee Deadline <span class="text-red-500">*</span></label>
-                                        <input type="date" id="lateFeeDeadline" name="lateFeeDeadline" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Master Exam Schedule -->
-                            <div class="bg-gray-50 dark:bg-gray-700/30 p-6 rounded-xl border border-gray-100 dark:border-gray-700">
-                                <h3 class="text-lg font-bold text-gray-800 dark:text-white border-b border-gray-200 dark:border-gray-600 pb-2 mb-4"><i class="fas fa-clock text-indigo-500 mr-2"></i>3b. Exam Schedule</h3>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Master Exam Date</label>
-                                        <input type="date" id="examDate" name="examDate" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5">
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Start Time</label>
-                                            <input type="time" id="startTime" name="startTime" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">End Time</label>
-                                            <input type="time" id="endTime" name="endTime" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5">
-                                        </div>
+                                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Late Fee Deadline <span class="text-red-500">*</span></label>
+                                        <input type="date" id="lateFeeDeadline" name="lateFeeDeadline" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-3 shadow-sm" required>
                                     </div>
                                 </div>
                             </div>
@@ -294,24 +296,6 @@ export default function CreateExam(passedExamId = null) {
                                         <input type="number" id="maxStudents" name="maxStudents" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5" placeholder="Leave empty for unlimited">
                                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Registration will gracefully auto-close when full.</p>
                                     </div>
-                                    
-                                    <label class="inline-flex items-center cursor-pointer w-full p-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 transition-colors hover:border-indigo-300 shadow-sm">
-                                        <input type="checkbox" id="requireFaceVerification" name="requireFaceVerification" class="sr-only peer" checked>
-                                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
-                                        <div class="ms-3 flex-1 flex flex-col">
-                                            <span class="text-sm font-bold text-gray-800 dark:text-gray-200">Require Face Verification</span>
-                                            <span class="text-xs text-gray-500">Enable Biometric AI checks for Registration.</span>
-                                        </div>
-                                    </label>
-
-                                    <label class="inline-flex items-center cursor-pointer w-full p-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 transition-colors hover:border-indigo-300 shadow-sm">
-                                        <input type="checkbox" id="allowEditAfterPublish" name="allowEditAfterPublish" class="sr-only peer">
-                                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
-                                        <div class="ms-3 flex-1 flex flex-col">
-                                            <span class="text-sm font-bold text-gray-800 dark:text-gray-200">Allow Global Edits After Publish</span>
-                                            <span class="text-xs text-gray-500">Unsafe - Can disrupt active student sessions.</span>
-                                        </div>
-                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -344,7 +328,6 @@ export default function CreateExam(passedExamId = null) {
         attachCoreListeners();
         addSubjectRow(); // Default row
         updateStepUI();
-        loadSupervisors(); // Fetch supervisors
         loadDepartments(); // Fetch departments dynamically
     };
 
@@ -359,7 +342,7 @@ export default function CreateExam(passedExamId = null) {
         let headerHtml = '';
         if (isBacklogRow) {
             headerHtml = `
-            <div class="w-full flex justify-between items-center bg-gray-100 dark:bg-gray-700/50 p-2 rounded-t-lg mb-4 border-b border-gray-200 dark:border-gray-600">
+            <div class="w-full flex justify-between items-center bg-gray-100 dark:bg-gray-700/50 p-4 rounded-t-xl border-b border-gray-200 dark:border-gray-600">
                 <label class="flex items-center space-x-3 cursor-pointer font-bold text-indigo-700 dark:text-indigo-400 w-full">
                     <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 backlog-subject-toggle">
                     <span>Include Backlog Subject: ${subName}</span>
@@ -369,31 +352,47 @@ export default function CreateExam(passedExamId = null) {
         }
 
         const html = `
-            <div class="subject-row ${isBacklogRow ? 'opacity-60 ring-2 ring-transparent transition-all' : ''} bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-600 rounded-xl p-5 flex flex-wrap lg:flex-nowrap gap-4 relative transition-all shadow-sm hover:shadow group animate-fade-in-up" data-id="${id}" data-db-id="${subjectData ? subjectData.id : ''}">
+            <div class="subject-row ${isBacklogRow ? 'opacity-60 ring-2 ring-transparent transition-all' : ''} bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-600 rounded-xl relative transition-all shadow-sm hover:shadow group animate-fade-in-up" data-id="${id}" data-db-id="${subjectData ? subjectData.id : ''}">
                 ${headerHtml}
-                <div class="flex-grow w-full lg:w-auto ${isBacklogRow ? '' : 'mt-2'}">
-                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Subject Name *</label>
-                    <input type="text" class="sub-name w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5" required placeholder="e.g. Data Structures" value="${subName}" ${isCompulsory ? 'readonly' : ''}>
+                <div class="p-5 flex flex-wrap lg:flex-nowrap gap-4 ${isBacklogRow ? 'pt-4' : ''}">
+                    <div class="flex-grow w-full lg:w-auto">
+                        <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Subject Name *</label>
+                        <input type="text" class="sub-name w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5" required placeholder="e.g. Data Structures" value="${subName}" ${isCompulsory ? 'readonly' : ''}>
+                    </div>
+                    <div class="w-full sm:w-1/2 lg:w-32">
+                        <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Code *</label>
+                        <input type="text" class="sub-code w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 font-mono" required placeholder="CS201" value="${subCode}" ${isCompulsory ? 'readonly' : ''}>
+                    </div>
+                    <div class="w-full sm:w-1/2 lg:w-32">
+                        <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Paper *</label>
+                        <input type="text" class="sub-paper w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 font-mono" required placeholder="P201" value="${subCode ? 'P'+subCode : ''}">
+                    </div>
+                    <div class="w-1/3 sm:w-1/4 lg:w-24">
+                        <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Total *</label>
+                        <input type="number" class="sub-total w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 text-center" required value="100">
+                    </div>
+                    <div class="w-1/3 sm:w-1/4 lg:w-24">
+                        <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Pass *</label>
+                        <input type="number" class="sub-pass w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 text-center" required value="40">
+                    </div>
+                    <div class="w-1/3 sm:w-1/4 lg:w-28">
+                        <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Mins *</label>
+                        <input type="number" class="sub-dur w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 text-center" required value="180">
+                    </div>
                 </div>
-                <div class="w-full sm:w-1/2 lg:w-32 ${isBacklogRow ? '' : 'mt-2'}">
-                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Code *</label>
-                    <input type="text" class="sub-code w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 font-mono" required placeholder="CS201" value="${subCode}" ${isCompulsory ? 'readonly' : ''}>
-                </div>
-                <div class="w-full sm:w-1/2 lg:w-32 ${isBacklogRow ? '' : 'mt-2'}">
-                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Paper *</label>
-                    <input type="text" class="sub-paper w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 font-mono" required placeholder="P201" value="${subCode ? 'P'+subCode : ''}">
-                </div>
-                <div class="w-1/3 sm:w-1/4 lg:w-24 ${isBacklogRow ? '' : 'mt-2'}">
-                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Total *</label>
-                    <input type="number" class="sub-total w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 text-center" required value="100">
-                </div>
-                <div class="w-1/3 sm:w-1/4 lg:w-24 ${isBacklogRow ? '' : 'mt-2'}">
-                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Pass *</label>
-                    <input type="number" class="sub-pass w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 text-center" required value="40">
-                </div>
-                <div class="w-1/3 sm:w-1/4 lg:w-28 ${isBacklogRow ? '' : 'mt-2'}">
-                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Mins *</label>
-                    <input type="number" class="sub-dur w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 text-center" required value="180">
+                <div class="p-5 flex flex-wrap lg:flex-nowrap gap-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/50">
+                    <div class="w-full sm:w-1/3">
+                        <label class="block text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2"><i class="far fa-calendar-alt mr-1"></i> Exam Date *</label>
+                        <input type="date" class="sub-date w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 shadow-sm" required>
+                    </div>
+                    <div class="w-full sm:w-1/3">
+                        <label class="block text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2"><i class="far fa-clock mr-1"></i> Start Time *</label>
+                        <input type="time" class="sub-start-time w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 shadow-sm" required>
+                    </div>
+                    <div class="w-full sm:w-1/3">
+                        <label class="block text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2"><i class="far fa-clock mr-1"></i> End Time *</label>
+                        <input type="time" class="sub-end-time w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5 shadow-sm" required>
+                    </div>
                 </div>
                 
                 ${!subjectData ? `
@@ -434,11 +433,15 @@ export default function CreateExam(passedExamId = null) {
         const draftBtn = document.getElementById('draftBtn');
         const publishBtn = document.getElementById('publishBtn');
 
-        nextBtn.addEventListener('click', () => {
+        nextBtn.addEventListener('click', async () => {
             if (validateStep(currentStep)) {
                 currentStep++;
                 updateStepUI();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Auto-load subjects when entering Step 2
+                if (currentStep === 2) {
+                    await triggerSubjectLoad();
+                }
             }
         });
 
@@ -467,6 +470,47 @@ export default function CreateExam(passedExamId = null) {
             document.getElementById('noSubjectWarning').classList.add('hidden');
             addSubjectRow();
         });
+
+        // Apply Timetable Defaults
+        const applyDefaultsBtn = document.getElementById('applyDefaultsBtn');
+        if (applyDefaultsBtn) {
+            applyDefaultsBtn.addEventListener('click', () => {
+                const startDate = document.getElementById('defaultStartDate')?.value;
+                const startTime = document.getElementById('defaultStartTime')?.value;
+                const endTime = document.getElementById('defaultEndTime')?.value;
+                const gapDays = parseInt(document.getElementById('defaultGapDays')?.value || '2', 10);
+                
+                if (!startDate) {
+                    showToast("Please select a Session Start Date first.", false);
+                    return;
+                }
+                
+                let currentDate = new Date(startDate);
+                const rows = document.querySelectorAll('.subject-row');
+                
+                rows.forEach(r => {
+                    const toggle = r.querySelector('.backlog-subject-toggle');
+                    if (toggle && !toggle.checked) return;
+                    
+                    const dateInput = r.querySelector('.sub-date');
+                    const startInput = r.querySelector('.sub-start-time');
+                    const endInput = r.querySelector('.sub-end-time');
+                    
+                    if (dateInput) {
+                        const yyyy = currentDate.getFullYear();
+                        const mm = String(currentDate.getMonth() + 1).padStart(2, '0');
+                        const dd = String(currentDate.getDate()).padStart(2, '0');
+                        dateInput.value = `${yyyy}-${mm}-${dd}`;
+                        
+                        // Add gap days for next iteration
+                        currentDate.setDate(currentDate.getDate() + gapDays);
+                    }
+                    if (startInput && startTime) startInput.value = startTime;
+                    if (endInput && endTime) endInput.value = endTime;
+                });
+                showToast("Timetable auto-filled successfully!");
+            });
+        }
 
         // Subject Removal and Toggle (Delegated)
         document.getElementById('subjectsContainer').addEventListener('click', (e) => {
@@ -498,6 +542,49 @@ export default function CreateExam(passedExamId = null) {
             });
         });
 
+        // Auto-calculate End Time based on Start Time + Max Subject Duration
+        const startTimeInput = document.getElementById('startTime');
+        const endTimeInput = document.getElementById('endTime');
+        if (startTimeInput && endTimeInput) {
+            startTimeInput.addEventListener('change', () => {
+                if (!startTimeInput.value) return;
+                
+                // Find max duration from selected subjects
+                let maxMins = 0; 
+                const rows = document.querySelectorAll('.subject-row');
+                const selectedDurations = [];
+                rows.forEach(r => {
+                    const toggle = r.querySelector('.backlog-subject-toggle');
+                    if (!toggle || toggle.checked) {
+                        const durInput = r.querySelector('.sub-dur');
+                        if (durInput && durInput.value) {
+                            selectedDurations.push(parseInt(durInput.value, 10));
+                        }
+                    }
+                });
+                
+                if (selectedDurations.length > 0) {
+                    maxMins = Math.max(...selectedDurations);
+                } else {
+                    maxMins = 180; // default 3 hours if no subjects
+                }
+                
+                // Parse start time
+                const [hours, minutes] = startTimeInput.value.split(':').map(Number);
+                const startDate = new Date();
+                startDate.setHours(hours, minutes, 0, 0);
+                
+                // Add maxMins
+                startDate.setMinutes(startDate.getMinutes() + maxMins);
+                
+                // Format back to HH:mm
+                const endHours = String(startDate.getHours()).padStart(2, '0');
+                const endMins = String(startDate.getMinutes()).padStart(2, '0');
+                endTimeInput.value = `${endHours}:${endMins}`;
+            });
+        }
+
+
         // Subject auto-load when Course + Department + Semester all have values
         const triggerSubjectLoad = async () => {
             const course = document.getElementById('course')?.value?.trim();
@@ -510,8 +597,11 @@ export default function CreateExam(passedExamId = null) {
             if (course && deptId && semester && examType) {
                 container.innerHTML = '<div class="text-center p-6"><i class="fas fa-spinner fa-spin text-indigo-500 mr-2"></i> Fetching Subjects...</div>';
                 try {
+                    // Subjects are university-wide — use dept NAME not college-specific departmentId
+                    const deptEl = document.getElementById('department');
+                    const deptName = deptEl ? deptEl.options[deptEl.selectedIndex]?.text?.trim() : '';
                     let url = `/api/admin/subjects${examType === 'BACKLOG' ? '/backlogged' : ''}?course=${encodeURIComponent(course)}&semester=${semester}`;
-                    if (deptId) url += `&departmentId=${deptId}`;
+                    if (deptName) url += `&departmentName=${encodeURIComponent(deptName)}`;
                     const res = await authFetch(url);
                     const subjects = res.ok ? await res.json() : [];
 
@@ -586,6 +676,38 @@ export default function CreateExam(passedExamId = null) {
                     isValid = false;
                 }
             }
+
+            // Special logic for Registration Window Step
+            if (stepNumber === 3) {
+                const regEndDate = document.getElementById('regEndDate')?.value;
+                const lateFeeDeadline = document.getElementById('lateFeeDeadline')?.value;
+                if (regEndDate) {
+                    const rows = document.querySelectorAll('.subject-row');
+                    let earliestExamDate = null;
+                    rows.forEach(r => {
+                        const toggle = r.querySelector('.backlog-subject-toggle');
+                        if (toggle && !toggle.checked) return;
+                        const d = r.querySelector('.sub-date')?.value;
+                        if (d && (!earliestExamDate || new Date(d) < new Date(earliestExamDate))) {
+                            earliestExamDate = d;
+                        }
+                    });
+
+                    if (earliestExamDate) {
+                        const earliestDateObj = new Date(earliestExamDate);
+                        if (new Date(regEndDate) >= earliestDateObj) {
+                            showToast("Registration End Date must be before the earliest Exam Date (" + earliestExamDate + ").", false);
+                            document.getElementById('regEndDate').classList.add('border-red-500');
+                            isValid = false;
+                        }
+                        if (lateFeeDeadline && new Date(lateFeeDeadline) >= earliestDateObj) {
+                            showToast("Late Fee Deadline must be before the earliest Exam Date (" + earliestExamDate + ").", false);
+                            document.getElementById('lateFeeDeadline').classList.add('border-red-500');
+                            isValid = false;
+                        }
+                    }
+                }
+            }
         }
 
         return isValid;
@@ -657,6 +779,28 @@ export default function CreateExam(passedExamId = null) {
         if (currentStep === 4) {
             nextBtn.classList.add('hidden');
             publishBtn.classList.remove('!hidden');
+
+            // Dynamic Fee Structure display based on Exam Type
+            const examType = document.getElementById('examType')?.value;
+            const regularFeeInput = document.getElementById('regularFee');
+            const backlogFeeInput = document.getElementById('backlogFee');
+            
+            if (regularFeeInput && backlogFeeInput) {
+                const regularFeeContainer = regularFeeInput.closest('div').parentElement;
+                const backlogFeeContainer = backlogFeeInput.closest('div').parentElement;
+
+                if (examType === 'REGULAR') {
+                    if (regularFeeContainer) regularFeeContainer.style.display = 'block';
+                    if (backlogFeeContainer) backlogFeeContainer.style.display = 'none';
+                } else if (examType === 'BACKLOG') {
+                    if (regularFeeContainer) regularFeeContainer.style.display = 'none';
+                    if (backlogFeeContainer) backlogFeeContainer.style.display = 'block';
+                } else {
+                    // BOTH or anything else
+                    if (regularFeeContainer) regularFeeContainer.style.display = 'block';
+                    if (backlogFeeContainer) backlogFeeContainer.style.display = 'block';
+                }
+            }
         } else {
             nextBtn.classList.remove('hidden');
             publishBtn.classList.add('!hidden');
@@ -712,7 +856,10 @@ export default function CreateExam(passedExamId = null) {
                 paperCode: row.querySelector('.sub-paper').value,
                 totalMarks: parseInt(row.querySelector('.sub-total').value) || 100,
                 passingMarks: parseInt(row.querySelector('.sub-pass').value) || 40,
-                duration: parseInt(row.querySelector('.sub-dur').value) || 180
+                duration: parseInt(row.querySelector('.sub-dur').value) || 180,
+                examDate: row.querySelector('.sub-date').value || null,
+                startTime: row.querySelector('.sub-start-time').value ? row.querySelector('.sub-start-time').value + ':00' : null,
+                endTime: row.querySelector('.sub-end-time').value ? row.querySelector('.sub-end-time').value + ':00' : null
             });
         });
 
@@ -732,10 +879,6 @@ export default function CreateExam(passedExamId = null) {
             semester: getVal('semester'),
             collegeId: window.CollegeContext?.selectedCollegeId || null,
 
-            supervisorId: document.getElementById('supervisorIds') && document.getElementById('supervisorIds').selectedOptions.length > 0 ? parseInt(document.getElementById('supervisorIds').selectedOptions[0].value) : null,
-            supervisorName: document.getElementById('supervisorIds') && document.getElementById('supervisorIds').selectedOptions.length > 0 ? document.getElementById('supervisorIds').selectedOptions[0].text : null,
-            supervisorIds: Array.from(document.getElementById('supervisorIds')?.selectedOptions || []).filter(opt => opt.value).map(opt => parseInt(opt.value)),
-
             // No examSubjectId needed, mapping handled via subjects array directly
 
             subjectIds: subjectIds,
@@ -748,9 +891,9 @@ export default function CreateExam(passedExamId = null) {
             },
 
             schedule: {
-                examDate: getVal('examDate'),
-                startTime: getVal('startTime') ? getVal('startTime') + ':00' : null,
-                endTime: getVal('endTime') ? getVal('endTime') + ':00' : null
+                examDate: subjectsArr.length > 0 ? subjectsArr[0].examDate : null,
+                startTime: subjectsArr.length > 0 ? subjectsArr[0].startTime : null,
+                endTime: subjectsArr.length > 0 ? subjectsArr[0].endTime : null
             },
 
             feeStructure: {
@@ -760,9 +903,7 @@ export default function CreateExam(passedExamId = null) {
             },
 
             controls: {
-                maxStudents: getInt('maxStudents'),
-                requireFaceVerification: getChecked('requireFaceVerification'),
-                allowEditAfterPublish: getChecked('allowEditAfterPublish')
+                maxStudents: getInt('maxStudents')
             },
 
             status: status
@@ -850,30 +991,6 @@ export default function CreateExam(passedExamId = null) {
             setVal('department', data.department);
             setVal('semester', data.semester);
 
-            if (data.supervisorIds && data.supervisorIds.length > 0) {
-                setTimeout(() => {
-                    const select = document.getElementById('supervisorIds');
-                    if (select) {
-                        Array.from(select.options).forEach(opt => {
-                            if (data.supervisorIds.includes(parseInt(opt.value))) {
-                                opt.selected = true;
-                            }
-                        });
-                    }
-                }, 500);
-            } else if (data.supervisorId) {
-                setTimeout(() => {
-                    const select = document.getElementById('supervisorIds');
-                    if (select) {
-                        Array.from(select.options).forEach(opt => {
-                            if (parseInt(opt.value) === data.supervisorId) {
-                                opt.selected = true;
-                            }
-                        });
-                    }
-                }, 500);
-            }
-
             if (data.registrationWindow) {
                 setVal('regStartDate', data.registrationWindow.startDate);
                 setVal('regEndDate', data.registrationWindow.endDate);
@@ -894,8 +1011,6 @@ export default function CreateExam(passedExamId = null) {
 
             if (data.controls) {
                 setVal('maxStudents', data.controls.maxStudents);
-                setChecked('requireFaceVerification', data.controls.requireFaceVerification);
-                setChecked('allowEditAfterPublish', data.controls.allowEditAfterPublish);
             }
 
             if (data.subjects && data.subjects.length > 0) {
@@ -919,41 +1034,33 @@ export default function CreateExam(passedExamId = null) {
         }
     };
 
-    const loadSupervisors = async () => {
-        try {
-            // Assume university ID 1 for now or fetch from context
-            const res = await authFetch(`/api/university/1/staff`);
-            if (res.ok) {
-                const staff = await res.json();
-                const dropdown = document.getElementById('supervisorIds');
-                // Assume staff contains both supervisors and others, we just list all or filter if role==SUPERVISOR
-                staff.forEach(person => {
-                    const opt = document.createElement('option');
-                    opt.value = person.staffId || person.id || person.userId; // Depending on API response
-                    opt.textContent = person.name + (person.supervisorType ? ` (${person.supervisorType})` : '');
-                    dropdown.appendChild(opt);
-                });
-            }
-        } catch (e) {
-            console.error('Failed to load supervisors', e);
-        }
-    };
-
     const loadDepartments = async () => {
         try {
-            const collegeId = window.CollegeContext?.selectedCollegeId;
+            const collegeId = window.CollegeContext?.selectedCollegeId || sessionStorage.getItem('selectedCollegeId') || 1;
             if (!collegeId) return;
             const res = await authFetch(`/api/admin/departments?collegeId=${collegeId}`);
             if (res.ok) {
                 const depts = await res.json();
                 const dropdown = document.getElementById('department');
                 dropdown.innerHTML = '<option value="">Select Department</option>';
-                depts.forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d.id;
-                    opt.textContent = d.name;
-                    dropdown.appendChild(opt);
-                });
+                
+                if (depts.length === 0) {
+                    // Fallback to default departments if DB is empty
+                    const defaults = ['Computer Science', 'Information Technology', 'Electronics & Communication', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering'];
+                    defaults.forEach((name, index) => {
+                        const opt = document.createElement('option');
+                        opt.value = index + 1; // Arbitrary ID, as payload uses text
+                        opt.textContent = name;
+                        dropdown.appendChild(opt);
+                    });
+                } else {
+                    depts.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = d.name;
+                        dropdown.appendChild(opt);
+                    });
+                }
             }
         } catch (e) {
             console.error('Failed to load departments', e);

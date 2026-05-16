@@ -243,7 +243,23 @@ async function enforceStudentVerificationGate() {
         if (!response.ok) return;
 
         const profile = await response.json();
-        const verified = !!profile.verified;
+        let verified = !!profile.verified;
+
+        try {
+            const bioResponse = await fetch('/api/student-profile/biometric/status', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (bioResponse.ok) {
+                const bioData = await bioResponse.json();
+                if (bioData.success && bioData.enrolled) {
+                    verified = true;
+                }
+            }
+        } catch (e) {
+            console.warn('Could not fetch biometric status:', e);
+        }
+
+        window.dispatchEvent(new CustomEvent('verification-status', { detail: { verified } }));
 
         if (verified) {
             removeVerificationBanner();
@@ -252,7 +268,7 @@ async function enforceStudentVerificationGate() {
             return;
         }
 
-        showVerificationBanner();
+        removeVerificationBanner();
         toggleRegisterButton(true);
         toggleMyExamsAccess(true);
     } catch (error) {
@@ -261,14 +277,7 @@ async function enforceStudentVerificationGate() {
 }
 
 function showVerificationBanner() {
-    const container = document.getElementById('page-container');
-    if (!container || document.getElementById('verification-warning-banner')) return;
-
-    const banner = document.createElement('div');
-    banner.id = 'verification-warning-banner';
-    banner.className = 'mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800';
-    banner.textContent = 'Please complete face verification before proceeding.';
-    container.prepend(banner);
+    // Banner removed as per requirement
 }
 
 function removeVerificationBanner() {

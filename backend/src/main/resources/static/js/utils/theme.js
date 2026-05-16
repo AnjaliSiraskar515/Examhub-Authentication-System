@@ -4,11 +4,15 @@
  */
 export const ThemeManager = {
     init() {
-        // Check for saved theme or system preference
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        // Default is LIGHT theme. Only apply dark if user explicitly chose it.
+        if (localStorage.theme === 'dark') {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
+            // Ensure the preference is explicitly set to light for new sessions
+            if (!localStorage.theme) {
+                localStorage.theme = 'light';
+            }
         }
     },
 

@@ -9,40 +9,23 @@ const getHeaders = () => {
     };
 };
 
+// Central handler: if a response is 401/403, the token is invalid — force re-login
+const handleAuthError = (response) => {
+    if (response.status === 401 || response.status === 403) {
+        console.warn('⚠️ Session expired or unauthorized. Redirecting to login...');
+        localStorage.clear();
+        window.location.href = 'index.html';
+        return true;
+    }
+    return false;
+};
+
 export const API = {
     // Exams
     getLocalExams: async () => {
         const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
 
-        // 🔧 MOCK MODE: Return sample exams for testing
-        if (token === 'mock-token-xyz') {
-            console.log('🔧 MOCK MODE - Returning sample exams');
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            return [
-                {
-                    id: 1,
-                    examName: 'SPPU First Year Exam',
-                    examType: 'COLLEGE',
-                    examDate: '2026-03-15',
-                    semester: 'Winter 2024'
-                },
-                {
-                    id: 2,
-                    examName: 'Advanced Java Programming',
-                    examType: 'UNIVERSITY',
-                    examDate: '2026-03-20',
-                    semester: 'Winter 2024'
-                },
-                {
-                    id: 3,
-                    examName: 'Database Management Systems',
-                    examType: 'COLLEGE',
-                    examDate: '2026-03-25',
-                    semester: 'Winter 2024'
-                }
-            ];
-        }
+        if (!token) throw new Error('No authentication token found');
 
         // Real API call
         try {
@@ -60,23 +43,7 @@ export const API = {
     registerForExam: async (registrationData) => {
         const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
 
-        // 🔧 MOCK MODE: Bypass backend for testing with mock token
-        if (token === 'mock-token-xyz') {
-            console.log('🔧 MOCK MODE - Simulating successful registration:', registrationData);
-
-            // Simulate network delay
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Return mock success response
-            return {
-                success: true,
-                message: '✅ Mock Registration Successful!',
-                registrationId: 'REG-' + Date.now(),
-                examName: registrationData.examName || 'Mock Exam',
-                studentId: registrationData.studentId,
-                timestamp: new Date().toISOString()
-            };
-        }
+        if (!token) throw new Error('No authentication token found');
 
         // Real API call for production
         const response = await fetch(`${API_BASE_URL}/registrations`, {
@@ -119,6 +86,7 @@ export const API = {
     getProfile: async () => {
         try {
             const response = await fetch(`${API_BASE_URL.replace('/student', '/profile')}/info`, { headers: getHeaders() });
+            if (handleAuthError(response)) return null; // Will redirect to login
             if (!response.ok) throw new Error('Failed to fetch profile');
             return await response.json();
         } catch (error) {
@@ -177,6 +145,7 @@ export const API = {
     getStudentStats: async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/stats`, { headers: getHeaders() });
+            if (handleAuthError(response)) return { totalRegistered: 0, pendingVerifications: 0, approvedExams: 0, upcomingExams: 0 };
             if (!response.ok) throw new Error('Failed to fetch stats');
             return await response.json();
         } catch (error) {

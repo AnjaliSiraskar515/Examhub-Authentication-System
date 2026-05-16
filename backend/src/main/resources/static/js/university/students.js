@@ -143,6 +143,7 @@ function renderStudentsTable() {
             <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                 <td class="px-6 py-4 font-bold text-gray-900 dark:text-white">${student.prn || student.userId}</td>
                 <td class="px-6 py-4 font-medium">${student.name || 'N/A'}</td>
+                <td class="px-6 py-4 font-medium text-gray-500">${student.email || 'N/A'}</td>
                 <td class="px-6 py-4">
                     <span class="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs font-medium">${collegeName}</span>
                 </td>

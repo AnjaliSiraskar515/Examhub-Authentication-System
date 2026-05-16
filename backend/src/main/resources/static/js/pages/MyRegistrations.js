@@ -20,9 +20,9 @@ export default function MyRegistrations() {
             const headers = { 'Authorization': token ? `Bearer ${token}` : '' };
             // Fetch registrations, student profile, and exams concurrently
             const [regResponse, profileResponse, examsResponse] = await Promise.all([
-                fetch('/api/student/registrations?studentId=1', { headers }),
+                fetch('/api/student/registrations', { headers }),
                 fetch('/api/profile/info', { headers }),
-                fetch('/api/exam/all', { headers })
+                fetch('/api/university/exams', { headers })
             ]);
 
             if (!regResponse.ok) {
@@ -30,6 +30,9 @@ export default function MyRegistrations() {
             }
 
             const myRegistrations = await regResponse.json();
+            
+
+            
             window.myRegistrationsData = myRegistrations;
 
             if (profileResponse.ok) {
@@ -56,11 +59,18 @@ export default function MyRegistrations() {
                 `;
             } else {
                 const regCards = myRegistrations.map(reg => {
+                    const examForReg = window.examsData ? window.examsData.find(e => e.id === reg.examId) : null;
+                    const isExamCompleted = examForReg && examForReg.status === 'COMPLETED';
+
                     let statusLabel = '';
                     let statusColor = '';
                     let statusIcon = '';
 
-                    if (reg.registrationStatus === 'APPROVED') {
+                    if (isExamCompleted) {
+                        statusLabel = 'COMPLETED';
+                        statusColor = 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600';
+                        statusIcon = 'fa-check-double';
+                    } else if (reg.registrationStatus === 'APPROVED') {
                         statusLabel = 'APPROVED';
                         statusColor = 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800';
                         statusIcon = 'fa-check-circle';
@@ -82,10 +92,12 @@ export default function MyRegistrations() {
                         ? reg.selectedSubjects.join(', ')
                         : 'No subjects recorded';
 
+                    const canDownloadHallTicket = !isExamCompleted && (reg.registrationStatus === 'APPROVED' || reg.paymentStatus === 'PAID');
+
                     return `
                         <div class="group relative bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden transform hover:-translate-y-1">
                             <!-- Gradient Accent Background -->
-                            <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-${reg.registrationStatus === 'APPROVED' ? 'green' : 'indigo'}-400/10 to-transparent rounded-full blur-3xl -z-10 transform group-hover:scale-125 transition-transform duration-700"></div>
+                            <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-${isExamCompleted ? 'gray' : (reg.registrationStatus === 'APPROVED' ? 'green' : 'indigo')}-400/10 to-transparent rounded-full blur-3xl -z-10 transform group-hover:scale-125 transition-transform duration-700"></div>
                             
                             <!-- Header row -->
                             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -138,8 +150,8 @@ export default function MyRegistrations() {
                                 <button onclick="window.viewRegistrationForm(${reg.id})" class="px-6 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500 hover:shadow-md text-gray-700 dark:text-gray-300 rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 transform active:scale-95">
                                     <i class="fas fa-eye text-gray-400"></i> View Form
                                 </button>
-                                <button onclick="alert('Downloading Hall Ticket...')" class="px-6 py-2.5 bg-gradient-to-r ${reg.registrationStatus === 'APPROVED' ? 'from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white shadow-indigo-500/25 shadow-lg' : 'from-indigo-100 to-indigo-50 dark:from-indigo-900/30 dark:to-indigo-800/30 text-indigo-400 dark:text-indigo-600 cursor-not-allowed border border-indigo-200 dark:border-indigo-800/50'} rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 transform active:scale-95" ${reg.registrationStatus !== 'APPROVED' ? 'disabled' : ''}>
-                                    <i class="fas fa-file-download ${reg.registrationStatus === 'APPROVED' ? 'text-indigo-200' : ''}"></i> Hall Ticket
+                                <button onclick="window.downloadHallTicket(${reg.id})" class="px-6 py-2.5 bg-gradient-to-r ${canDownloadHallTicket ? 'from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white shadow-indigo-500/25 shadow-lg' : 'from-indigo-100 to-indigo-50 dark:from-indigo-900/30 dark:to-indigo-800/30 text-indigo-400 dark:text-indigo-600 cursor-not-allowed border border-indigo-200 dark:border-indigo-800/50'} rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 transform active:scale-95" ${!canDownloadHallTicket ? 'disabled' : ''}>
+                                    <i class="fas fa-file-download ${canDownloadHallTicket ? 'text-indigo-200' : ''}"></i> Hall Ticket
                                 </button>
                             </div>
                         </div>
@@ -180,7 +192,7 @@ export default function MyRegistrations() {
     window.viewRegistrationForm = (regId) => {
         const reg = window.myRegistrationsData.find(r => r.id === regId);
         const profile = window.studentProfileInfo || {};
-        const exam = window.examsData ? window.examsData.find(e => e.examId === reg.examId) : null;
+        const exam = window.examsData ? window.examsData.find(e => e.id === reg.examId || e.examId === reg.examId) : null;
         if (!reg) return;
 
         const modalOverlay = document.createElement('div');
@@ -210,13 +222,36 @@ export default function MyRegistrations() {
 
         const subjectsCredits = [4, 4, 3, 3, 2, 2];
         const subjectsHtml = (reg.selectedSubjects || []).map((s, idx) => {
+            // Try to find subject details from exam data for code, date and time
+            let matchedSub = null;
+            if (exam && exam.subjects) {
+                matchedSub = exam.subjects.find(es => es.subjectName === s);
+            }
             const isLab = s.toLowerCase().includes('lab') || s.toLowerCase().includes('practical');
-            const code = isLab ? `IT40${idx + 1}P` : `IT40${idx + 1}`;
-            const creditValue = subjectsCredits[idx] !== undefined ? subjectsCredits[idx] : (isLab ? 2 : 4);
+            // Use actual subject code from exam data, fallback to generated
+            const code = matchedSub && matchedSub.subjectCode ? matchedSub.subjectCode 
+                        : (isLab ? `IT40${idx + 1}P` : `IT40${idx + 1}`);
+            const creditValue = matchedSub && matchedSub.totalMarks ? Math.round(matchedSub.totalMarks / 25) 
+                        : (subjectsCredits[idx] !== undefined ? subjectsCredits[idx] : (isLab ? 2 : 4));
+
+            // Get per-subject schedule
+            let examDate = 'TBD';
+            let startTime = 'TBD';
+            if (matchedSub && matchedSub.examDate) {
+                examDate = matchedSub.examDate;
+                startTime = matchedSub.startTime || 'TBD';
+            } else if (exam && exam.examDate) {
+                examDate = exam.examDate;
+                startTime = exam.startTime || 'TBD';
+            }
+
             return `
                 <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50/50">
                     <td class="py-4 font-bold text-indigo-600">${code}</td>
-                    <td class="py-4 text-gray-800 font-medium whitespace-nowrap">${s}</td>
+                    <td class="py-4 text-gray-800 font-medium whitespace-nowrap">
+                        ${s}
+                        <div class="text-xs text-gray-500 mt-1 font-bold"><i class="far fa-clock text-indigo-400"></i> ${examDate} | ${startTime}</div>
+                    </td>
                     <td class="py-4">
                         <span class="text-[10px] font-bold uppercase tracking-widest border border-gray-200 text-gray-500 px-3 py-1 rounded shadow-sm">${isLab ? 'PRACTICAL' : 'THEORY'}</span>
                     </td>
@@ -228,6 +263,7 @@ export default function MyRegistrations() {
             `;
         }).join('');
 
+
         modalOverlay.innerHTML = `
             <!-- Top App Bar -->
             <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
@@ -238,13 +274,13 @@ export default function MyRegistrations() {
                     <button onclick="window.print()" class="text-gray-500 hover:text-gray-800 flex items-center gap-2">
                         <i class="fas fa-print"></i> Print
                     </button>
-                    <button onclick="alert('Downloading Document...')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-sm transition-colors">
+                    <button id="download-pdf-btn" onclick="window.downloadRegFormPdf()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-sm transition-colors">
                         <i class="fas fa-download"></i> Download PDF
                     </button>
                 </div>
             </div>
 
-            <div class="p-6 md:p-8 max-w-7xl mx-auto w-full flex-grow space-y-6">
+            <div id="pdf-content-area" class="p-6 md:p-8 max-w-7xl mx-auto w-full flex-grow space-y-6 bg-gray-50">
                 <!-- Status Banner -->
                 <div class="${statusBg} border rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div class="flex items-center gap-4">
@@ -270,10 +306,16 @@ export default function MyRegistrations() {
                             <!-- Session Hero Header -->
                             <div class="bg-[#313380] text-white p-8 md:p-10">
                                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-2 block">Examination Session</span>
-                                <h1 class="text-3xl lg:text-4xl font-black mb-6 tracking-tight">${exam ? exam.examName : (reg.examSession || 'Mid-Semester Examination - April 2026')}</h1>
-                                <div class="flex items-center gap-6 text-sm font-medium text-white/80">
-                                    <span class="flex items-center gap-2"><i class="far fa-calendar-alt"></i> 2025-2026</span>
-                                    <span class="flex items-center gap-2"><i class="fas fa-map-marker-alt"></i> ${exam ? exam.location : (reg.institutionName || 'School of Engineering &amp; Technology, Main Campus')}</span>
+                                <h1 class="text-3xl lg:text-4xl font-black mb-6 tracking-tight">${exam && exam.sessionName ? exam.sessionName : (reg.examSession || 'Mid-Semester Examination - April 2026')}</h1>
+                                <div class="flex flex-wrap items-center gap-6 text-sm font-medium text-white/80">
+                                    <span class="flex items-center gap-2"><i class="far fa-calendar-alt"></i> Timetable Attached Below</span>
+                                    <span class="flex items-center gap-2"><i class="fas fa-graduation-cap"></i> 2025-2026</span>
+                                    <span class="flex items-center gap-2"><i class="fas fa-map-marker-alt"></i> ${
+                                        (exam && exam.centerName && exam.centerName !== 'N/A') ? exam.centerName :
+                                        (reg.institutionName && reg.institutionName !== 'N/A') ? reg.institutionName :
+                                        (window.studentProfileInfo && window.studentProfileInfo.collegeName && window.studentProfileInfo.collegeName !== 'N/A') ? window.studentProfileInfo.collegeName :
+                                        'Dhole Patil College of Engineering'
+                                    }</span>
                                 </div>
                             </div>
 
@@ -295,7 +337,10 @@ export default function MyRegistrations() {
                                         </div>
                                         <div>
                                             <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Roll Number</span>
-                                            <span class="block text-gray-900 font-bold">${profile.rollNumber || profile.roll || ''}</span>
+                                            <span class="block text-gray-900 font-bold">${
+                                                profile.rollNumber || profile.roll || profile.enrollmentNo || 
+                                                profile.enrollmentNumber || reg.prn || ''
+                                            }</span>
                                         </div>
                                         <div>
                                             <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">University Email</span>
@@ -375,7 +420,7 @@ export default function MyRegistrations() {
                             <div class="space-y-8">
                                 <div class="flex justify-between items-center bg-gray-50/50 -mx-8 px-8 py-3">
                                     <span class="text-xs font-bold text-gray-500">Amount Paid</span>
-                                    <span class="text-xl font-black text-gray-900">₹${reg.totalFee || '1,200.00'}</span>
+                                    <span class="text-xl font-black text-gray-900">₹${reg.totalFee !== null && reg.totalFee !== undefined ? Number(reg.totalFee).toFixed(2) : '1200.00'}</span>
                                 </div>
                                 
                                 <div class="space-y-4">
@@ -418,6 +463,41 @@ export default function MyRegistrations() {
         `;
 
         document.getElementById('registration-modal-container').appendChild(modalOverlay);
+    };
+
+    window.downloadHallTicket = (regId) => {
+        // Store the registration ID so the admit card page can fetch the right data if needed
+        localStorage.setItem('currentHallTicketRegId', regId);
+        window.open('student_admit_card.html?regId=' + encodeURIComponent(regId), '_blank');
+    };
+
+    window.downloadRegFormPdf = function() {
+        const btn = document.getElementById('download-pdf-btn');
+        if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        
+        if (!window.html2pdf) {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+            script.onload = () => generatePdf();
+            document.head.appendChild(script);
+        } else {
+            generatePdf();
+        }
+
+        function generatePdf() {
+            const element = document.getElementById('pdf-content-area');
+            const opt = {
+                margin:       0.3,
+                filename:     'Exam_Registration_Form.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#f9fafb' },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                if (btn) btn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
+            });
+        }
     };
 
     fetchAndRender();
