@@ -67,9 +67,10 @@ export const DashboardHome = {
                     };
                 });
 
-                // Only show exams that are not completed AND whose date is today or in the future
+                // Only show exams that are not completed AND whose date is today or in the future OR status is OPEN/LIVE
                 this.upcomingExamsList = allMapped.filter(item => {
                     if (item._examStatus === 'COMPLETED') return false;
+                    if (item._examStatus === 'OPEN' || item._examStatus === 'LIVE') return true;
                     if (!item._examDate || item._examDate === 'TBD') return true; // include if no date known
                     const d = new Date(item._examDate);
                     d.setHours(0, 0, 0, 0);

@@ -73,7 +73,7 @@ public class AdmitCardController {
 
             // Fetch seat allocation
             ExamSeatAllocation seat = examSeatAllocationRepository
-                    .findByRegistrationId(registrationId).orElse(null);
+                    .findFirstByRegistrationId(registrationId).orElse(null);
 
             // Fetch UniversityExam to find today's subject slot
             com.example.examauth.student_exam.university.model.UniversityExam exam = 

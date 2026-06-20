@@ -49,7 +49,7 @@ public class ExamRegistrationService {
 
         // ========== VALIDATION 1.5: Max Students Capacity Check ==========
         if (exam.getControls() != null && exam.getControls().getMaxStudents() != null) {
-            long currentRegistrations = examRegistrationRepository.countByExamId(request.getExamId());
+            long currentRegistrations = examRegistrationRepository.countByExamIdAndRegistrationStatus(request.getExamId(), ExamRegistration.RegistrationStatus.APPROVED);
             if (currentRegistrations >= exam.getControls().getMaxStudents()) {
                 throw new IllegalStateException("Registration is closed: Maximum student capacity (" + exam.getControls().getMaxStudents() + ") has been reached for this exam.");
             }
@@ -122,8 +122,8 @@ public class ExamRegistrationService {
             registration.setTotalFee(request.getTotalFee());
         }
 
-        // Use APPLIED for new workflow, PENDING for backward compatibility
-        registration.setRegistrationStatus(ExamRegistration.RegistrationStatus.APPLIED);
+        // Use PENDING_APPROVAL for competitive registration workflow
+        registration.setRegistrationStatus(ExamRegistration.RegistrationStatus.PENDING_APPROVAL);
 
         ExamRegistration savedRegistration = examRegistrationRepository.save(registration);
 
@@ -236,8 +236,12 @@ public class ExamRegistrationService {
                 try {
                     com.example.examauth.student_exam.university.model.UniversityExam exam = universityExamRepository
                             .findById(reg.getExamId()).orElse(null);
-                    if (exam != null && exam.getExamDate() != null && exam.getExamDate().isAfter(today)) {
-                        upcomingExams++;
+                    if (exam != null) {
+                        String status = exam.getStatus() != null ? exam.getStatus() : "";
+                        if (!"COMPLETED".equalsIgnoreCase(status)) {
+                            // If it's not completed, it's either upcoming or currently ongoing
+                            upcomingExams++;
+                        }
                     }
                 } catch (Exception e) {
                     log.error("Error fetching exam for stats: {}", e.getMessage());

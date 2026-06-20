@@ -10,8 +10,13 @@ import com.example.examauth.student_exam.repo.ExamRegistrationRepository;
 import com.example.examauth.student_exam.repo.ExamSeatAllocationRepository;
 import com.example.examauth.student_exam.university.model.ExamCollegeMapping;
 import com.example.examauth.student_exam.university.repo.ExamCollegeMappingRepository;
+import com.example.examauth.student_exam.university.repo.UniversityExamRepository;
+import com.example.examauth.student_exam.university.model.UniversityExam;
+import com.example.examauth.student_exam.university.model.UniversityExamSubject;
 import com.example.examauth.service.StudentExamEligibilityService;
 import com.example.examauth.repo.ExamAttendanceRepository;
+import com.example.examauth.repo.CollegeRepository;
+import com.example.examauth.model.College;
 import com.example.examauth.exception.EligibilityException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +39,8 @@ public class SeatAllocationService {
     private final ExamCollegeMappingRepository mappingRepository;
     private final StudentExamEligibilityService studentExamEligibilityService;
     private final ExamAttendanceRepository examAttendanceRepository;
+    private final UniversityExamRepository universityExamRepository;
+    private final CollegeRepository collegeRepository;
 
     @Transactional
     public void generateSeatAllocation(Long examId, Long collegeId) {
@@ -44,6 +51,11 @@ public class SeatAllocationService {
 
         // 1. Idempotency: clear existing before regeneration
         seatAllocationRepository.deleteAllByExamIdAndCollegeId(examId, collegeId);
+        seatAllocationRepository.flush(); // Force delete execution before any inserts to avoid constraint violations
+
+        // Fetch Exam with subjects eagerly loaded to prevent LazyInitializationException
+        UniversityExam exam = universityExamRepository.findByIdWithSubjects(examId)
+                .orElseThrow(() -> new IllegalArgumentException("Exam not found"));
 
         // 2. Fetch Halls
         List<ExamHall> halls = examHallRepository.findAllByExamIdAndCollegeId(examId, collegeId);
@@ -93,56 +105,115 @@ public class SeatAllocationService {
             throw new IllegalStateException("Not enough hall capacity. Capacity: " + totalCapacity + ", Students: " + collegeRegistrations.size());
         }
 
-        // 4. Sort by PRN for deterministic roll number generation
-        collegeRegistrations.sort(Comparator.comparing(r -> r.getPrn() != null ? r.getPrn() : ""));
+        // --- WIPE OLD DATA BEFORE PROCEEDING ---
+        // Ensure absolutely no old seats or roll numbers remain for this college before we start generating new ones
+        seatAllocationRepository.deleteAllByExamIdAndCollegeId(examId, collegeId);
+        seatAllocationRepository.flush();
 
-        // 5. Generate allocations
-        User anyStudent = userRepository.findById(collegeRegistrations.get(0).getStudentId()).orElseThrow();
-        String collegeCode = anyStudent.getCollege() != null && anyStudent.getCollege().getCode() != null 
-                ? anyStudent.getCollege().getCode() : "COL";
-        String year = String.valueOf(java.time.Year.now().getValue());
-
-        List<ExamSeatAllocation> allocations = new ArrayList<>();
-        int studentIndex = 0;
-        int serialInCollege = 1;
-
-        for (ExamHall hall : halls) {
-            int seatsInThisHall = 0;
-            while (seatsInThisHall < hall.getCapacity() && studentIndex < collegeRegistrations.size()) {
-                ExamRegistration reg = collegeRegistrations.get(studentIndex);
-                User student = userRepository.findById(reg.getStudentId()).orElseThrow();
-
-                ExamSeatAllocation alloc = new ExamSeatAllocation();
-                alloc.setRegistrationId(reg.getId());
-                alloc.setStudentId(reg.getStudentId());
-                alloc.setPrn(reg.getPrn());
-                alloc.setStudentName(student.getName());
-                alloc.setExamId(examId);
-                alloc.setCollegeId(collegeId);
-                alloc.setCollegeName(student.getCollege().getName());
-                alloc.setHall(hall);
-                alloc.setHallName(hall.getHallName());
-
-                // Standardized Format: PREFIX-XXX (e.g., A-001)
-                alloc.setSeatNumber(String.format("%s-%03d", hall.getHallPrefix(), seatsInThisHall + 1));
-                
-                // Format: <collegeCode>/<year>/<3-digit serial> (resets per college as serialInCollege starts at 1)
-                alloc.setRollNumber(String.format("%s/%s/%03d", collegeCode, year, serialInCollege));
-                alloc.setSerialInCollege(serialInCollege);
-
-                allocations.add(alloc);
-
-                seatsInThisHall++;
-                studentIndex++;
-                serialInCollege++;
-            }
-            
-            // Update seats assigned in hall
-            hall.setSeatsAssigned(seatsInThisHall);
-            examHallRepository.save(hall);
+        // 4. Shuffle the registrations to ensure randomized seat and roll number assignments on regeneration
+        java.util.Collections.shuffle(collegeRegistrations);
+        
+        // Map to ensure roll numbers are permanently attached to the student regardless of shuffling
+        java.util.Map<Long, Integer> regSerialMap = new java.util.HashMap<>();
+        for (int i = 0; i < collegeRegistrations.size(); i++) {
+            regSerialMap.put(collegeRegistrations.get(i).getId(), i + 1);
         }
 
-        seatAllocationRepository.saveAll(allocations);
+        // 5. Generate allocations per subject
+        // Use the code of the college where the exam is taking place
+        College examCenter = collegeRepository.findById(collegeId).orElseThrow();
+        String collegeCode = examCenter.getCode() != null ? examCenter.getCode() : "COL";
+        String year = String.valueOf(java.time.Year.now().getValue());
+
+        List<UniversityExamSubject> examSubjectsRaw = exam.getSubjects() != null ? exam.getSubjects() : List.of();
+        // Deduplicate subjects (Hibernate EAGER lists can sometimes duplicate rows)
+        List<UniversityExamSubject> examSubjects = new ArrayList<>();
+        java.util.Set<Long> seenSubjIds = new java.util.HashSet<>();
+        for (UniversityExamSubject s : examSubjectsRaw) {
+            if (s.getId() != null && seenSubjIds.add(s.getId())) {
+                examSubjects.add(s);
+            }
+        }
+
+        List<ExamSeatAllocation> allocations = new ArrayList<>();
+        
+        // Deduplicate registrations just to be safe against data corruption
+        java.util.Set<Long> seenRegIds = new java.util.HashSet<>();
+        List<ExamRegistration> uniqueRegistrations = new ArrayList<>();
+        for (ExamRegistration r : collegeRegistrations) {
+            if (seenRegIds.add(r.getId())) {
+                uniqueRegistrations.add(r);
+            }
+        }
+        
+        for (UniversityExamSubject subject : examSubjects) {
+            // Filter registrations for this subject
+            List<ExamRegistration> subjectRegistrations = new ArrayList<>();
+            for (ExamRegistration reg : uniqueRegistrations) {
+                List<String> selected = reg.getSelectedSubjects();
+                if (selected == null || selected.isEmpty() || selected.stream().anyMatch(s -> s.equalsIgnoreCase(subject.getSubjectName()))) {
+                    subjectRegistrations.add(reg);
+                }
+            }
+            
+            if (subjectRegistrations.isEmpty()) continue;
+            
+            // Shuffle the student list so they get a different seat arrangement for every subject!
+            java.util.Collections.shuffle(subjectRegistrations);
+            
+            int studentIndex = 0;
+
+            for (ExamHall hall : halls) {
+                int seatsInThisHall = 0;
+                while (seatsInThisHall < hall.getCapacity() && studentIndex < subjectRegistrations.size()) {
+                    ExamRegistration reg = subjectRegistrations.get(studentIndex);
+                    User student = userRepository.findById(reg.getStudentId()).orElseThrow();
+
+                    ExamSeatAllocation alloc = new ExamSeatAllocation();
+                    alloc.setRegistrationId(reg.getId());
+                    alloc.setStudentId(reg.getStudentId());
+                    alloc.setPrn(reg.getPrn());
+                    alloc.setStudentName(student.getName());
+                    alloc.setExamId(examId);
+                    alloc.setSubjectId(subject.getId());
+                    alloc.setCollegeId(collegeId);
+                    alloc.setCollegeName(student.getCollege().getName());
+                    alloc.setHall(hall);
+                    alloc.setHallName(hall.getHallName());
+
+                    // Standardized Format: PREFIX-XXX (e.g., A-001)
+                    alloc.setSeatNumber(String.format("%s-%03d", hall.getHallPrefix(), seatsInThisHall + 1));
+                    
+                    // Format: <collegeCode>/<year>/<3-digit serial>
+                    int serialInCollege = regSerialMap.get(reg.getId());
+                    alloc.setRollNumber(String.format("%s/%s/%03d", collegeCode, year, serialInCollege));
+                    alloc.setSerialInCollege(serialInCollege);
+
+                    allocations.add(alloc);
+
+                    seatsInThisHall++;
+                    studentIndex++;
+                }
+                
+                hall.setSeatsAssigned(seatsInThisHall);
+                examHallRepository.save(hall);
+            }
+        }
+
+        // 5. Final deduplication safety net before inserting
+        java.util.Set<String> seenAlloc = new java.util.HashSet<>();
+        List<ExamSeatAllocation> distinctAllocations = new ArrayList<>();
+        for (ExamSeatAllocation a : allocations) {
+            String key = a.getRegistrationId() + "-" + (a.getSubjectId() != null ? a.getSubjectId() : "null");
+            if (seenAlloc.add(key)) {
+                distinctAllocations.add(a);
+            } else {
+                System.out.println("WARNING: Prevented duplicate allocation for regId=" + a.getRegistrationId() + " subjectId=" + a.getSubjectId());
+            }
+        }
+
+        seatAllocationRepository.saveAll(distinctAllocations);
+        seatAllocationRepository.flush();
 
         // 6. Update Mapping Status
         ExamCollegeMapping mapping = mappingRepository.findByExamIdAndCollegeId(examId, collegeId).orElse(null);

@@ -14,4 +14,8 @@ public interface UniversityExamRepository extends JpaRepository<UniversityExam, 
     List<UniversityExam> findBySessionName(String sessionName);
 
     List<UniversityExam> findBySupervisorId(Long supervisorId);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"subjects"})
+    @org.springframework.data.jpa.repository.Query("SELECT u FROM UniversityExam u WHERE u.id = :id")
+    java.util.Optional<UniversityExam> findByIdWithSubjects(@org.springframework.data.repository.query.Param("id") Long id);
 }

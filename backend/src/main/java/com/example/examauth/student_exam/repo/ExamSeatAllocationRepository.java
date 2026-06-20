@@ -18,8 +18,11 @@ public interface ExamSeatAllocationRepository extends JpaRepository<ExamSeatAllo
     // Primary lookups for admit card generation
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** Main lookup: find a student's seat for a specific registration */
-    Optional<ExamSeatAllocation> findByRegistrationId(Long registrationId);
+    /** Main lookup: find a student's seat for a specific registration and subject */
+    Optional<ExamSeatAllocation> findByRegistrationIdAndSubjectId(Long registrationId, Long subjectId);
+
+    /** Fallback or original method if subjectId is not provided */
+    Optional<ExamSeatAllocation> findFirstByRegistrationId(Long registrationId);
 
     /** Find by student + exam (alternative admit card lookup) */
     Optional<ExamSeatAllocation> findByStudentIdAndExamId(Long studentId, Long examId);
@@ -32,7 +35,13 @@ public interface ExamSeatAllocationRepository extends JpaRepository<ExamSeatAllo
     List<ExamSeatAllocation> findAllByExamIdAndCollegeIdOrderBySeatNumber(Long examId, Long collegeId);
 
     /** Paginated allocations for exam+college ordered by seat number for large datasets */
-    org.springframework.data.domain.Page<ExamSeatAllocation> findAllByExamIdAndCollegeIdOrderBySeatNumber(Long examId, Long collegeId, org.springframework.data.domain.Pageable pageable);
+    @Query("SELECT e FROM ExamSeatAllocation e WHERE e.id IN " +
+           "(SELECT MIN(e2.id) FROM ExamSeatAllocation e2 WHERE e2.examId = :examId AND e2.collegeId = :collegeId GROUP BY e2.registrationId) " +
+           "ORDER BY e.seatNumber")
+    org.springframework.data.domain.Page<ExamSeatAllocation> findAllDistinctByRegistrationIdForExamAndCollege(
+            @Param("examId") Long examId, 
+            @Param("collegeId") Long collegeId, 
+            org.springframework.data.domain.Pageable pageable);
 
     /** All allocations for exam+college ordered by roll number */
     List<ExamSeatAllocation> findAllByExamIdAndCollegeIdOrderByRollNumber(Long examId, Long collegeId);
@@ -78,8 +87,13 @@ public interface ExamSeatAllocationRepository extends JpaRepository<ExamSeatAllo
 
     @Modifying
     @Transactional
-    @Query("DELETE FROM ExamSeatAllocation a WHERE a.examId = :examId AND a.collegeId = :collegeId")
+    @Query("DELETE FROM ExamSeatAllocation e WHERE e.examId = :examId AND e.collegeId = :collegeId")
     void deleteAllByExamIdAndCollegeId(
             @Param("examId") Long examId,
             @Param("collegeId") Long collegeId);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM ExamSeatAllocation e WHERE e.registrationId IN :regIds")
+    void deleteAllByRegistrationIds(@Param("regIds") List<Long> regIds);
 }

@@ -387,10 +387,10 @@
           </td>
           <td>
             <div class="sig-line">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Signature_of_John_Hancock.svg" alt="Sign"
-                style="height: 35px; opacity: 0.8; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);">
+              <img id="headSupervisorSignImage" src="" alt="Sign"
+                style="height: 55px; max-width: 140px; object-fit: contain; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); display: none;">
             </div>
-            <div class="sig-text">Controller of Examinations</div>
+            <div class="sig-text">Center Head Supervisor</div>
           </td>
         </tr>
       </table>
@@ -475,7 +475,45 @@
 
         document.getElementById('verifyStatus').innerText = 'ELIGIBLE';
 
+        // Set dynamic university identity (logo & name)
+        try {
+          const idResp = await fetch('/api/university/identity');
+          if (idResp.ok) {
+            const idData = await idResp.json();
+            const headerEl = document.querySelector('.header');
+            if (headerEl) {
+              const uniName = idData.name || data.universityName || 'SAVITRIBAI PHULE PUNE UNIVERSITY';
+              const logo = idData.logoUrl || data.universityLogoUrl;
+              if (logo) {
+                headerEl.style.display = 'flex';
+                headerEl.style.alignItems = 'center';
+                headerEl.style.justifyContent = 'space-between';
+                headerEl.innerHTML = `
+                  <img src="${logo}" alt="University Logo" style="height: 70px; object-fit: contain;">
+                  <div style="text-align: center; flex-grow: 1;">
+                    <h1 style="font-size: 22px; margin: 0 0 5px 0; font-weight: bold; text-transform: uppercase;">${uniName}</h1>
+                    <h2 style="font-size: 16px; margin: 0 0 5px 0; font-weight: bold;">Examination Hall Ticket / Admit Card</h2>
+                    <p style="font-size: 14px; margin: 0; font-weight: bold;">March-April 2026</p>
+                  </div>
+                  <div style="width: 70px;"></div> <!-- Spacer -->
+                `;
+              } else {
+                const h1El = headerEl.querySelector('h1');
+                if (h1El) h1El.innerText = uniName;
+              }
+            }
+          }
+        } catch(e) {
+          console.warn('Failed to load university identity', e);
+        }
+
         setQrFromPayload(data.qrCode);
+        
+        if (data.headSupervisorSignatureUrl) {
+           const sigImg = document.getElementById('headSupervisorSignImage');
+           sigImg.src = data.headSupervisorSignatureUrl;
+           sigImg.style.display = 'block';
+        }
 
         const subjects = Array.isArray(data.subjects) ? data.subjects : [];
         if (subjects.length === 0) {

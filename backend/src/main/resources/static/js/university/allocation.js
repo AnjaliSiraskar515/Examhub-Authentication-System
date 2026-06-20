@@ -56,14 +56,6 @@ async function loadAllocationExams() {
 
         (exams || []).filter(ex => {
             if (ex.status === 'COMPLETED') return false;
-            if (ex.examDate) {
-                let dateStr = Array.isArray(ex.examDate) ? ex.examDate.join('-') : ex.examDate;
-                const parts = dateStr.split('-');
-                if (parts.length >= 3) {
-                    const eDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-                    if (eDate < today) return false;
-                }
-            }
             return true;
         }).forEach(ex => {
             let dateStr = '';
@@ -119,7 +111,10 @@ async function loadMappingsForExam(examId) {
                     ${m.status === 'HALLS_CONFIGURED' ? 
                         `<button onclick="generateSeats(${m.examId}, ${m.collegeId})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded shadow text-sm transition-all"><i class="fas fa-cogs mr-1"></i> Generate Seats</button>` 
                         : m.status === 'SEATS_GENERATED' ? 
-                        `<button onclick="viewSeatingChart(${m.examId}, ${m.collegeId})" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1.5 rounded shadow text-sm transition-all"><i class="fas fa-list-ol mr-1"></i> View Chart</button>`
+                        `<div class="flex justify-end gap-2">
+                            <button onclick="generateSeats(${m.examId}, ${m.collegeId})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded shadow text-sm transition-all" title="Regenerate Seats"><i class="fas fa-redo"></i></button>
+                            <button onclick="viewSeatingChart(${m.examId}, ${m.collegeId})" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1.5 rounded shadow text-sm transition-all"><i class="fas fa-list-ol mr-1"></i> View Chart</button>
+                         </div>`
                         : '<span class="text-xs text-gray-400 italic">Waiting for Halls...</span>'
                     }
                 </td>
@@ -225,6 +220,11 @@ async function generateSeats(examId, collegeId) {
         }
         alert('Seats generated successfully!');
         loadMappingsForExam(examId);
+        
+        // Auto-refresh the seating chart if it is currently open for this college
+        if (allocationState.currentCollegeId === collegeId) {
+            viewSeatingChart(examId, collegeId, allocationState.currentPage || 0);
+        }
     } catch (e) {
         alert(e.message || 'Failed to generate seats');
     }

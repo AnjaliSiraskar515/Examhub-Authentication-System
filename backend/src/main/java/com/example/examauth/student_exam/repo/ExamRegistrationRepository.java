@@ -24,6 +24,8 @@ public interface ExamRegistrationRepository extends JpaRepository<ExamRegistrati
 
     long countByExamId(Long examId);
 
+    long countByExamIdAndRegistrationStatus(Long examId, ExamRegistration.RegistrationStatus status);
+
     List<ExamRegistration> findByRegistrationStatus(
             com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus status);
 }

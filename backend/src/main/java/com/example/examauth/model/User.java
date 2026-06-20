@@ -185,6 +185,15 @@ public class User {
     private String universityLogoPath; // filename stored in uploads/logo/
     private String employeeId;
     private String appointmentLetterPath;
+    private String signaturePath; // Added for Head Supervisor signature
+
+    public String getSignaturePath() {
+        return signaturePath;
+    }
+
+    public void setSignaturePath(String signaturePath) {
+        this.signaturePath = signaturePath;
+    }
 
     public String getSupervisorType() {
         return supervisorType;

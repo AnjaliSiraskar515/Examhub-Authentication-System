@@ -79,11 +79,11 @@ function renderExamsTable(exams) {
                 </span>
             </td>
             <td class="px-6 py-4 text-right">
-                ${currentStatus !== 'COMPLETED' ? `
+                ${(currentStatus !== 'COMPLETED' && currentStatus !== 'LIVE') ? `
                 <button onclick="releaseHallTicket(${exam.id})" class="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors" title="Release Hall Ticket"><i class="fas fa-paper-plane"></i></button>
                 <button onclick="editExam('${exam.sourceId}')" class="text-blue-600 hover:text-blue-900 mr-3 transition-colors" title="Edit Exam"><i class="fas fa-edit"></i> Edit</button>
+                ` : `<span class="text-gray-400 text-sm font-medium mr-3"><i class="fas fa-lock mr-1"></i> Locked</span>`}
                 <button onclick="confirmDeleteExam('${exam.sourceId}')" class="text-red-600 hover:text-red-900 transition-colors" title="Delete Exam"><i class="fas fa-trash"></i></button>
-                ` : `<span class="text-gray-400 text-sm font-medium"><i class="fas fa-lock mr-1"></i> Locked</span>`}
             </td>
         </tr>
     `}).join('');

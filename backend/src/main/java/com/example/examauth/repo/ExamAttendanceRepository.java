@@ -7,7 +7,8 @@ import java.util.Optional;
 
 public interface ExamAttendanceRepository extends JpaRepository<ExamAttendance, Long> {
     boolean existsByStudentIdAndExamId(Long studentId, Long examId);
-    Optional<ExamAttendance> findByStudentIdAndExamId(Long studentId, Long examId);
+    Optional<ExamAttendance> findFirstByStudentIdAndExamId(Long studentId, Long examId);
+    Optional<ExamAttendance> findFirstByStudentIdAndExamIdAndSubjectId(Long studentId, Long examId, Long subjectId);
     boolean existsByExamId(Long examId);
     
     @org.springframework.data.jpa.repository.Query("SELECT CASE WHEN COUNT(ea) > 0 THEN true ELSE false END FROM ExamAttendance ea JOIN User u ON ea.studentId = u.userId WHERE ea.examId = :examId AND u.college.id = :collegeId")

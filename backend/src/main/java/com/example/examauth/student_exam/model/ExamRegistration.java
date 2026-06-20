@@ -53,6 +53,9 @@ public class ExamRegistration {
     @Column(name = "qr_code", columnDefinition = "TEXT")
     private String qrCode;
 
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
     /**
      * List of subjects selected by student for this exam
      * Stored as JSON in database
@@ -88,7 +91,7 @@ public class ExamRegistration {
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "registration_status", nullable = false)
-    private RegistrationStatus registrationStatus = RegistrationStatus.APPLIED;
+    private RegistrationStatus registrationStatus = RegistrationStatus.PENDING_APPROVAL;
 
     /**
      * Timestamp when registration was submitted
@@ -112,7 +115,7 @@ public class ExamRegistration {
             paymentStatus = PaymentStatus.PENDING;
         }
         if (registrationStatus == null) {
-            registrationStatus = RegistrationStatus.APPLIED;
+            registrationStatus = RegistrationStatus.PENDING_APPROVAL;
         }
         if (declarationAccepted == null) {
             declarationAccepted = false;
@@ -137,9 +140,11 @@ public class ExamRegistration {
      * Enhanced to include APPLIED state for new workflow
      */
     public enum RegistrationStatus {
-        APPLIED, // Initial state after form submission
+        PENDING_APPROVAL, // New state for competitive registration
+        APPLIED, // Initial state after form submission (legacy)
         APPROVED, // Verified and approved by admin
-        REJECTED, // Rejected (kept for backward compatibility)
+        REJECTED, // Rejected
+        AUTO_EXPIRED, // Deadline passed without approval
         PENDING // Legacy status (kept for backward compatibility)
     }
 }

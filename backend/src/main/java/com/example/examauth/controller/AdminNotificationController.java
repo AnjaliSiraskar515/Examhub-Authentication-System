@@ -39,6 +39,15 @@ public class AdminNotificationController {
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SUPERADMIN')")
     public ResponseEntity<?> getNotifications() {
+        // If in-app notifications are disabled via System Settings, return empty list
+        boolean inAppEnabled = settingsService.getBooleanSetting(
+                SettingsService.KEY_SMS_ALERTS_ENABLED, true);
+        if (!inAppEnabled) {
+            return ResponseEntity.ok(Map.of("notifications", List.of(),
+                    "disabled", true,
+                    "message", "In-app notifications are currently disabled by the Super Admin."));
+        }
+
         List<Map<String, Object>> notifications = new ArrayList<>();
 
         long pendingInstitutions = institutionRepository.countByStatusIgnoreCase("pending");

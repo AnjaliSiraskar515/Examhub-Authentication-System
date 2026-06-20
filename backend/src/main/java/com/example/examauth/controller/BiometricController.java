@@ -88,7 +88,7 @@ public class BiometricController {
             return new AttendanceWriteResult(null, false, false);
         }
 
-        var existingOpt = examAttendanceRepository.findByStudentIdAndExamId(studentId, examId);
+        var existingOpt = examAttendanceRepository.findFirstByStudentIdAndExamId(studentId, examId);
         if (existingOpt.isPresent()) {
             return new AttendanceWriteResult(existingOpt.get(), false, true);
         }

@@ -36,10 +36,32 @@ public class UniversityController {
     private ExamRegistrationRepository examRegistrationRepository;
 
     @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Autowired
     private com.example.examauth.student_exam.university.repo.ExamCollegeMappingRepository examCollegeMappingRepository;
 
     @Autowired
     private com.example.examauth.student_exam.service.NotificationService notificationService;
+    @GetMapping("/identity")
+    public ResponseEntity<?> getPublicIdentity() {
+        com.example.examauth.model.User admin = userRepository.findByRole("UNIVERSITY_ADMIN").stream()
+                .filter(u -> u.getUniversityLogoPath() != null && !u.getUniversityLogoPath().isEmpty())
+                .findFirst()
+                .orElseGet(() -> userRepository.findByRole("UNIVERSITY_ADMIN").stream().findFirst().orElse(null));
+        if (admin != null) {
+            String logoPath = admin.getUniversityLogoPath();
+            String logoUrl = null;
+            if (logoPath != null && !logoPath.isEmpty()) {
+                logoUrl = logoPath.startsWith("/") ? logoPath : "/uploads/logo/" + logoPath;
+            }
+            return ResponseEntity.ok(Map.of(
+                "name", admin.getUniversityName() != null ? admin.getUniversityName() : "SAVITRIBAI PHULE PUNE UNIVERSITY",
+                "logoUrl", logoUrl != null ? logoUrl : ""
+            ));
+        }
+        return ResponseEntity.ok(Map.of("name", "SAVITRIBAI PHULE PUNE UNIVERSITY", "logoUrl", ""));
+    }
 
     // Helper: get the university name of the currently authenticated UNIVERSITY_ADMIN
     private String getCurrentAdminUniversityName() {
@@ -253,17 +275,41 @@ public class UniversityController {
         return ResponseEntity.ok(unifiedExams);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     @DeleteMapping("/{univId}/exam/{id}")
     public ResponseEntity<?> deleteExam(@PathVariable Long univId, @PathVariable String id) {
         try {
+            Long examId = null;
             if (id.startsWith("LEGACY_")) {
-                Long examId = Long.parseLong(id.substring(7));
-                examService.deleteExam(examId);
-                return ResponseEntity.ok(Map.of("message", "Legacy exam deleted"));
+                examId = Long.parseLong(id.substring(7));
             } else if (id.startsWith("UNIV_")) {
-                Long targetUnivId = Long.parseLong(id.substring(5));
-                universityExamRepository.deleteById(targetUnivId);
-                return ResponseEntity.ok(Map.of("message", "University exam deleted"));
+                examId = Long.parseLong(id.substring(5));
+            }
+
+            if (examId != null) {
+                // Delete dependent records first using JDBC. Wrap each in try-catch so missing tables don't abort deletion
+                String[] dependentTables = {
+                    "exam_seat_allocations", "exam_registrations", "exam_registrations_module",
+                    "exam_college_mappings", "exam_halls", "exam_center_allocations",
+                    "supervisor_action_logs", "qr_codes", "qr_tokens", "incident_reports",
+                    "student_scores", "admit_cards"
+                };
+
+                for (String table : dependentTables) {
+                    try {
+                        jdbcTemplate.update("DELETE FROM " + table + " WHERE exam_id = ?", examId);
+                    } catch (Exception ignored) {
+                        // Table might not exist or column might be different, safe to ignore
+                    }
+                }
+
+                if (id.startsWith("LEGACY_")) {
+                    examService.deleteExam(examId);
+                    return ResponseEntity.ok(Map.of("message", "Legacy exam deleted"));
+                } else if (id.startsWith("UNIV_")) {
+                    universityExamRepository.deleteById(examId);
+                    return ResponseEntity.ok(Map.of("message", "University exam deleted"));
+                }
             }
             return ResponseEntity.status(404).body(Map.of("error", "Exam not found"));
         } catch (Exception e) {
@@ -277,24 +323,24 @@ public class UniversityController {
         try {
             // Validation: Ensure at least one college has generated seats
             List<com.example.examauth.student_exam.university.model.ExamCollegeMapping> mappings = examCollegeMappingRepository.findAllByExamId(examId);
-            if (!mappings.isEmpty()) {
-                boolean hasSeatsGenerated = mappings.stream()
-                    .anyMatch(m -> m.getStatus() == com.example.examauth.student_exam.university.model.ExamCollegeMapping.MappingStatus.SEATS_GENERATED || 
-                                   m.getStatus() == com.example.examauth.student_exam.university.model.ExamCollegeMapping.MappingStatus.COMPLETED);
-                
-                if (!hasSeatsGenerated) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Cannot release hall tickets. Hall and seat allocation must be completed for at least one college first."));
-                }
+            
+            if (mappings.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Cannot release hall tickets. No colleges have been mapped to this exam yet."));
+            }
+
+            boolean hasSeatsGenerated = mappings.stream()
+                .anyMatch(m -> m.getStatus() == com.example.examauth.student_exam.university.model.ExamCollegeMapping.MappingStatus.SEATS_GENERATED || 
+                               m.getStatus() == com.example.examauth.student_exam.university.model.ExamCollegeMapping.MappingStatus.COMPLETED);
+            
+            if (!hasSeatsGenerated) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Cannot release hall tickets. Hall and seat allocation must be completed first."));
             }
 
             List<ExamRegistration> registrations = examRegistrationRepository.findByExamIdAndRegistrationStatus(examId,
                     ExamRegistration.RegistrationStatus.APPROVED);
 
-            // FALLBACK FOR MOCK DATA MISMATCH: if the university clicks release but the
-            // mock student registered to a deleted/phantom exam ID.
             if (registrations.isEmpty()) {
-                registrations = examRegistrationRepository
-                        .findByRegistrationStatus(ExamRegistration.RegistrationStatus.APPROVED);
+                return ResponseEntity.badRequest().body(Map.of("error", "No approved student registrations found for this exam."));
             }
 
             for (ExamRegistration reg : registrations) {

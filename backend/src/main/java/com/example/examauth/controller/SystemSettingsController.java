@@ -176,6 +176,8 @@ public class SystemSettingsController {
             Path backupFile = backupDir.resolve(filename);
 
             ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
             mapper.writerWithDefaultPrettyPrinter().writeValue(backupFile.toFile(), snapshot);
 
             settingsService.updateSettings(

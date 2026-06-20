@@ -68,14 +68,18 @@ export default function MyRegistrations() {
                         statusLabel = 'REJECTED';
                         statusColor = 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800';
                         statusIcon = 'fa-times-circle';
-                    } else if (reg.registrationStatus === 'APPLIED') {
-                        statusLabel = 'PENDING APPROVAL';
+                    } else if (reg.registrationStatus === 'PENDING_APPROVAL' || reg.registrationStatus === 'APPLIED' || reg.registrationStatus === 'PENDING') {
+                        statusLabel = 'APPLICATION UNDER REVIEW';
                         statusColor = 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800';
-                        statusIcon = 'fa-info-circle';
+                        statusIcon = 'fa-clock';
+                    } else if (reg.registrationStatus === 'AUTO_EXPIRED') {
+                        statusLabel = 'AUTO EXPIRED';
+                        statusColor = 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400 dark:border-gray-800';
+                        statusIcon = 'fa-calendar-times';
                     } else {
                         statusLabel = 'UNKNOWN';
                         statusColor = 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400 dark:border-gray-800';
-                        statusIcon = 'fa-clock';
+                        statusIcon = 'fa-question-circle';
                     }
 
                     const subjects = reg.selectedSubjects && reg.selectedSubjects.length > 0
@@ -200,12 +204,18 @@ export default function MyRegistrations() {
             statusIcon = 'text-red-600';
             statusLabel = 'REGISTRATION REJECTED';
             subtext = 'Your application was declined. Please check with the administration.';
+        } else if (reg.registrationStatus === 'AUTO_EXPIRED') {
+            statusBg = 'bg-gray-50 border-gray-200';
+            statusText = 'text-gray-700';
+            statusIcon = 'text-gray-600';
+            statusLabel = 'REGISTRATION EXPIRED';
+            subtext = 'Your application expired because the deadline passed without approval.';
         } else {
             statusBg = 'bg-blue-50 border-blue-200';
             statusText = 'text-blue-700';
             statusIcon = 'text-blue-600';
-            statusLabel = 'APPLICATION PENDING';
-            subtext = 'Your application is currently being processed.';
+            statusLabel = 'APPLICATION UNDER REVIEW';
+            subtext = 'Your application is currently being processed and is pending capacity review.';
         }
 
         const subjectsCredits = [4, 4, 3, 3, 2, 2];
