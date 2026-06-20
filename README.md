@@ -34,10 +34,6 @@ A multi-layered examination authentication platform designed to prevent imperson
 *   **Database:** MySQL (Relational Schema)
 *   **ORM:** Spring Data JPA (Hibernate)
 
-### **AI Microservice (Future Scope)**
-*   **Framework:** Python Flask (Port 5001)
-*   **Capabilities:** Face verification (DeepFace/Facenet512) and Document OCR (Tesseract)
-
 ---
 
 ## 📂 Project Structure
@@ -47,7 +43,6 @@ A multi-layered examination authentication platform designed to prevent imperson
  ┣ 📂 backend/            # Spring Boot REST API & Business Logic
  ┣ 📂 frontend/           # Vanilla JS UI, Dashboards, and Forms
  ┣ 📂 database/           # MySQL Schema and Seed Scripts
- ┣ 📂 ai_verification/    # Python Flask Microservice for OCR
  ┣ 📂 csv/                # Sample CSV templates for bulk upload
  ┗ 📂 documentation_diagrams/ # Sequence and Architecture diagrams
 ```
@@ -81,13 +76,6 @@ A multi-layered examination authentication platform designed to prevent imperson
    python -m http.server 8000
    ```
 2. Navigate to `http://localhost:8000/frontend/auth_portal.html` to log in.
-
-### 4. AI Microservice (Optional)
-```bash
-cd ai_verification
-pip install -r requirements.txt
-python app.py
-```
 
 ---
 
