@@ -71,11 +71,8 @@ A multi-layered examination authentication platform designed to prevent imperson
 *(The backend will start locally on `http://localhost:8080` or `8081`)*
 
 ### 3. Frontend Setup
-1. Use any standard HTTP server to serve the static frontend files.
-   ```bash
-   python -m http.server 8000
-   ```
-2. Navigate to `http://localhost:8000/frontend/auth_portal.html` to log in.
+1. Open the `frontend` folder in VS Code.
+2. Use the **Live Server** extension to serve the files, or open `auth_portal.html` directly in your browser.
 
 ---
 
