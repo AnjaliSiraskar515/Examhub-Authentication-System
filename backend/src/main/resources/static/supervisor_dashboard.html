@@ -384,33 +384,33 @@
 
           <!-- 2. Live Monitoring Stats -->
           <div id="liveStatsPanel" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="card p-4 flex items-center justify-between border-l-4 border-indigo-500">
+              <div>
+                <p class="text-sm text-gray-500">Total Allocated</p>
+                <p class="text-xl font-bold text-gray-800" id="liveStatTotal">--</p>
+              </div>
+              <i class="fas fa-users text-indigo-100 text-3xl"></i>
+            </div>
             <div class="card p-4 flex items-center justify-between border-l-4 border-emerald-500">
               <div>
-                <p class="text-sm text-gray-500">Active Students</p>
-                <p class="text-xl font-bold text-gray-800" id="statActive">--</p>
+                <p class="text-sm text-gray-500">Verified (Present)</p>
+                <p class="text-xl font-bold text-gray-800" id="liveStatVerified">--</p>
               </div>
-              <i class="fas fa-user-check text-emerald-100 text-3xl"></i>
+              <i class="fas fa-fingerprint text-emerald-100 text-3xl"></i>
             </div>
             <div class="card p-4 flex items-center justify-between border-l-4 border-amber-500">
               <div>
-                <p class="text-sm text-gray-500">Idle / Warnings</p>
-                <p class="text-xl font-bold text-gray-800" id="statWarnings">--</p>
+                <p class="text-sm text-gray-500">Pending</p>
+                <p class="text-xl font-bold text-gray-800" id="liveStatPending">--</p>
               </div>
-              <i class="fas fa-exclamation-triangle text-amber-100 text-3xl"></i>
+              <i class="fas fa-hourglass-half text-amber-100 text-3xl"></i>
             </div>
             <div class="card p-4 flex items-center justify-between border-l-4 border-red-500">
               <div>
-                <p class="text-sm text-gray-500">Disconnected</p>
-                <p class="text-xl font-bold text-gray-800" id="statDisconnected">--</p>
+                <p class="text-sm text-gray-500">Absent</p>
+                <p class="text-xl font-bold text-gray-800" id="liveStatAbsent">--</p>
               </div>
-              <i class="fas fa-wifi-slash text-red-100 text-3xl"></i>
-            </div>
-            <div class="card p-4 flex items-center justify-between border-l-4 border-purple-500">
-              <div>
-                <p class="text-sm text-gray-500">Incidents</p>
-                <p class="text-xl font-bold text-gray-800" id="statIncidents">--</p>
-              </div>
-              <i class="fas fa-file-invoice text-purple-100 text-3xl"></i>
+              <i class="fas fa-user-slash text-red-100 text-3xl"></i>
             </div>
           </div>
 
@@ -441,8 +441,6 @@
                       Verification</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Live
                       Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity
-                    </th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions
                     </th>
                   </tr>
@@ -505,7 +503,10 @@
       </div>
 
       <div id="tab-qr" class="tab-content hidden">
-        <div class="card p-6">
+        <div class="card p-6 relative">
+          <button onclick="showTab(previousTab)" class="absolute top-6 right-6 text-gray-500 hover:text-indigo-600 transition-colors flex items-center gap-2 font-medium px-3 py-1 rounded hover:bg-indigo-50">
+            <i class="fas fa-arrow-left"></i> Back
+          </button>
           <h2 class="text-2xl font-semibold mb-6 text-gray-900"><i class="fas fa-qrcode mr-2"></i> Scan Student QR</h2>
           <div id="qr-reader" class="qr-reader-box mb-4 mx-auto">
             <i class="fas fa-camera text-4xl"></i>
@@ -1128,6 +1129,10 @@
         <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
           <button onclick="closeExamDetailsModal()"
             class="px-5 py-2.5 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 font-medium transition-colors text-sm">Close</button>
+          <button id="edModalDashboardBtn"
+            class="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow transition-all text-sm flex items-center gap-2">
+            <i class="fas fa-users-viewfinder"></i> Candidate Dashboard
+          </button>
           <button id="edModalActionBtn"
             class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow transition-all text-sm flex items-center gap-2">
             <i class="fas fa-eye"></i> View Details
@@ -1144,10 +1149,11 @@
 
       // Title & status badge
       document.getElementById('edModalTitle').textContent = ex.title || 'Exam';
-      const isLive = ex.status === 'LIVE' || ex.status === 'ONGOING' || ex.status === 'OPEN';
-      const isUpcoming = new Date(ex.date) > new Date();
+      const effStatus = ex.computedStatus || ex.status;
+      const isLive = effStatus === 'LIVE' || effStatus === 'ONGOING' || effStatus === 'OPEN';
+      const isUpcoming = effStatus === 'UPCOMING' || (!isLive && effStatus !== 'COMPLETED' && new Date(ex.date) > new Date());
       let badgeColor = isLive ? 'bg-green-500' : isUpcoming ? 'bg-yellow-500' : 'bg-gray-400';
-      let badgeLabel = isLive ? '● LIVE' : isUpcoming ? 'UPCOMING' : ex.status || 'COMPLETED';
+      let badgeLabel = isLive ? '● LIVE' : isUpcoming ? 'UPCOMING' : effStatus || 'COMPLETED';
       document.getElementById('edModalStatus').innerHTML =
         `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold text-white ${badgeColor}">${badgeLabel}</span>`;
 
@@ -1159,7 +1165,9 @@
 
       // Time (start → end)
       let timeStr = ex.startTime || '--';
-      if (ex.startTime && ex.duration) {
+      if (ex.startTime && ex.endTime && ex.endTime !== 'TBD') {
+        timeStr = `${ex.startTime.slice(0, 5)} – ${ex.endTime.slice(0, 5)}`;
+      } else if (ex.startTime && ex.duration) {
         try {
           const [h, m] = ex.startTime.split(':').map(Number);
           const s = new Date(); s.setHours(h, m, 0);
@@ -1179,18 +1187,20 @@
       document.getElementById('edModalLocation').textContent = ex.location || 'Not specified';
 
       // Center – available for university-wizard exams; fallback to location or 'Not specified'
-      document.getElementById('edModalCenter').textContent = ex.centerName || ex.center || ex.location || 'Not specified';
+      document.getElementById('edModalCenter').textContent = ex.centerName || ex.center || ex.location || 'Assigned Home Center';
 
       // Halls – derive from capacity or show 'Not specified'
       const cap = ex.centerCapacity || ex.maxStudents;
       const halls = ex.halls || ex.hallCount ||
-        (cap ? Math.max(1, Math.ceil(Number(cap) / 30)) + ' (est.)' : 'Not specified');
+        (cap ? Math.max(1, Math.ceil(Number(cap) / 30)) + ' (est.)' : 'Dynamic Allocation');
       document.getElementById('edModalHalls').textContent = halls;
 
       // Student count — fetch live from the same endpoint used by the monitoring table
       const edModalStudentsEl = document.getElementById('edModalStudents');
       edModalStudentsEl.textContent = '...';
-      fetch(`/api/supervisor/students?examId=${ex.id}`, { headers: authHeaders() })
+      let url = `/api/supervisor/students?examId=${ex.id}`;
+      if (ex.subjectId) url += `&subjectId=${ex.subjectId}`;
+      fetch(url, { headers: authHeaders() })
         .then(r => r.json())
         .then(students => {
           edModalStudentsEl.textContent = students.length > 0 ? students.length : '0';
@@ -1214,15 +1224,26 @@
       if (exIsCompleted) {
         actionBtn.innerHTML = '<i class="fas fa-download mr-2"></i> Download Report';
         actionBtn.className = 'px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow transition-all text-sm flex items-center gap-2';
-        actionBtn.onclick = () => { closeExamDetailsModal(); downloadExamReport(ex.id); };
+        actionBtn.onclick = () => { closeExamDetailsModal(); downloadExamReport(ex.id, ex.subjectId); };
+        actionBtn.style.display = '';
       } else if (exIsLive) {
         actionBtn.innerHTML = '<i class="fas fa-broadcast-tower mr-2"></i> Monitor Hall';
         actionBtn.className = 'px-5 py-2.5 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 shadow transition-all text-sm flex items-center gap-2 animate-pulse';
-        actionBtn.onclick = () => { closeExamDetailsModal(); openMonitorHall(ex.id, ex.title); };
+        actionBtn.onclick = () => { closeExamDetailsModal(); openMonitorHall(ex.id, ex.title, ex.subjectId); };
+        actionBtn.style.display = '';
       } else {
-        actionBtn.innerHTML = '<i class="fas fa-user-check mr-2"></i> Verify Students';
-        actionBtn.className = 'px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow transition-all text-sm flex items-center gap-2';
-        actionBtn.onclick = () => { closeExamDetailsModal(); showTab('qr'); };
+        actionBtn.style.display = 'none';
+      }
+
+      // Wire Dashboard button
+      const dbBtn = document.getElementById('edModalDashboardBtn');
+      if(dbBtn) {
+        dbBtn.onclick = () => {
+          closeExamDetailsModal();
+          if (typeof openExamDetail === 'function') {
+            openExamDetail(ex.id, (ex.title||'').replace(/'/g, "\\'"), ex.date, ex.startTime, ex.mode || 'OFFLINE', ex.location || '', ex.computedStatus || ex.status, ex.duration || 0, ex.subjectId);
+          }
+        };
       }
 
       // Show modal
@@ -1351,9 +1372,18 @@
     const tabs = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     let qrScanner;
+    let currentTab = 'profile';
+    let previousTab = 'exams';
+
     function hideAllTabs() { tabContents.forEach(tc => tc.style.display = 'none'); tabs.forEach(b => b.classList.remove('active')); }
 
     function showTab(tabName) {
+      if (tabName === 'qr' && currentTab !== 'qr') {
+          previousTab = currentTab;
+      } else if (tabName !== 'qr') {
+          currentTab = tabName;
+      }
+
       document.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('tab-' + tabName).classList.remove('hidden');
@@ -1416,7 +1446,44 @@
             stuCount = studs.length;
             totalStudents += studs.length;
           } catch(_) {}
-          const st = (ex.status || '').toUpperCase();
+          let st = (ex.status || '').toUpperCase();
+          try {
+             const todayObj = new Date();
+             const examDateObj = new Date(ex.date);
+             const isToday = examDateObj.toDateString() === todayObj.toDateString();
+             let isLive = st === 'LIVE' || st === 'ONGOING';
+             let isCompleted = st === 'COMPLETED' || (!isLive && examDateObj < todayObj && !isToday);
+
+             if (isToday && ex.startTime && ex.startTime !== 'TBD') {
+                const parseTime = (tStr) => {
+                   if (!tStr || tStr === 'TBD') return null;
+                   let match = tStr.trim().match(/(\d{1,2}):(\d{2})/);
+                   if (!match) return null;
+                   let h = parseInt(match[1]);
+                   let m = parseInt(match[2]);
+                   if (tStr.toUpperCase().includes('PM') && h < 12) h += 12;
+                   if (tStr.toUpperCase().includes('AM') && h === 12) h = 0;
+                   return h * 60 + m;
+                };
+                const startMins = parseTime(ex.startTime);
+                const endMins = (ex.endTime && ex.endTime !== 'TBD') ? parseTime(ex.endTime) : (startMins + (ex.duration || 120));
+                const nowMins = todayObj.getHours() * 60 + todayObj.getMinutes();
+                if (startMins !== null && endMins !== null) {
+                   if (!isLive && !isCompleted) {
+                      if (nowMins >= startMins && nowMins <= endMins) {
+                         st = 'LIVE';
+                         isLive = true;
+                      } else if (nowMins > endMins) {
+                         st = 'COMPLETED';
+                         isCompleted = true;
+                      }
+                   }
+                }
+             }
+             if (!isLive && !isCompleted && st !== 'LIVE' && st !== 'COMPLETED') st = 'UPCOMING';
+             if (isCompleted && st !== 'COMPLETED') st = 'COMPLETED';
+          } catch(e) {}
+
           if (st === 'LIVE' || st === 'UPCOMING') activeCount++;
 
           const timeStr = ex.startTime ? ex.startTime.toString().slice(0,5) : '—';
@@ -1929,123 +1996,240 @@
         container.innerHTML = '';
         if (arr.length === 0) container.innerHTML = '<div class="muted">No assigned exams.</div>';
 
+        const groupedExams = {};
         arr.forEach(ex => {
-          const div = document.createElement('div'); div.className = 'exam-row card';
+            const key = ex.sessionName || "Independent Exams";
+            if (!groupedExams[key]) groupedExams[key] = [];
+            groupedExams[key].push(ex);
+        });
 
-          // === STATUS BADGE ===
-          // Trust DB status first (set by scheduler), fallback to date comparison
-          let computedStatus = ex.status ? ex.status.toUpperCase() : '';
-          const examDateObj = new Date(ex.date);
-          const todayObj = new Date();
-          const isToday = examDateObj.toDateString() === todayObj.toDateString();
+        const groupInfoArray = Object.keys(groupedExams).map(groupName => {
+            const group = groupedExams[groupName];
+            const allCompleted = group.every(ex => {
+                let s = ex.status ? ex.status.toUpperCase() : '';
+                return s === 'COMPLETED' || (!s && new Date(ex.date) < new Date());
+            });
+            return { groupName, group, allCompleted };
+        });
 
-          // If DB says LIVE or COMPLETED, trust it. Otherwise use date logic.
-          const isLive = computedStatus === 'LIVE' || computedStatus === 'ONGOING';
-          const isCompleted = computedStatus === 'COMPLETED' || (!isLive && examDateObj < todayObj && !isToday);
-          const isUpcoming = !isLive && !isCompleted;
+        // Sort so that ACTIVE (allCompleted = false) exams bubble to the top
+        groupInfoArray.sort((a, b) => {
+            if (a.allCompleted === b.allCompleted) return 0;
+            return a.allCompleted ? 1 : -1;
+        });
 
-          let statusBadge = '';
-          if (isLive) statusBadge = `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold animate-pulse">● LIVE</span>`;
-          else if (isUpcoming) statusBadge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">UPCOMING</span>`;
-          else statusBadge = `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">COMPLETED</span>`;
+        groupInfoArray.forEach((info, groupIndex) => {
+            const { groupName, group, allCompleted } = info;
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'mb-6 border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden';
+            
+            // Render Header
+            const header = document.createElement('div');
+            header.className = 'px-6 py-4 bg-gray-50 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors border-b border-gray-100';
+            header.onclick = () => {
+                const body = document.getElementById(`group-body-${groupIndex}`);
+                const icon = document.getElementById(`group-icon-${groupIndex}`);
+                if (body.classList.contains('hidden')) {
+                    body.classList.remove('hidden');
+                    icon.style.transform = 'rotate(180deg)';
+                } else {
+                    body.classList.add('hidden');
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            };
+            
+            const badge = allCompleted ? `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold ml-3">COMPLETED</span>` : `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold ml-3">ACTIVE</span>`;
 
-          // Mode Badge
-          const modeBadge = `<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-semibold border border-indigo-100"><i class="fas fa-wifi mr-1"></i>${ex.mode || 'OFFLINE'}</span>`;
-
-          // === BUTTONS based on exam status ===
-          let actionBtn = '';
-          let scanBtn = '';
-
-          if (isCompleted) {
-            // COMPLETED: View Report + Download Report
-            actionBtn = `
-              <button class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 shadow-md transition-all font-medium text-sm flex items-center gap-1"
-                onclick="openExamReport('${ex.id}')">
-                <i class="fas fa-chart-bar"></i> View Report
-              </button>
-              <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-md transition-all font-medium text-sm flex items-center gap-1"
-                onclick="downloadExamReport('${ex.id}')">
-                <i class="fas fa-download"></i> Download Report
-              </button>`;
-          } else if (isLive) {
-            // LIVE: Monitor Hall
-            actionBtn = `
-              <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md transition-all font-medium text-sm flex items-center gap-1 animate-pulse"
-                onclick="openMonitorHall('${ex.id}', '${ex.title.replace(/'/g, "\\'")}')"> 
-                <i class="fas fa-broadcast-tower"></i> Monitor Hall
-              </button>`;
-            scanBtn = `
-              <button class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 border border-gray-200 text-sm" onclick="showTab('qr')" title="Start Scanning">
-                <i class="fas fa-qrcode"></i>
-              </button>`;
-          } else {
-            // UPCOMING: Verify Students
-            actionBtn = `
-              <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition-all font-medium text-sm flex items-center gap-1"
-                onclick="showTab('qr')">
-                <i class="fas fa-user-check"></i> Verify Students
-              </button>`;
-            scanBtn = `
-              <button disabled class="px-3 py-2 bg-gray-50 text-gray-300 rounded-lg cursor-not-allowed border border-gray-100 text-sm" title="Not Active Yet">
-                <i class="fas fa-qrcode"></i>
-              </button>`;
-          }
-          // Store full exam data for the details modal
-          window._examDataMap = window._examDataMap || {};
-          window._examDataMap[ex.id] = ex;
-
-          const viewDetailsBtn = `
-        <button class="px-4 py-2 bg-white text-indigo-700 border border-indigo-300 rounded-lg hover:bg-indigo-50 shadow-sm transition-all font-medium text-sm flex items-center"
-                onclick="openExamDetailsModal('${ex.id}')">
-          <i class="fas fa-info-circle mr-2"></i>View Details
-        </button>`;
-
-          let buttonsHTML = viewDetailsBtn + actionBtn + scanBtn;
-
-          div.innerHTML = `
-          <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-1">
-                        ${statusBadge}
-                        ${modeBadge}
-                        <span class="text-xs text-gray-400 font-mono">ID: ${ex.id}</span>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-800">${ex.title}</h3>
-                    <div class="text-sm text-gray-500 mt-1 flex items-center gap-4">
-                        ${(() => {
-              // Time Calculation
-              let timeDisplay = `${ex.startTime}`;
-              if (ex.duration) {
-                try {
-                  const [h, m] = ex.startTime.split(':').map(Number);
-                  const start = new Date();
-                  start.setHours(h, m, 0);
-                  const end = new Date(start.getTime() + ex.duration * 60000);
-                  const endStr = end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-                  timeDisplay = `${ex.startTime} - ${endStr}`;
-                } catch (e) { }
-              }
-
-              // Date Formatting
-              let dateObj = new Date(ex.date);
-              // User Request: If LIVE, show current date
-              if (ex.status === 'LIVE' || ex.status === 'ONGOING') {
-                dateObj = new Date();
-              }
-              const dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-
-              return `
-                            <span><i class="far fa-calendar-alt mr-1 text-indigo-500"></i> ${dateStr}</span>
-                            <span class="border-l border-gray-300 pl-3 mx-2"><i class="far fa-clock mr-1 text-indigo-500"></i> ${timeDisplay}</span>
-                            <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-semibold"><i class="fas fa-hourglass-half mr-1"></i> ${ex.duration} min</span>`;
-            })()}
-                    </div>
+            header.innerHTML = `
+                <div class="flex items-center">
+                    <h2 class="text-xl font-bold text-gray-800">${groupName}</h2>
+                    ${badge}
                 </div>
-                <div class="flex items-center gap-2">
-                    ${buttonsHTML}
+                <div class="flex items-center gap-4">
+                    <p class="text-sm text-gray-500 font-medium"><i class="fas fa-layer-group mr-1 text-indigo-400"></i> ${group.length} Subject${group.length > 1 ? 's' : ''}</p>
+                    <i id="group-icon-${groupIndex}" class="fas fa-chevron-down text-gray-400 transition-transform duration-300" style="transform: rotate(180deg);"></i>
                 </div>
-            </div>`;
-          container.appendChild(div);
+            `;
+            
+            const body = document.createElement('div');
+            body.id = `group-body-${groupIndex}`;
+            // visible by default (no hidden class) since I set rotate(180deg)
+            body.className = 'flex flex-col gap-0 p-2 bg-gray-50/50 transition-all';
+            
+            group.forEach((ex, subjectIndex) => {
+                const div = document.createElement('div');
+                div.className = 'exam-row bg-white rounded-lg p-5 border border-gray-200 shadow-sm m-2 hover:shadow-md transition-shadow';
+
+                // === STATUS BADGE ===
+                let computedStatus = ex.status ? ex.status.toUpperCase() : '';
+                const examDateObj = new Date(ex.date);
+                const todayObj = new Date();
+                const isToday = examDateObj.toDateString() === todayObj.toDateString();
+                let isLive = computedStatus === 'LIVE' || computedStatus === 'ONGOING';
+                let isCompleted = computedStatus === 'COMPLETED' || (!isLive && examDateObj < todayObj && !isToday);
+
+                // Calculate LIVE / COMPLETED / SCANNING_ALLOWED based on time
+                let isScanningAllowed = false;
+                if (isLive) isScanningAllowed = true;
+                
+                if (isToday && ex.startTime && ex.startTime !== 'TBD') {
+                    try {
+                        const parseTime = (tStr) => {
+                            if (!tStr || tStr === 'TBD') return null;
+                            let match = tStr.trim().match(/(\d{1,2}):(\d{2})/);
+                            if (!match) return null;
+                            let h = parseInt(match[1]);
+                            let m = parseInt(match[2]);
+                            if (tStr.toUpperCase().includes('PM') && h < 12) h += 12;
+                            if (tStr.toUpperCase().includes('AM') && h === 12) h = 0;
+                            return h * 60 + m;
+                        };
+                        const startMins = parseTime(ex.startTime);
+                        const endMins = (ex.endTime && ex.endTime !== 'TBD') ? parseTime(ex.endTime) : (startMins + (ex.duration || 120));
+                        const nowMins = todayObj.getHours() * 60 + todayObj.getMinutes();
+                        
+                        if (startMins !== null && endMins !== null) {
+                            if (!isLive && !isCompleted) {
+                                if (nowMins >= startMins && nowMins <= endMins) {
+                                    isLive = true;
+                                    isScanningAllowed = true;
+                                } else if (nowMins > endMins) {
+                                    isCompleted = true;
+                                }
+                            }
+                            
+                            // Unlocks 2 hours (120 mins) before start, stays active until end
+                            if (nowMins >= (startMins - 120) && nowMins <= endMins) {
+                                isScanningAllowed = true;
+                            }
+                        }
+                    } catch(e) {}
+                }
+
+                const isUpcoming = !isLive && !isCompleted;
+
+                let statusBadge = '';
+                if (isLive) {
+                    statusBadge = `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold animate-pulse">● LIVE</span>`;
+                    ex.computedStatus = 'LIVE';
+                } else if (isUpcoming) {
+                    statusBadge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">UPCOMING</span>`;
+                    ex.computedStatus = 'UPCOMING';
+                } else {
+                    statusBadge = `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">COMPLETED</span>`;
+                    ex.computedStatus = 'COMPLETED';
+                }
+
+                const modeBadge = `<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-semibold border border-indigo-100"><i class="fas fa-wifi mr-1"></i>${ex.mode || 'OFFLINE'}</span>`;
+
+                // === BUTTONS based on exam status ===
+                let actionBtn = '';
+                let scanBtn = '';
+                const uniqueId = ex.subjectId ? `${ex.id}_${ex.subjectId}` : ex.id;
+                ex.uniqueId = uniqueId;
+                window._examDataMap = window._examDataMap || {};
+                window._examDataMap[uniqueId] = ex;
+
+                if (isCompleted) {
+                    actionBtn = `
+                    <button class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 shadow-md transition-all font-medium text-sm flex items-center gap-1"
+                        onclick="openExamReport('${ex.id}', '${ex.subjectId || ''}')">
+                        <i class="fas fa-chart-bar"></i> View Report
+                    </button>
+                    <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-md transition-all font-medium text-sm flex items-center gap-1"
+                        onclick="downloadExamReport('${ex.id}', '${ex.subjectId || ''}')">
+                        <i class="fas fa-download"></i> Download Report
+                    </button>`;
+                } else if (isLive) {
+                    actionBtn = `
+                    <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md transition-all font-medium text-sm flex items-center gap-1 animate-pulse"
+                        onclick="openMonitorHall('${ex.id}', '${ex.title.replace(/'/g, "\\'")}', '${ex.subjectId || ''}')"> 
+                        <i class="fas fa-broadcast-tower"></i> Monitor Hall
+                    </button>`;
+                    scanBtn = `
+                    <button class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 border border-gray-200 text-sm" onclick="showTab('qr')" title="Start Scanning">
+                        <i class="fas fa-qrcode"></i>
+                    </button>`;
+                } else {
+                    if (isScanningAllowed) {
+                        actionBtn = `
+                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition-all font-medium text-sm flex items-center gap-1"
+                            onclick="showTab('qr')">
+                            <i class="fas fa-user-check"></i> Verify Students
+                        </button>`;
+                        scanBtn = `
+                        <button class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 border border-gray-200 text-sm" onclick="showTab('qr')" title="Start Scanning">
+                            <i class="fas fa-qrcode"></i>
+                        </button>`;
+                    } else {
+                        actionBtn = `
+                        <button disabled class="px-4 py-2 bg-gray-300 text-white rounded-lg cursor-not-allowed font-medium text-sm flex items-center gap-1" title="Unlocks 2 hours before exam">
+                            <i class="fas fa-user-lock"></i> Locked
+                        </button>`;
+                        scanBtn = `
+                        <button disabled class="px-3 py-2 bg-gray-50 text-gray-300 rounded-lg cursor-not-allowed border border-gray-100 text-sm" title="Unlocks 2 hours before exam">
+                            <i class="fas fa-qrcode"></i>
+                        </button>`;
+                    }
+                }
+
+                const viewDetailsBtn = `
+                <button class="px-4 py-2 bg-white text-indigo-700 border border-indigo-300 rounded-lg hover:bg-indigo-50 shadow-sm transition-all font-medium text-sm flex items-center"
+                        onclick="openExamDetailsModal('${uniqueId}')">
+                <i class="fas fa-info-circle mr-2"></i>View Details
+                </button>`;
+
+                let buttonsHTML = viewDetailsBtn + actionBtn + scanBtn;
+
+                div.innerHTML = `
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                ${statusBadge}
+                                ${modeBadge}
+                                <span class="text-xs text-gray-400 font-mono">ID: ${ex.id}</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">${ex.subjectName || ex.title}</h3>
+                            <div class="text-sm text-gray-500 mt-1 flex items-center gap-4">
+                                ${(() => {
+                    let timeDisplay = `${ex.startTime || 'TBD'}`;
+                    if (ex.startTime && ex.endTime && ex.endTime !== 'TBD') {
+                        timeDisplay = `${ex.startTime.slice(0, 5)} - ${ex.endTime.slice(0, 5)}`;
+                    } else if (ex.startTime && ex.startTime !== 'TBD' && ex.duration) {
+                        try {
+                        const [h, m] = ex.startTime.split(':').map(Number);
+                        const start = new Date();
+                        start.setHours(h, m, 0);
+                        const end = new Date(start.getTime() + ex.duration * 60000);
+                        timeDisplay = `${ex.startTime.slice(0, 5)} - ${end.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}`;
+                        } catch (e) { }
+                    }
+
+                    let dateStr = ex.date;
+                    if (ex.date && ex.date !== 'TBD' && ex.date !== 'null') {
+                        let dateObj = new Date(ex.date);
+                        if (ex.status === 'LIVE' || ex.status === 'ONGOING') dateObj = new Date();
+                        if (!isNaN(dateObj)) dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                    }
+
+                    return `
+                                    <span><i class="far fa-calendar-alt mr-1 text-indigo-500"></i> ${dateStr}</span>
+                                    <span class="border-l border-gray-300 pl-3 mx-2"><i class="far fa-clock mr-1 text-indigo-500"></i> ${timeDisplay}</span>
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-semibold"><i class="fas fa-hourglass-half mr-1"></i> ${ex.duration} min</span>`;
+                    })()}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${buttonsHTML}
+                        </div>
+                    </div>`;
+                body.appendChild(div);
+            });
+            
+            wrapper.appendChild(header);
+            wrapper.appendChild(body);
+            container.appendChild(wrapper);
         });
         container.dataset.loaded = '1';
       } catch (e) { console.error(e); container.innerHTML = '<div class="message error">Failed to load exams</div>'; }
@@ -2560,6 +2744,9 @@
             const inst = js.institution || {};
             const biometricEnrolled = !!js.biometricEnrolled;
             const biometricRecentlyVerified = !!js.biometricRecentlyVerified;
+            // Set globals so biometric verification knows which exam/subject to record attendance for!
+            if (exam.examId) currentExamId = exam.examId;
+            if (exam.subjectId) currentSubjectId = exam.subjectId;
 
             // Biometric status badge
             let bioBadgeText = 'Biometric Not Enrolled';
@@ -2703,12 +2890,13 @@
     }
 
     function markPresent() {
-      // alert('Student successfully marked present.'); // Removed for smoother flow
       loadProfile(); // refresh stats
-      // resetScanner(); // Optional: Keep scanner active or clear it. User asked for "scan next", so maybe clear.
-      // Reset scanner is handled by resetScanner() call if needed, but markPresent usually resets context.
-      // Let's keep resetScanner() as it was.
-      resetScanner();
+      
+      // Delay resetting the scanner by 3.5 seconds so the supervisor 
+      // has enough time to see the "PRESENT" confirmation on the student card!
+      setTimeout(() => {
+        resetScanner();
+      }, 3500);
     }
 
     // Manual Verify Handler
@@ -2751,7 +2939,9 @@
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
             studentId: studentId.toString(),
-            fingerprint: deterministicHash
+            fingerprint: deterministicHash,
+            examId: (typeof currentExamId !== 'undefined' && currentExamId) ? currentExamId.toString() : "",
+            subjectId: (typeof currentSubjectId !== 'undefined' && currentSubjectId) ? currentSubjectId.toString() : ""
           })
         });
         const js = await res.json();
@@ -2919,7 +3109,8 @@
                 body: JSON.stringify({
                     studentId: studentId.toString(),
                     fingerprint: hash,
-                    examId: currentExamId ? currentExamId.toString() : ""
+                    examId: currentExamId ? currentExamId.toString() : "",
+                    subjectId: currentSubjectId ? currentSubjectId.toString() : ""
                 })
             });
             return await response.json();
@@ -3380,8 +3571,11 @@
       }
     }
 
-    window.openExamDetail = function (id, title, date, startTime, mode, location, status, duration) {
+    let currentSubjectId = null;
+
+    window.openExamDetail = function (id, title, date, startTime, mode, location, status, duration, subjectId) {
       currentExamId = id;
+      currentSubjectId = subjectId;
       document.getElementById('examsListView').classList.add('hidden');
       document.getElementById('examDetailView').classList.remove('hidden');
 
@@ -3467,19 +3661,14 @@
       if (!container) return;
       let btns = '';
 
-      if (status === 'UPCOMING' || status === 'PAUSED') {
-        btns += `<button onclick="changeExamStatus('LIVE')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold"><i class="fas fa-play mr-2"></i> Start Exam</button>`;
-      }
-
-      if (status === 'LIVE') {
-        btns += `<button onclick="changeExamStatus('PAUSED')" class="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 font-bold"><i class="fas fa-pause mr-2"></i> Pause</button>`;
-        btns += `<button onclick="changeExamStatus('LOCKED')" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold"><i class="fas fa-lock mr-2"></i> EMERGENCY LOCK</button>`;
-        btns += `<button onclick="changeExamStatus('ENDED')" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 font-bold"><i class="fas fa-stop mr-2"></i> End Exam</button>`;
+      if (status === 'LIVE' || status === 'PAUSED' || status === 'UPCOMING') {
+        if (status === 'LIVE' || status === 'PAUSED') {
+          btns += `<button onclick="changeExamStatus('LOCKED')" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold"><i class="fas fa-lock mr-2"></i> EMERGENCY LOCK</button>`;
+        }
       }
 
       if (status === 'LOCKED') {
         btns += `<button onclick="changeExamStatus('LIVE')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold"><i class="fas fa-unlock mr-2"></i> Resume Exam</button>`;
-        btns += `<button onclick="changeExamStatus('ENDED')" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 font-bold"><i class="fas fa-stop mr-2"></i> End Exam</button>`;
       }
 
       container.innerHTML = btns;
@@ -3541,8 +3730,11 @@
     // --- Phase 3: Live Monitoring ---
     async function fetchLiveStudents() {
       try {
-        // Pass examId to filter (simulated api call)
-        const res = await fetch(`/api/supervisor/students?examId=${currentExamId}`, {
+        // Pass examId and subjectId to filter
+        let url = `/api/supervisor/students?examId=${currentExamId}`;
+        if (currentSubjectId) url += `&subjectId=${currentSubjectId}`;
+        
+        const res = await fetch(url, {
           headers: authHeaders()
         });
         const students = await res.json();
@@ -3583,6 +3775,12 @@
           if (s.status === 'ACTIVE') statusColor = 'text-emerald-600 font-bold';
           if (s.status === 'DISCONNECTED') statusColor = 'text-red-600 font-bold animate-pulse';
           if (s.status === 'SUSPICIOUS') statusColor = 'text-amber-600 font-bold';
+          if (s.status === 'PRESENT') statusColor = 'text-gray-700 font-bold tracking-wide';
+          
+          if (s.status === 'APPROVED' || s.status === 'PENDING_APPROVAL' || s.status === 'PENDING' || s.status === 'APPLIED') {
+              displayStatus = 'NOT SCANNED';
+              statusColor = 'text-gray-400 font-medium italic';
+          }
         }
 
         const verificationBadge = s.biometricVerified ?
@@ -3611,10 +3809,6 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.regno || '--'}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">${verificationBadge}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm ${statusColor}"><i class="fas fa-circle text-[8px] mr-1"></i> ${displayStatus}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div>${isEnded ? 'Finalized' : (s.lastActivityTime || 'Now')}</div>
-                    ${s.warningCount > 0 ? `<div class="text-amber-600 text-xs font-bold">${s.warningCount} Warnings</div>` : ''}
-                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     ${actionButtons}
                 </td>
@@ -3627,15 +3821,18 @@
     }
 
     function updateLiveStats(students) {
-      const active = document.getElementById('statActive');
-      const disc = document.getElementById('statDisconnected');
-      const warn = document.getElementById('statWarnings');
-      const inc = document.getElementById('statIncidents'); // Added selector
+      const total = document.getElementById('liveStatTotal');
+      const verified = document.getElementById('liveStatVerified');
+      const pending = document.getElementById('liveStatPending');
+      const absent = document.getElementById('liveStatAbsent');
 
-      if (active) active.innerText = students.filter(s => s.status === 'ACTIVE').length;
-      if (disc) disc.innerText = students.filter(s => s.status === 'DISCONNECTED').length;
-      if (warn) warn.innerText = students.reduce((acc, s) => acc + (s.warningCount || 0), 0);
-      if (inc) inc.innerText = students.reduce((acc, s) => acc + (s.incidentCount || 0), 0);
+      const verifiedCount = students.filter(s => s.biometricVerified || s.qrVerified).length;
+      const absentCount = students.filter(s => s.status === 'ABSENT').length;
+
+      if (total) total.innerText = students.length;
+      if (verified) verified.innerText = verifiedCount;
+      if (absent) absent.innerText = absentCount;
+      if (pending) pending.innerText = students.length - verifiedCount - absentCount;
     }
 
     // --- Phase 4: Exam Summary Logic ---
@@ -4068,7 +4265,7 @@
     // ==========================================
     let currentMonitorData = [];
 
-    function openMonitorHall(examId, title) {
+    function openMonitorHall(examId, title, subjectId) {
       document.getElementById('monitorHallModal').classList.remove('hidden');
       document.getElementById('mhExamTitle').textContent = title;
       document.getElementById('mhTableBody').innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading live allocations...</td></tr>';
@@ -4077,7 +4274,9 @@
       document.getElementById('mhSearch').value = '';
 
       // Fetch seat allocations (re-using the report endpoint as it has exactly what we need)
-      fetch(`/api/supervisor/exam/${examId}/report`, { headers: authHeaders() })
+      let url = `/api/supervisor/exam/${examId}/report`;
+      if (subjectId) url += `?subjectId=${subjectId}`;
+      fetch(url, { headers: authHeaders() })
         .then(res => res.json())
         .then(data => {
           if(data.error) throw new Error(data.error);
@@ -4140,9 +4339,15 @@
              <div class="text-xs mt-0.5">PRN: ${s.prn}</div>
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-center">
-             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
-               <i class="fas fa-check-circle mr-1.5"></i> Allocated
-             </span>
+             ${s.verified ? 
+               `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  <i class="fas fa-check-circle mr-1.5"></i> Allocated - Present
+                </span>` 
+               : 
+               `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                  <i class="fas fa-user-clock mr-1.5"></i> Not Allocated
+                </span>`
+             }
           </td>
         </tr>
       `).join('');
@@ -4156,13 +4361,15 @@
     // ==========================================
     // DOWNLOAD REPORT LOGIC
     // ==========================================
-    function openExamReport(examId) {
+    function openExamReport(examId, subjectId) {
       document.getElementById('reportModal').classList.remove('hidden');
       document.getElementById('reportLoading').classList.remove('hidden');
       document.getElementById('reportContent').classList.add('hidden');
       
       // We also use this to view the report before downloading
-      fetch(`/api/supervisor/exam/${examId}/report`, { headers: authHeaders() })
+      let url = `/api/supervisor/exam/${examId}/report`;
+      if (subjectId) url += `?subjectId=${subjectId}`;
+      fetch(url, { headers: authHeaders() })
         .then(res => res.json())
         .then(data => {
           if(data.error) throw new Error(data.error);
@@ -4175,21 +4382,27 @@
           if(data.startTime !== 'N/A') dtStr += ' | ' + data.startTime.substring(0,5);
           document.getElementById('repExamDateTime').textContent = dtStr;
           
-          document.getElementById('repExamCenter').textContent = data.centerName || data.college || '--';
-          document.getElementById('repExamTotal').textContent = data.totalStudents || '0';
+          document.getElementById('repExamCenter').textContent = data.centerName || data.college || 'Assigned Home Center';
+          document.getElementById('repExamTotal').textContent = data.totalPresent !== undefined ? data.totalPresent : (data.totalStudents || '0');
           
           const tbody = document.getElementById('repTableBody');
           if(data.students && data.students.length > 0) {
-             tbody.innerHTML = data.students.map((s, idx) => `
+             tbody.innerHTML = data.students.map((s, idx) => {
+               const statusHtml = s.verified 
+                 ? `<span class="text-green-700 font-semibold text-xs uppercase"><i class="fas fa-check mr-1"></i>Verified</span>`
+                 : `<span class="text-red-700 font-semibold text-xs uppercase"><i class="fas fa-times mr-1"></i>Pending / Absent</span>`;
+                 
+               return `
                <tr class="border-b border-gray-200 hover:bg-gray-50">
                  <td class="border border-gray-300 px-4 py-2 text-center text-gray-500">${idx+1}</td>
                  <td class="border border-gray-300 px-4 py-2 font-medium">${s.hallName}</td>
                  <td class="border border-gray-300 px-4 py-2 font-bold">${s.seatNumber}</td>
                  <td class="border border-gray-300 px-4 py-2 font-mono text-sm">${s.rollNumber}</td>
                  <td class="border border-gray-300 px-4 py-2">${s.studentName}</td>
-                 <td class="border border-gray-300 px-4 py-2 text-center text-green-700 font-semibold text-xs uppercase"><i class="fas fa-check mr-1"></i>Verified</td>
+                 <td class="border border-gray-300 px-4 py-2 text-center">${statusHtml}</td>
                </tr>
-             `).join('');
+               `;
+             }).join('');
           } else {
              tbody.innerHTML = `<tr><td colspan="6" class="border border-gray-300 px-4 py-8 text-center text-gray-500 italic">No attendance data available for this exam.</td></tr>`;
           }
@@ -4206,8 +4419,8 @@
       document.getElementById('reportModal').classList.add('hidden');
     }
 
-    function downloadExamReport(examId) {
-       openExamReport(examId);
+    function downloadExamReport(examId, subjectId) {
+       openExamReport(examId, subjectId);
        // Give it a second to render then trigger direct PDF download
        setTimeout(() => {
            const element = document.getElementById('printableReportArea');

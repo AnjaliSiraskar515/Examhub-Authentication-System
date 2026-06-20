@@ -42,7 +42,57 @@ async function loadAssignedExams() {
         });
         if (!response.ok) throw new Error('Failed to load assigned exams');
         const mappings = await response.json();
-        hallsState.mappings = mappings || [];
+
+        // Fetch exams to determine dynamic live status
+        let liveExamIds = new Set();
+        try {
+            const examsRes = await fetch('/api/supervisor/exams', { headers: authHeaders() });
+            const exams = await examsRes.json();
+            
+            exams.forEach(ex => {
+                let st = (ex.status || '').toUpperCase();
+                try {
+                     const todayObj = new Date();
+                     const examDateObj = new Date(ex.date);
+                     const isToday = examDateObj.toDateString() === todayObj.toDateString();
+                     let isLive = st === 'LIVE' || st === 'ONGOING';
+                     let isCompleted = st === 'COMPLETED' || (!isLive && examDateObj < todayObj && !isToday);
+
+                     if (isToday && ex.startTime && ex.startTime !== 'TBD') {
+                        const parseTime = (tStr) => {
+                           if (!tStr || tStr === 'TBD') return null;
+                           let match = tStr.trim().match(/(\d{1,2}):(\d{2})/);
+                           if (!match) return null;
+                           let h = parseInt(match[1]);
+                           let m = parseInt(match[2]);
+                           if (tStr.toUpperCase().includes('PM') && h < 12) h += 12;
+                           if (tStr.toUpperCase().includes('AM') && h === 12) h = 0;
+                           return h * 60 + m;
+                        };
+                        const startMins = parseTime(ex.startTime);
+                        const endMins = (ex.endTime && ex.endTime !== 'TBD') ? parseTime(ex.endTime) : (startMins + (ex.duration || 120));
+                        const nowMins = todayObj.getHours() * 60 + todayObj.getMinutes();
+                        if (startMins !== null && endMins !== null) {
+                           if (!isLive && !isCompleted) {
+                              if (nowMins >= startMins && nowMins <= endMins) {
+                                 st = 'LIVE';
+                              } else if (nowMins > endMins) {
+                                 st = 'COMPLETED';
+                              }
+                           }
+                        }
+                     }
+                } catch(err) {}
+                
+                if (st === 'LIVE' || st === 'ONGOING') {
+                    liveExamIds.add(ex.id);
+                }
+            });
+        } catch(err) {
+            console.warn("Could not fetch exams for dynamic status filtering", err);
+        }
+
+        hallsState.mappings = mappings.filter(m => !liveExamIds.has(m.examId)) || [];
 
         const select = document.getElementById('halls-exam-select');
         select.innerHTML = '<option value="">— Select Exam —</option>';

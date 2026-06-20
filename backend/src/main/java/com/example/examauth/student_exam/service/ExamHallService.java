@@ -1,5 +1,7 @@
 package com.example.examauth.student_exam.service;
 
+import com.example.examauth.repo.CollegeRepository;
+import com.example.examauth.repo.UserRepository;
 import com.example.examauth.student_exam.model.ExamHall;
 import com.example.examauth.student_exam.repo.ExamHallRepository;
 import com.example.examauth.student_exam.university.model.ExamCollegeMapping;
@@ -16,6 +18,8 @@ public class ExamHallService {
 
     private final ExamHallRepository examHallRepository;
     private final ExamCollegeMappingRepository mappingRepository;
+    private final CollegeRepository collegeRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public ExamHall createHall(ExamHall hall) {
@@ -31,9 +35,31 @@ public class ExamHallService {
 
         ExamHall savedHall = examHallRepository.save(hall);
 
-        // Update Mapping status and capacity
+        // Update Mapping status and capacity — auto-create if missing (e.g. university-wide exams)
         ExamCollegeMapping mapping = mappingRepository.findByExamIdAndCollegeId(hall.getExamId(), hall.getCollegeId())
-                .orElseThrow(() -> new IllegalArgumentException("Exam mapping not found"));
+                .orElseGet(() -> {
+                    ExamCollegeMapping newMapping = new ExamCollegeMapping();
+                    newMapping.setExamId(hall.getExamId());
+                    newMapping.setCollegeId(hall.getCollegeId());
+                    newMapping.setHeadSupervisorId(hall.getCreatedBySupervisorId());
+                    newMapping.setStatus(ExamCollegeMapping.MappingStatus.PENDING);
+
+                    // Populate collegeName so it doesn't show as "null" in dashboards
+                    if (hall.getCollegeId() != null) {
+                        collegeRepository.findById(hall.getCollegeId()).ifPresent(college ->
+                            newMapping.setCollegeName(college.getName())
+                        );
+                    }
+
+                    // Populate headSupervisorName so it doesn't show as "null" in dashboards
+                    if (hall.getCreatedBySupervisorId() != null) {
+                        userRepository.findById(hall.getCreatedBySupervisorId()).ifPresent(supervisor ->
+                            newMapping.setHeadSupervisorName(supervisor.getName())
+                        );
+                    }
+
+                    return newMapping;
+                });
         
         Integer totalCapacity = examHallRepository.sumCapacityByExamIdAndCollegeId(hall.getExamId(), hall.getCollegeId());
         mapping.setTotalCapacity(totalCapacity);
@@ -44,6 +70,7 @@ public class ExamHallService {
 
         return savedHall;
     }
+
 
     public List<ExamHall> getHallsByExamAndCollege(Long examId, Long collegeId) {
         return examHallRepository.findAllByExamIdAndCollegeId(examId, collegeId);

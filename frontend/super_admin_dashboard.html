@@ -463,6 +463,22 @@
       from { transform: translateY(20px); opacity: 0; }
       to   { transform: translateY(0);    opacity: 1; }
     }
+
+    /* Dark Mode Filter Logic */
+    html.dark-mode {
+      filter: invert(1) hue-rotate(180deg);
+      background: #000;
+    }
+    /* Re-invert elements that shouldn't be inverted (images, charts) */
+    html.dark-mode img,
+    html.dark-mode canvas,
+    html.dark-mode .preserve-colors {
+      filter: invert(1) hue-rotate(180deg);
+    }
+    /* Fix weird artifacts on modals/backgrounds if needed */
+    html.dark-mode .bg-black {
+      background-color: rgba(255, 255, 255, 0.4) !important;
+    }
   </style>
 </head>
 
@@ -559,7 +575,10 @@
               </div>
             </div>
 
-            <div class="flex gap-3">
+            <div class="flex gap-3 items-center">
+              <button id="themeToggleBtn" onclick="toggleTheme()" class="text-gray-500 hover:text-indigo-600 transition-colors p-2 rounded-full hover:bg-gray-100" title="Toggle Dark Mode">
+                <i class="fas fa-moon text-lg"></i>
+              </button>
               <button class="btn primary-btn text-xs font-medium shadow-sm"
                 onclick="openNotificationsSection()"><i class="fas fa-bell mr-1"></i> Notifications</button>
             </div>
@@ -1307,10 +1326,7 @@
             <div class="flex justify-between items-center mb-4">
               <h3 class="font-bold text-gray-800">Exams Conducted Trends</h3>
               <div class="flex gap-2">
-                <select class="text-xs border rounded p-1 text-gray-600 outline-none">
-                  <option>Last 6 Months</option>
-                  <option>Last Year</option>
-                </select>
+
                 <button class="text-xs text-gray-500 hover:text-blue-600" onclick="downloadSubsection('Trends')"><i
                     class="fas fa-download"></i></button>
               </div>
@@ -1386,11 +1402,7 @@
                 <input type="number" id="setting-session-timeout" data-setting-key="session.timeout.minutes"
                   class="form-input w-full p-2 border border-gray-300 rounded" value="15">
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Max Students Per Exam</label>
-                <input type="number" id="setting-max-students" data-setting-key="exam.max.students"
-                  class="form-input w-full p-2 border border-gray-300 rounded" value="500">
-              </div>
+
             </div>
           </div>
 
@@ -1402,8 +1414,9 @@
             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
               <div class="flex">
                 <div class="ml-3">
-                  <p class="text-sm text-yellow-700">
-                    Critical security alerts are sent instantly via SMS regardless of settings.
+                  <p class="text-sm text-blue-700">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    When <strong>Enable In-App Notifications</strong> is ON, Super Admin receives live alerts for pending institutions, security events, and fraud escalations. Turn it OFF to silence all dashboard notifications.
                   </p>
                 </div>
               </div>
@@ -1423,9 +1436,13 @@
               </div>
 
               <div class="space-y-3 pt-4">
-                <label class="flex items-center"><input type="checkbox" id="setting-sms-alerts"
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="setting-sms-alerts"
                     data-setting-key="notifications.sms.alerts.enabled" checked
-                    class="mr-3 text-blue-600 h-5 w-5 rounded"> Enable SMS Alerts for Admin</label>
+                    class="mr-3 text-blue-600 h-5 w-5 rounded">
+                  <span class="text-sm font-medium text-gray-700">Enable In-App Notifications</span>
+                  <span class="ml-2 text-xs text-gray-400">(Controls dashboard notification panel)</span>
+                </label>
                 <label class="flex items-center"><input type="checkbox" id="setting-auto-report-incidents"
                     data-setting-key="notifications.auto.report.incidents" checked
                     class="mr-3 text-blue-600 h-5 w-5 rounded"> Auto-Report Security Incidents to Chief</label>
@@ -2633,11 +2650,19 @@
 
       let notifications = [];
       try {
-        const response = await authFetch('http://localhost:8081/api/admin/notifications');
+        const response = await authFetch('http://localhost:8081/api/admin/notifications?_t=' + new Date().getTime());
         const payload = await response.json();
         if (!response.ok) {
           throw new Error(payload.error || 'Failed to load notifications');
         }
+        
+        if (payload.disabled) {
+          list.innerHTML = `<div class="text-sm text-orange-600 bg-orange-50 p-3 rounded border border-orange-100">
+                              <i class="fas fa-bell-slash mr-2"></i> ${payload.message}
+                            </div>`;
+          return;
+        }
+        
         notifications = Array.isArray(payload.notifications) ? payload.notifications : [];
       } catch (err) {
         console.error('Notifications load error:', err);
@@ -4246,6 +4271,29 @@
           alert('Network error downloading report.');
       }
     }
+    
+    // Theme Toggle Logic
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark-mode');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateThemeIcon(isDark);
+    }
+
+    function updateThemeIcon(isDark) {
+      const btn = document.getElementById('themeToggleBtn');
+      if (btn) {
+        btn.innerHTML = isDark ? '<i class="fas fa-sun text-lg"></i>' : '<i class="fas fa-moon text-lg"></i>';
+      }
+    }
+
+    // Initialize Theme on load
+    (function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark-mode');
+        updateThemeIcon(true);
+      }
+    })();
   </script>
 </body>
 

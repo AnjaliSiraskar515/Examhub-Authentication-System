@@ -156,15 +156,19 @@ public class QrVerificationResponse {
 
     public static class ExamDetail {
         private Long examId;
+        private Long subjectId;
         private String examName;
         private String subject;
+        private String subjectCode;
         private String date;
         private String time;
 
-        public ExamDetail(Long examId, String examName, String subject, String date, String time) {
+        public ExamDetail(Long examId, Long subjectId, String examName, String subject, String subjectCode, String date, String time) {
             this.examId = examId;
+            this.subjectId = subjectId;
             this.examName = examName;
             this.subject = subject;
+            this.subjectCode = subjectCode;
             this.date = date;
             this.time = time;
         }
@@ -178,8 +182,16 @@ public class QrVerificationResponse {
             return examId;
         }
 
+        public Long getSubjectId() {
+            return subjectId;
+        }
+
         public String getSubject() {
             return subject;
+        }
+
+        public String getSubjectCode() {
+            return subjectCode;
         }
 
         public String getDate() {

@@ -66,7 +66,10 @@ public class SupervisorHallController {
                     if ("COMPLETED".equalsIgnoreCase(uExam.getStatus())) {
                         return false;
                     }
-                    boolean isCollegeExam = collegeId != null && collegeId.equals(uExam.getCollegeId());
+                    // Skip exams if the supervisor has no college — cannot configure halls without it
+                    if (collegeId == null) return false;
+
+                    boolean isCollegeExam = collegeId.equals(uExam.getCollegeId());
                     boolean isUniversityExam = finalInstCode != null && finalInstCode.equalsIgnoreCase(uExam.getInstitutionCode());
                     
                     log.info("Checking Exam {}: CollegeId={}, InstCode={}, isCollegeExam={}, isUniversityExam={}", 
@@ -82,7 +85,9 @@ public class SupervisorHallController {
                     Map<String, Object> map = new java.util.HashMap<>();
                     map.put("examId", exam.getId());
                     map.put("examName", exam.getExamName());
-                    map.put("collegeId", collegeId != null ? collegeId : exam.getCollegeId());
+                    // ALWAYS use the supervisor's own collegeId — never null — so
+                    // hall creation always sends a valid collegeId to the backend.
+                    map.put("collegeId", collegeId);
                     return map;
                 })
                 .toList();

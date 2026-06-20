@@ -516,7 +516,13 @@ export default function ExamRegistration() {
 
     const setupRegistrationLogic = (lateFeeActive) => {
         const exam = currentSelectedExam;
-        const regFee = exam.feeStructure?.regularFee || 0;
+        
+        const isBacklog = (exam.examType || '').toLowerCase().includes('backlog') || 
+                          (exam.examType || '').toLowerCase().includes('supplementary') || 
+                          (exam.sessionName || '').toLowerCase().includes('supplementary') ||
+                          (exam.sessionName || '').toLowerCase().includes('backlog');
+                          
+        const regFee = isBacklog ? (exam.feeStructure?.backlogFee || 0) : (exam.feeStructure?.regularFee || 0);
         const lateFee = exam.feeStructure?.lateFee || 0;
 
         document.getElementById('backToListBtn').addEventListener('click', () => {

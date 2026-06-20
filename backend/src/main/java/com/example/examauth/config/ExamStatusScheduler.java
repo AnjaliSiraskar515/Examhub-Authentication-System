@@ -12,6 +12,7 @@ import com.example.examauth.student_exam.university.model.UniversityExamSubject;
 import com.example.examauth.student_exam.university.repo.UniversityExamRepository;
 import com.example.examauth.repo.UserRepository;
 import com.example.examauth.model.User;
+import com.example.examauth.student_exam.repo.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -34,6 +35,7 @@ public class ExamStatusScheduler {
     private final ExamSeatAllocationRepository examSeatAllocationRepository;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     // Track notifications by Slot: format "examId_subjectId"
     private final java.util.Set<String> studentNotifiedSlots = java.util.concurrent.ConcurrentHashMap.newKeySet();
@@ -147,16 +149,21 @@ public class ExamStatusScheduler {
                                 || selectedSubjects.stream().anyMatch(s -> s.equalsIgnoreCase(sub.getSubjectName()));
                         if (!isRelevant) continue;
 
-                        // Per-student, per-subject slot key to prevent duplicates
-                        String slotKey = exam.getId() + "_" + sub.getId() + "_" + reg.getStudentId();
-                        if (studentNotifiedSlots.contains(slotKey)) continue;
+                        String title = "Exam Starting Soon — " + sub.getSubjectName() + " (" + sub.getExamDate() + ")";
+
+                        // Query database to prevent duplicates across restarts
+                        if (notificationRepository.existsByStudentIdAndTitle(reg.getStudentId(), title)) continue;
 
                         // Fetch seat allocation for hall and seat number
                         ExamSeatAllocation seat = examSeatAllocationRepository
-                                .findByRegistrationId(reg.getId()).orElse(null);
+                                .findByRegistrationIdAndSubjectId(reg.getId(), sub.getId()).orElse(null);
+                        
+                        if (seat == null) {
+                            seat = examSeatAllocationRepository.findFirstByRegistrationId(reg.getId()).orElse(null);
+                        }
 
                         String hallInfo = (seat != null && seat.getHallName() != null && !seat.getHallName().isBlank())
-                                ? seat.getHallName() : "your assigned hall";
+                                ? seat.getHallName() : "Not yet assigned";
                         String seatInfo = (seat != null && seat.getSeatNumber() != null && !seat.getSeatNumber().isBlank())
                                 ? " | Seat No: " + seat.getSeatNumber() : "";
                         // Use same roll number pattern as ProfileController (dept prefix + userId)
@@ -169,7 +176,6 @@ public class ExamStatusScheduler {
                             rollInfo = " | Roll No: " + studentRoll;
                         }
 
-                        String title = "Exam Starting Soon — " + sub.getSubjectName();
                         String message = "Your " + sub.getSubjectName() + " exam for " + sessionName
                                 + " starts at " + sub.getStartTime() + " on " + sub.getExamDate() + "."
                                 + " Hall: " + hallInfo + seatInfo + rollInfo
@@ -177,9 +183,8 @@ public class ExamStatusScheduler {
 
                         try {
                             notificationService.createNotification(reg.getStudentId(), title, message);
-                            studentNotifiedSlots.add(slotKey);
-                            log.info("Hall notification sent to student {} for subject {} (slot {})",
-                                    reg.getStudentId(), sub.getSubjectName(), slotKey);
+                            log.info("Hall notification sent to student {} for subject {}",
+                                    reg.getStudentId(), sub.getSubjectName());
                         } catch (Exception ex) {
                             log.warn("Could not notify student {}: {}", reg.getStudentId(), ex.getMessage());
                         }
@@ -212,9 +217,9 @@ public class ExamStatusScheduler {
                     if (supervisorNotifiedSlots.contains(slotKey)) continue;
 
                     LocalDateTime sDT = LocalDateTime.of(sub.getExamDate(), sub.getStartTime());
-                    LocalDateTime threeHoursBefore = sDT.minusHours(3);
+                    LocalDateTime fourHoursBefore = sDT.minusHours(4);
 
-                    if (!now.isBefore(threeHoursBefore) && now.isBefore(sDT)) {
+                    if (!now.isBefore(fourHoursBefore) && now.isBefore(sDT)) {
                         List<ExamHall> halls = examHallRepository.findAllByExamId(exam.getId());
                         String sessionName = exam.getSessionName() != null ? exam.getSessionName() : "Upcoming Exam";
 
@@ -224,7 +229,7 @@ public class ExamStatusScheduler {
                                 String message = "Reminder: You are assigned to invigilate "
                                         + hall.getHallName() + " for the " + sub.getSubjectName()
                                         + " exam starting at " + sub.getStartTime()
-                                        + ". Please report to the hall by " + sub.getStartTime().minusMinutes(30) + ".";
+                                        + ". Please report to the exam center by " + sub.getStartTime().minusHours(3) + ".";
                                 try {
                                     notificationService.createNotification(hall.getExamSupervisorId(), title, message);
                                 } catch (Exception ex) {
@@ -250,6 +255,46 @@ public class ExamStatusScheduler {
             }
         } catch (Exception e) {
             log.error("notifySupervisorsOfDuty failed: {}", e.getMessage());
+        }
+    }
+
+    @Transactional
+    @Scheduled(fixedDelay = 5 * 60 * 1000)
+    public void expirePendingRegistrations() {
+        try {
+            LocalDateTime now = LocalDateTime.now();
+
+            List<ExamRegistration> pendingRegistrations = examRegistrationRepository
+                    .findByRegistrationStatus(ExamRegistration.RegistrationStatus.PENDING_APPROVAL);
+
+            for (ExamRegistration reg : pendingRegistrations) {
+                UniversityExam exam = universityExamRepository.findById(reg.getExamId()).orElse(null);
+                if (exam == null) continue;
+
+                boolean shouldExpire = false;
+
+                // Check registration window if exists
+                if (exam.getRegistrationWindow() != null && exam.getRegistrationWindow().getEndDate() != null) {
+                    if (now.toLocalDate().isAfter(exam.getRegistrationWindow().getEndDate())) {
+                        shouldExpire = true;
+                    }
+                } else if (exam.getExamDate() != null) {
+                    // Fallback to exam date
+                    if (now.toLocalDate().isAfter(exam.getExamDate())) {
+                        shouldExpire = true;
+                    }
+                }
+
+                if (shouldExpire) {
+                    reg.setRegistrationStatus(ExamRegistration.RegistrationStatus.AUTO_EXPIRED);
+                    examRegistrationRepository.save(reg);
+
+                    notificationService.createNotification(reg.getStudentId(), "Exam Registration Expired",
+                            "Your registration for " + exam.getExamName() + " has expired as the deadline has passed without approval.");
+                }
+            }
+        } catch (Exception e) {
+            log.error("expirePendingRegistrations failed: {}", e.getMessage());
         }
     }
 }

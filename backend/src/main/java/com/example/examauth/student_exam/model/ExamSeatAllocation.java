@@ -23,15 +23,15 @@ import java.time.LocalDateTime;
 @Table(
     name = "exam_seat_allocations",
     uniqueConstraints = {
-        // One seat per registration per exam — prevents duplicate generation
+        // One seat per registration per subject
         @UniqueConstraint(
             name = "uq_seat_per_registration",
-            columnNames = {"registration_id", "exam_id"}
+            columnNames = {"registration_id", "subject_id"}
         ),
-        // Roll number unique within exam + college (refinement #3)
+        // Roll number unique within exam + college + subject
         @UniqueConstraint(
-            name = "uq_roll_per_exam_college",
-            columnNames = {"exam_id", "college_id", "roll_number"}
+            name = "uq_roll_per_exam_college_subject",
+            columnNames = {"exam_id", "college_id", "subject_id", "roll_number"}
         )
     },
     indexes = {
@@ -78,6 +78,9 @@ public class ExamSeatAllocation {
     // ─────────────────────────────────────────────────────────────────────────
     @Column(name = "exam_id", nullable = false)
     private Long examId;
+
+    @Column(name = "subject_id")
+    private Long subjectId;
 
     @Column(name = "college_id", nullable = false)
     private Long collegeId;

@@ -391,8 +391,6 @@ if (signupForm) {
       alert("⚠️ Something went wrong during registration.");
     }
   });
-} else {
-  console.warn("⚠️ signupForm not found in DOM.");
 }
 
 

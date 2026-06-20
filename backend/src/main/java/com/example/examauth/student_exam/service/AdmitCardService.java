@@ -63,7 +63,7 @@ public class AdmitCardService {
         // ── Seat Allocation ────────────────────────────────────────────────────
         // Use real allocation if generated; fallback to legacy format if not yet run.
         ExamSeatAllocation seatAlloc = examSeatAllocationRepository
-                .findByRegistrationId(registrationId).orElse(null);
+                .findFirstByRegistrationId(registrationId).orElse(null);
 
         final String seatNumber;
         final String rollNumber;
@@ -113,6 +113,39 @@ public class AdmitCardService {
         dto.setCenterName(centerDisplayName);
         dto.setSubjects(buildSubjects(exam, registration));
         dto.setQrCode(registration.getQrCode());
+
+        // Fetch Head Supervisor Signature
+        Long targetCollegeId = (seatAlloc != null && seatAlloc.getCollegeId() != null) 
+                ? seatAlloc.getCollegeId() 
+                : (student.getCollege() != null ? student.getCollege().getId() : null);
+        if (targetCollegeId != null) {
+            User headSupervisor = userRepository.findByRole("SUPERVISOR").stream()
+                    .filter(u -> "HEAD".equalsIgnoreCase(u.getSupervisorType()))
+                    .filter(u -> u.getCollege() != null && u.getCollege().getId().equals(targetCollegeId))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (headSupervisor != null && headSupervisor.getSignaturePath() != null) {
+                // Return URL relative to backend
+                String sigPath = headSupervisor.getSignaturePath();
+                dto.setHeadSupervisorSignatureUrl(sigPath.startsWith("/") ? sigPath : "/" + sigPath);
+            }
+        }
+
+        // Fetch University Identity
+        User universityAdmin = userRepository.findByRole("UNIVERSITY_ADMIN").stream()
+                .filter(u -> u.getUniversityLogoPath() != null && !u.getUniversityLogoPath().isEmpty())
+                .findFirst()
+                .orElseGet(() -> userRepository.findByRole("UNIVERSITY_ADMIN").stream().findFirst().orElse(null));
+        if (universityAdmin != null) {
+            if (universityAdmin.getUniversityLogoPath() != null) {
+                String logoPath = universityAdmin.getUniversityLogoPath();
+                dto.setUniversityLogoUrl(logoPath.startsWith("/") ? logoPath : "/uploads/logo/" + logoPath);
+            }
+            if (universityAdmin.getUniversityName() != null) {
+                dto.setUniversityName(universityAdmin.getUniversityName());
+            }
+        }
         // Generate roll number the same way ProfileController does, so it matches the exam form display
         String deptPrefix = (student.getDepartment() != null && student.getDepartment().length() >= 2)
                 ? student.getDepartment().substring(0, 2).toUpperCase() : "GN";

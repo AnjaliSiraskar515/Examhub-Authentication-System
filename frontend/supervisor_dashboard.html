@@ -740,6 +740,45 @@
     </div>
   </div>
 
+  <!-- Auto Approve Modal -->
+  <div id="autoApproveModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-[60]">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all scale-100 border border-indigo-100">
+      <div class="mb-6 flex items-start gap-4">
+        <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <i class="fas fa-magic text-2xl text-indigo-600"></i>
+        </div>
+        <div>
+            <h3 class="text-xl font-bold text-gray-900 mb-1">Auto Approve Top N</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">
+              Automatically approve the first N pending applications in the queue based on their application date.
+            </p>
+        </div>
+      </div>
+
+      <div class="space-y-4 mb-8">
+          <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">Select Exam</label>
+              <select id="autoApproveExamSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                  <option value="">Loading exams...</option>
+              </select>
+          </div>
+          <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">Number of Students (N)</label>
+              <input type="number" id="autoApproveCount" min="1" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="e.g. 50">
+          </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="closeAutoApproveModal()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-2.5 rounded-xl hover:bg-gray-200 transition-all text-sm">
+          Cancel
+        </button>
+        <button onclick="confirmAutoApprove()" id="confirmAutoApproveBtn" class="flex-1 bg-indigo-600 text-white font-bold py-2.5 rounded-xl shadow-lg hover:bg-indigo-700 transition-all text-sm flex items-center justify-center gap-2">
+          <span>Run Auto Approve</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== Exam Details Modal ===== -->
   <div id="examDetailsModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-center justify-center z-[70] p-4" onclick="if(event.target===this)closeExamDetailsModal()">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
@@ -1065,10 +1104,22 @@
           return;
         }
 
-        container.innerHTML = forms.map(form => `
+        let html = `
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-gradient-to-r from-indigo-50 to-blue-50 p-5 rounded-2xl border border-indigo-100 shadow-sm">
+                <div class="mb-4 md:mb-0">
+                    <h4 class="font-bold text-indigo-900 text-lg flex items-center gap-2"><i class="fas fa-layer-group text-indigo-500"></i> Bulk Approvals</h4>
+                    <p class="text-sm text-indigo-700 mt-1">Efficiently process pending applications based on first-come-first-serve queue position.</p>
+                </div>
+                <button onclick="openAutoApproveModal()" class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-md shadow-indigo-200 font-bold transition-all flex items-center gap-2 w-full md:w-auto justify-center">
+                    <i class="fas fa-magic"></i> Auto Approve Top N
+                </button>
+            </div>
+        `;
+
+        html += forms.map(form => `
                 <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow relative transition-all group">
-                    <div class="absolute top-4 right-4 text-xs font-bold px-3 py-1 rounded-full ${form.status === 'APPLIED' || form.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}">
-                        ${form.status}
+                    <div class="absolute top-4 right-4 text-xs font-bold px-3 py-1 rounded-full ${form.status === 'APPLIED' || form.status === 'PENDING' || form.status === 'PENDING_APPROVAL' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}">
+                        ${form.status === 'PENDING_APPROVAL' ? 'PENDING' : form.status}
                     </div>
                     <div class="flex items-start gap-4">
                         <div class="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-xl flex-shrink-0">
@@ -1081,6 +1132,7 @@
                                 <span class="flex items-center"><i class="fas fa-graduation-cap w-4 text-gray-400"></i> ${form.course || 'N/A'}</span>
                                 <span class="flex items-center"><i class="fas fa-calendar-alt w-4 text-gray-400"></i> ${form.examSession || 'N/A'}</span>
                                 <span class="flex items-center"><i class="fas fa-book w-4 text-gray-400"></i> Exam: ${form.examName || 'N/A'}</span>
+                                <span class="flex items-center font-bold ${form.approvedCount >= form.capacity ? 'text-red-600' : 'text-indigo-600'} bg-gray-50 px-2 py-0.5 rounded border border-gray-200"><i class="fas fa-chair w-4"></i> Seats Filled: ${form.approvedCount || 0} / ${form.capacity || 'Unlimited'}</span>
                             </div>
                             <div class="bg-gray-50 rounded p-3 text-sm border border-gray-100">
                                 <span class="font-semibold text-gray-700">Selected Subjects:</span>
@@ -1094,7 +1146,7 @@
                         <button onclick="alert('View full form feature coming soon.')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
                             <i class="fas fa-eye mr-1"></i> View Details
                         </button>
-                        ${(form.status === 'APPLIED' || form.status === 'PENDING') ? `
+                        ${(form.status === 'APPLIED' || form.status === 'PENDING' || form.status === 'PENDING_APPROVAL') ? `
                             <button onclick="acceptExamForm(${form.id}, this)" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">
                                 <i class="fas fa-check mr-1"></i> Accept & Verify
                             </button>
@@ -1102,6 +1154,8 @@
                     </div>
                 </div>
             `).join('');
+            
+            container.innerHTML = html;
 
       } catch (err) {
         console.error('Error loading exam forms:', err);
@@ -1137,6 +1191,92 @@
         btnElement.innerHTML = originalHtml;
         btnElement.disabled = false;
       }
+    }
+
+    // Auto Approve Top N Logic
+    window.openAutoApproveModal = async function() {
+        document.getElementById('autoApproveModal').classList.remove('hidden');
+        const select = document.getElementById('autoApproveExamSelect');
+        select.innerHTML = '<option value="">Loading...</option>';
+        try {
+            // Re-fetch exams assigned to supervisor to populate the dropdown
+            const res = await fetch('http://localhost:8081/api/supervisor/exams', { headers: authHeaders() });
+            if (res.ok) {
+                const exams = await res.json();
+                if (exams.length === 0) {
+                    select.innerHTML = '<option value="">No exams assigned</option>';
+                } else {
+                    select.innerHTML = exams.map(e => `<option value="${e.id}">${e.sessionName || 'Exam ' + e.id} (Capacity: ${e.controls?.maxStudents || 'Unlimited'})</option>`).join('');
+                }
+            } else {
+                select.innerHTML = '<option value="">Failed to load exams</option>';
+            }
+        } catch (err) {
+            select.innerHTML = '<option value="">Error loading exams</option>';
+        }
+    }
+
+    window.closeAutoApproveModal = function() {
+        document.getElementById('autoApproveModal').classList.add('hidden');
+    }
+
+    window.confirmAutoApprove = async function() {
+        const examId = document.getElementById('autoApproveExamSelect').value;
+        const count = document.getElementById('autoApproveCount').value;
+        
+        if (!examId || !count || count <= 0) {
+            showToast('Please select an exam and enter a valid count', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('confirmAutoApproveBtn');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        btn.disabled = true;
+
+        try {
+            // Note: Since we don't have a specific backend endpoint for bulk auto approve top N yet,
+            // we will simulate this by fetching pending forms for this exam and approving them sequentially.
+            const resForms = await fetch('http://localhost:8081/api/supervisor/exam-forms', { headers: authHeaders() });
+            const allForms = await resForms.json();
+            
+            // Filter pending forms for the selected exam, sorted by date if possible (simulated here by ID)
+            const pendingForExam = allForms.filter(f => f.examId == examId && (f.status === 'APPLIED' || f.status === 'PENDING' || f.status === 'PENDING_APPROVAL'));
+            
+            // Sort by ID to approximate first-come-first-serve
+            pendingForExam.sort((a, b) => a.id - b.id);
+            
+            const toApprove = pendingForExam.slice(0, count);
+            
+            if (toApprove.length === 0) {
+                showToast('No pending applications found for this exam', 'info');
+                closeAutoApproveModal();
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                return;
+            }
+            
+            let successCount = 0;
+            for (const form of toApprove) {
+                const res = await fetch(`http://localhost:8081/api/supervisor/exam-forms/${form.id}/accept`, {
+                    method: 'POST',
+                    headers: authHeaders()
+                });
+                if (res.ok) {
+                    successCount++;
+                }
+            }
+            
+            showToast(`Successfully auto-approved ${successCount} applications`, 'success');
+            closeAutoApproveModal();
+            loadExamForms();
+        } catch (err) {
+            console.error('Auto approve error:', err);
+            showToast('An error occurred during auto approve', 'error');
+        } finally {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
     }
 
     // Fetch and render profile

@@ -23,6 +23,9 @@ public class AdmitCardDTO {
     private String centerName;
     private List<SubjectScheduleDTO> subjects = new ArrayList<>();
     private String qrCode;
+    private String headSupervisorSignatureUrl;
+    private String universityLogoUrl;
+    private String universityName;
 
     @Data
     @NoArgsConstructor

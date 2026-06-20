@@ -1,0 +1,664 @@
+
+================================================================================
+        FINAL YEAR PROJECT - DEMO EXPLANATION GUIDE
+        Advanced Examination Authentication System
+        (Read this before your presentation tomorrow!)
+================================================================================
+
+------------------------------------------------------------------------
+WHAT IS OUR PROJECT? (Say this first)
+------------------------------------------------------------------------
+
+Our project is an "Advanced Examination Authentication System."
+
+In simple words:
+    - When a student comes to give an exam, the system verifies that
+      the RIGHT student is sitting in the RIGHT seat.
+    - It prevents cheating, impersonation, and fraud during exams.
+    - Everything is managed digitally — no paper-based attendance,
+      no manual verification.
+
+------------------------------------------------------------------------
+WHAT PROBLEM DOES IT SOLVE?
+------------------------------------------------------------------------
+
+CURRENT PROBLEM (without our system):
+    - Supervisors manually check ID cards — slow and error-prone.
+    - Students can send someone else to give the exam (impersonation).
+    - No digital record of who attended and who didn't.
+    - Fraud cases have no proper tracking system.
+    - No automated way to manage exams across multiple colleges.
+
+OUR SOLUTION:
+    - Each student gets a unique AES-256 encrypted QR code (Admit Card).
+    - Exam Supervisor scans the QR → system instantly fetches student details.
+    - Attendance is recorded digitally and automatically.
+    - Full role-based system: Super Admin → University → Institution Admin
+      → Head Supervisor → Exam Supervisor → Student.
+    - Automated email notifications, forced password change on first login,
+      intelligent exam creation with subject validation.
+
+------------------------------------------------------------------------
+WHO ARE THE USERS? (Roles in the System)
+------------------------------------------------------------------------
+
+1. SUPER ADMIN
+   - The highest authority (University/Board level).
+   - Approves and manages all institutions/colleges on the platform.
+   - Can view fraud reports and escalated cases from all institutions.
+   - Manages the overall system settings.
+
+2. INSTITUTION ADMIN (College Admin)
+   - Manages their specific college's data.
+   - Adds students, supervisors, departments, and subjects via CSV upload.
+   - When users are added, system automatically sends login credentials
+     by email to each student and supervisor.
+   - Creates exams — system shows only valid subjects automatically.
+   - Manages backlog students separately.
+   - Exam is mapped to colleges automatically in one click.
+
+3a. HEAD SUPERVISOR (College Head / Exam Coordinator)
+    - Senior authority at the college level.
+    - Manages and oversees the entire exam — overall coordination.
+    - Assigns Exam Supervisors to specific exam halls.
+    - Can view exam status, attendance overview, and all reports.
+    - Has authority to escalate fraud/incident cases.
+
+3b. EXAM SUPERVISOR (Hall Incharge)
+    - The supervisor physically present inside the exam hall.
+    - Scans student QR codes to mark attendance.
+    - Verifies student identity by checking details shown after QR scan.
+    - Logs fraud/incident reports for that particular hall.
+
+4. STUDENT
+   - Added by Institution Admin (not self-registered).
+   - Gets email with login credentials automatically.
+   - On FIRST LOGIN → system forces student to change their password.
+   - Before login → OTP is sent to their email for verification.
+   - Can view their exam schedule, admit card, and attendance.
+
+------------------------------------------------------------------------
+TECHNOLOGY STACK (What we used to build it)
+------------------------------------------------------------------------
+
+FRONTEND (What users see):
+    - HTML, CSS, JavaScript
+    - Pages: Login/Auth Portal, Student Dashboard, Admin Dashboard,
+             Supervisor Dashboard (Head + Exam), University Dashboard,
+             Super Admin Dashboard, Admit Card, Institution Onboarding
+
+BACKEND (Server-side logic):
+    - Java with Spring Boot framework
+    - Handles all business logic, REST APIs
+    - Manages authentication, exam logic, notifications, QR generation
+
+DATABASE:
+    - MySQL
+    - 19 tables (see DATABASE TABLES section below)
+
+AI MICROSERVICE (Separate Python Flask service):
+    - Python Flask runs on Port 5001
+    - NOTE: The biometric verification is actually handled by the
+      Java backend itself (NOT Python). Python has a mock endpoint
+      written but it is not used in the live system.
+
+------------------------------------------------------------------------
+HOW THE SYSTEM WORKS - STEP BY STEP (Correct Flow)
+------------------------------------------------------------------------
+
+STEP 1: INSTITUTION ONBOARDING (by Super Admin)
+    - Super Admin approves a college/institution on the platform.
+    - Institution gets a unique Institution Code.
+    - Institution Admin account is created.
+
+STEP 2: INSTITUTION SETUP (by Institution Admin)
+    - Admin adds:
+        → College/Department data
+        → Subjects for each course and semester
+        → Students (via CSV file upload)
+        → Supervisors (Head + Exam supervisors)
+    - When students and supervisors are added, the system
+      AUTOMATICALLY sends login credentials to their emails.
+    - On first login, every user is FORCED to change their password.
+
+STEP 3: OTP BEFORE LOGIN
+    - When any user tries to login → OTP is sent to their email.
+    - User enters OTP → login is allowed.
+    - This ensures only the real person can access the account.
+
+STEP 4: EXAM CREATION (by Institution Admin)
+    - Admin creates an exam.
+    - System AUTOMATICALLY shows only valid subjects based on:
+        → The semester and course
+        → If it is a BACKLOG exam → only shows subjects in which
+          at least one student has a pending backlog (no extra subjects)
+        → If it is a REGULAR exam → shows all subjects for that semester
+    - Students are AUTO-MAPPED to the exam based on their course/semester.
+    - No manual student list needed — system handles it automatically.
+    - Exam is mapped to colleges automatically in one click.
+
+STEP 5: SUPERVISOR HALL ASSIGNMENT (by Head Supervisor)
+    - Head Supervisor logs in and assigns Exam Supervisors to halls.
+    - NOT done by admin — Head Supervisor manages this independently.
+
+STEP 6: ADMIT CARD GENERATION
+    - Once exam is set up, each student gets an Admit Card.
+    - Admit Card contains a QR Code (encrypted with AES-256).
+    - Student can download or show it on their phone.
+
+STEP 7: EXAM DAY - VERIFICATION PROCESS
+    a) Student comes to exam hall and shows their Admit Card (QR Code).
+    b) Exam Supervisor (Hall Incharge) opens the Supervisor Dashboard.
+    c) Exam Supervisor scans / enters the student's QR Code.
+    d) System decrypts the AES-256 encrypted QR and fetches student details.
+    e) Exam Supervisor visually confirms the student identity.
+    f) Attendance is marked in the system → Record saved ✅
+    g) If QR is invalid/tampered → Error shown, Exam Supervisor is alerted ❌
+    h) Head Supervisor monitors overall exam and handles escalated cases.
+
+STEP 8: ATTENDANCE & REPORTING
+    - All attendance records are saved in the database.
+    - Admin can view who attended and who was absent in real-time.
+    - Fraud cases are logged with severity (low/medium/high).
+    - Super Admin gets escalated fraud alerts.
+
+------------------------------------------------------------------------
+KEY FEATURES (Highlight these in the demo)
+------------------------------------------------------------------------
+
+✅ 1. Encrypted QR Code (AES-256) — ACTIVE
+       Each student gets a unique encrypted QR code in their Admit Card.
+       Encrypted using AES-256 so it cannot be faked or copied.
+       Exam Supervisor scans it → system instantly fetches student details.
+
+✅ 2. OTP Verification Before Login — ACTIVE
+       OTP is sent to email every time a user tries to log in.
+       Ensures only the real person can access the account.
+
+✅ 3. Forced Password Change on First Login — ACTIVE
+       When any user logs in for the first time, system forces them
+       to set a new password. Prevents use of default credentials.
+
+✅ 4. Auto Email on User Creation — ACTIVE
+       When Institution Admin adds students or supervisors,
+       the system automatically sends login credentials by email.
+       No manual communication needed.
+
+✅ 5. Smart Exam Creation (Subject Validation) — ACTIVE
+       When creating an exam, system shows ONLY valid subjects.
+       For BACKLOG exam: only shows subjects with pending backlogs.
+       For REGULAR exam: shows all subjects for that semester/course.
+
+✅ 6. Auto Student Mapping to Exam — ACTIVE
+       Students are automatically mapped to exams based on their
+       course and semester. No manual list upload needed.
+
+✅ 7. CSV File Upload — ACTIVE
+       Institution Admin can bulk upload students and supervisors
+       via CSV file. Fast and error-free data entry.
+
+✅ 8. Dual Supervisor Role System — ACTIVE
+       Head Supervisor = College Head who manages the full exam.
+       Exam Supervisor = Hall Incharge who scans QR and marks attendance.
+       Head Supervisor assigns Exam Supervisors to halls.
+
+✅ 9. Fraud Detection & Logging — ACTIVE
+       Any suspicious activity is logged automatically.
+       Severity levels: Low / Medium / High.
+       Super Admin gets escalated fraud alerts.
+
+✅ 10. Backlog Management — ACTIVE
+        Students with pending/backlog subjects are tracked separately.
+        Backlog exams show only backlog subjects — intelligent filtering.
+
+✅ 11. Notifications & Communication — ACTIVE
+        Admin can send alerts/notifications to students and supervisors.
+        Communication module supports messages between roles.
+
+✅ 12. Multi-Institution Support — ACTIVE
+        Super Admin can manage multiple universities/institutions.
+        Each institution has its own isolated data.
+
+✅ 13. Biometric / Fingerprint Verification — ACTIVE (Java Backend)
+        Fingerprint template is captured by the supervisor.
+        Java backend hashes it using SHA-256 and compares with
+        the stored hash in the database.
+        If first time → enrolls the student's fingerprint.
+        If already enrolled → compares hashes → MATCH or FAIL.
+        Attendance is recorded as PRESENT or ABSENT based on result.
+
+------------------------------------------------------------------------
+DATABASE TABLES (For the DBA member to explain)
+------------------------------------------------------------------------
+
+Our database has 19 tables. Key ones:
+
+TABLE: users
+    - Stores ALL users (students, supervisors, admins, super admin).
+    - Key fields: user_id, name, email, prn, password, role,
+                  supervisor_type (HEAD/EXAM), firstLogin, feesPaid,
+                  isEligible, examAccessAllowed, biometric_hash,
+                  department, semester, studentType (REGULAR/BACKLOG),
+                  college_id, department_id, institution_code
+
+TABLE: institutions
+    - Stores each college/institution registered on the platform.
+    - Key fields: institution_id, name, institution_code, admin_email,
+                  status (pending/approved/rejected), login_key
+
+TABLE: colleges
+    - Stores college details linked to an institution.
+    - Key fields: college_id, name (linked to institution)
+
+TABLE: departments
+    - Stores departments within a college (e.g., Computer, Mechanical).
+    - Key fields: department_id, name, college_id
+
+TABLE: subjects
+    - Stores subjects for each course, semester, and department.
+    - Key fields: id, name, code, semester, course, department_id
+    - Unique constraint: code + semester + department + course
+
+TABLE: exams
+    - Stores all exam details.
+    - Key fields: exam_id, exam_name, subject_id, type (REGULAR/BACKLOG),
+                  semester, college_id, date, start_time, duration,
+                  mode (online/offline), status (upcoming/completed),
+                  supervisor_id, supervisor_ids
+
+TABLE: qr_codes
+    - Stores the encrypted QR tokens for each student-exam pair.
+    - Key fields: qr_id, user_id, exam_id, token (AES-256 encrypted)
+
+TABLE: attendance
+    - Records when a student's attendance was marked by supervisor.
+    - Key fields: id, exam_id, student_id, supervisor_id, marked_on
+
+TABLE: exam_attendance
+    - Extended attendance with more details.
+    - Key fields: exam_id, student_id, supervisor_id, status
+
+TABLE: student_backlogs
+    - Tracks backlog subjects for each student.
+    - Key fields: id, student_id, subject_id, subject_name,
+                  semester, cleared (true/false)
+
+TABLE: fraud_logs
+    - Logs all suspicious activity during exams.
+    - Key fields: log_id, user_id, exam_id, description,
+                  severity (low/medium/high), escalated_to_super_admin
+
+TABLE: otp_verifications
+    - Stores OTPs sent to users for email login verification.
+    - Key fields: id, email, otp_code, created_at, expires_at, verified
+
+TABLE: communication_messages
+    - Stores messages/notifications sent between roles.
+    - Key fields: id, senderEmail, receiverEmail, senderRole, receiverRole,
+                  subject, message, priority (LOW/NORMAL/URGENT),
+                  type (GENERAL/WARNING/BROADCAST), status (SENT/READ)
+
+TABLE: incident_reports
+    - Logs incidents reported by Exam Supervisor during exam.
+    - Key fields: report_id, supervisor_id, exam_id, description
+
+TABLE: supervisor_action_logs
+    - Logs all actions taken by supervisors (audit trail).
+    - Key fields: id, supervisor_id, action, timestamp
+
+TABLE: system_settings
+    - Stores global system configuration settings.
+    - Key fields: setting_id, key, value
+
+TABLE: alerts
+    - Stores alerts sent within the system.
+    - Key fields: alert_id, user_id, message, type, created_at
+
+TABLE: qr_code_entries
+    - Detailed QR code scan log.
+    - Key fields: entry_id, qr_id, scanned_by, scanned_at
+
+TABLE: documents
+    - Stores uploaded documents/files for user profiles.
+    - Key fields: doc_id, user_id, doc_type, doc_path,
+                  verified_status, uploaded_on
+
+------------------------------------------------------------------------
+BACKEND API STRUCTURE (For the Backend member to explain)
+------------------------------------------------------------------------
+
+Our backend is built using Spring Boot (Java).
+It has 26 controller classes with 100+ API endpoints:
+
+    AuthController            → Login (with OTP), forced password change
+    AdminController           → Full exam management, student eligibility
+    AdminCollegeController    → College and department management
+    AdminStudentController    → Student data management, CSV upload
+    AdminSubjectController    → Subject management per course/semester
+    AdminSupervisorController → Supervisor management
+    AdminDepartmentController → Department CRUD operations
+    AdminNotificationController→ Notifications to users
+    AdminBacklogController    → Backlog student management
+    StudentController         → Student exam view, admit card
+    SupervisorController      → QR scanning, attendance marking
+    SupervisorHallController  → Head Supervisor hall assignment
+    BiometricController       → Biometric template matching
+    ProfileController         → User profile, photo, document management
+    QrController              → QR code generation and decryption
+    FraudController           → Fraud log management
+    CommunicationController   → Messages and notifications between roles
+    UniversityController      → University-level management
+    InstitutionController     → Institution onboarding and management
+    OtpController             → OTP generation and verification
+    ExamController            → Exam CRUD, subject validation
+    SystemSettingsController  → Global settings management
+
+All APIs follow REST standards.
+Authentication is done using JWT (JSON Web Tokens).
+Role-based access: each API checks the user's role before allowing access.
+
+------------------------------------------------------------------------
+AI MODULE (Python Flask - Port 5001)
+------------------------------------------------------------------------
+
+Our system has a Python Flask microservice (app.py) on Port 5001.
+Currently it is used for BIOMETRIC verification support only.
+
+HOW BIOMETRIC WORKS (Java - BiometricController.java):
+    1. Exam Supervisor captures the student's fingerprint template.
+    2. Java backend hashes the fingerprint using SHA-256.
+    3. If student has NO stored hash → ENROLLS them (first scan).
+    4. If student HAS a stored hash → COMPARES both hashes.
+    5. If hashes MATCH → Attendance marked as PRESENT ✔️
+    6. If hashes DON'T MATCH → Attendance marked as ABSENT / FAILED ❌
+
+NOTE: Face verification and Document OCR are written in Python
+      but are NOT active in the current demo. These are planned
+      for future implementation (see Future Scope section).
+
+
+------------------------------------------------------------------------
+CHALLENGES WE FACED (Say this confidently!)
+------------------------------------------------------------------------
+
+1. AES-256 QR Code Encryption/Decryption
+   - Implementing AES-256 encryption for QR tokens was complex.
+   - Had to ensure both generation (admin side) and decryption
+     (supervisor scan side) worked perfectly without data loss.
+
+2. Multi-Role Access Control (5 Roles)
+   - Had to carefully restrict which user can access which API.
+   - 5 different roles: Super Admin, Institution Admin, Head Supervisor,
+     Exam Supervisor, Student — each with different permissions.
+   - Used JWT tokens with role-based authorization.
+
+3. Intelligent Exam Subject Validation
+   - System had to automatically filter subjects based on exam type.
+   - For backlog exam: only show subjects where at least one student
+     has a pending backlog — this required complex query logic.
+
+4. Dual Supervisor Role Design
+   - Head Supervisor (College Head) manages the overall exam.
+   - Exam Supervisor (Hall Incharge) handles on-ground verification.
+   - Designing separate access levels and responsibilities required
+     careful planning of the system architecture.
+
+5. Automated Email on User Creation
+   - When admin adds students/supervisors via CSV, the system
+     automatically sends email to each user with credentials.
+   - Handling bulk email for hundreds of users efficiently was tricky.
+
+6. Forced First Login Password Change
+   - When a user logs in for the first time, system must detect it
+     and force them to set a new password before accessing anything.
+   - Used a firstLogin flag in the users table to handle this.
+
+7. CSV Bulk Upload Parsing
+   - Parsing CSV files and inserting hundreds of student/supervisor
+     records without errors or duplicates was challenging.
+
+------------------------------------------------------------------------
+WHY WE CHOSE THIS PROJECT? (Real-Life Problem → Our Solution)
+------------------------------------------------------------------------
+
+REAL LIFE PROBLEM WE OBSERVED:
+    Every year during university/college exams, these problems happen:
+
+    1. IMPERSONATION FRAUD
+       - A student pays someone else to sit in the exam on their behalf.
+       - With hundreds of students, manual checking is impossible.
+
+    2. MANUAL ID VERIFICATION IS SLOW & UNRELIABLE
+       - Supervisor checks ID card manually.
+       - A fake or borrowed ID card can easily fool a supervisor.
+       - During peak time (500+ students), long queues form.
+
+    3. NO DIGITAL ATTENDANCE RECORD
+       - Attendance is taken on paper.
+       - Papers can be lost, tampered, or forged.
+       - Generating reports takes days after the exam.
+
+    4. NO SMART EXAM MANAGEMENT
+       - Admin manually assigns students to exams.
+       - No intelligence in subject selection for backlog exams.
+       - No automated notifications to students/supervisors.
+
+HOW WE THOUGHT OF THE SOLUTION:
+    We asked ourselves — "What if every student had a UNIQUE, UNFORGEABLE
+    digital pass that only THEY can use, and the system verifies it
+    instantly without the supervisor needing to remember faces?"
+
+    That is exactly what our system does:
+    → AES-256 encrypted QR Code = unforgeable digital pass
+    → System instantly verifies who the student is after QR scan
+    → Attendance is auto-recorded — no paper, no manual effort
+    → Intelligent exam creation with auto subject validation
+    → Automated emails so admin doesn't need to manually notify anyone
+
+WHY THIS PROJECT IS RELEVANT TODAY:
+    - Exams are becoming larger in scale (thousands of students).
+    - Digital India push means colleges need digital solutions.
+    - Post-COVID, institutions want contactless, automated systems.
+    - Our solution directly solves a real, everyday problem that every
+      college in India faces during exam season.
+
+------------------------------------------------------------------------
+ADVANTAGES OF OUR SYSTEM vs MANUAL SYSTEM
+------------------------------------------------------------------------
+
+MANUAL SYSTEM (Old Way)            OUR SYSTEM (New Way)
+--------------------------------   --------------------------------
+Supervisor checks ID manually      QR code scanned instantly
+Takes 2-3 min per student          Takes 5-10 seconds per student
+Paper attendance sheets            Digital attendance in database
+Sheets can be lost/tampered        Data permanently stored securely
+No fraud proof                     Fraud logs with timestamps
+Fake IDs can fool supervisors      Encrypted QR cannot be forged
+Manual reports take days           Reports generated instantly
+Admin manually notifies users      Auto email sent on user creation
+No password security enforced      Forced password change on first login
+Admin manually picks subjects      System auto-validates subjects
+Manual student list for exam       Students auto-mapped to exam
+One admin manages everything       Role-based: 5 different roles
+No multi-institution support       One platform for multiple colleges
+No backlog subject filtering       Smart backlog-only subject filter
+Student data entered manually      CSV bulk upload supported
+
+SUMMARY - KEY ADVANTAGES:
+    ✅ SPEED: 10x faster student verification than manual checking
+    ✅ ACCURACY: No human error in attendance recording
+    ✅ SECURITY: AES-256 encryption prevents QR forgery
+    ✅ SMART: System auto-validates subjects, auto-maps students
+    ✅ AUTOMATED: Emails sent automatically, no manual notification
+    ✅ ACCOUNTABILITY: Every action is logged with timestamp
+    ✅ SCALABILITY: Handles hundreds of students across multiple halls
+    ✅ PAPERLESS: 100% digital — no paper sheets needed
+    ✅ MULTI-ROLE: 5 different roles with separate dashboards
+    ✅ REAL-TIME: Admin gets attendance data live during exam
+
+------------------------------------------------------------------------
+DISADVANTAGES / CURRENT LIMITATIONS
+------------------------------------------------------------------------
+
+    ❌ 1. INTERNET REQUIRED
+          The system needs active internet to work.
+          If the network goes down during exam, QR scanning stops.
+
+    ❌ 2. REAL BIOMETRIC NOT INTEGRATED
+          We could not integrate real fingerprint scanner hardware
+          because real biometric systems require a private paid domain
+          and specialized vendor SDK/network access — not available
+          in an academic project setup. Currently we use biometric
+          template matching which simulates the same logic and can
+          be connected to real hardware in the future.
+
+    ❌ 3. NO MOBILE APP
+          Currently only a web application.
+          Students must access it from a browser (laptop/desktop).
+
+    ❌ 4. NO OFFLINE MODE
+          If the server goes down, supervisors cannot mark attendance
+          until it comes back online.
+
+------------------------------------------------------------------------
+WHAT WE CAN IMPROVE (Future Improvements)
+------------------------------------------------------------------------
+
+    🔧 1. REAL BIOMETRIC HARDWARE INTEGRATION
+           Connect actual fingerprint scanner hardware once we have
+           access to vendor SDK and private paid domain services.
+           The biometric logic is already in place — just needs hardware.
+
+    🔧 2. FACE RECOGNITION (AI-based — Code Ready in Python)
+           Python Flask microservice already has /face_verify endpoint
+           using DeepFace (Facenet512 model). Needs final integration
+           and testing with the live exam flow.
+
+    🔧 3. DOCUMENT VERIFICATION (AI OCR — Code Ready in Python)
+           Python has /verify_document endpoint using Pytesseract OCR.
+           Can automatically read and verify student ID documents.
+           Needs activation in the main registration flow.
+
+    🔧 4. OFFLINE MODE
+           Add a local cache so supervisors can mark attendance
+           even without internet and sync later when online.
+
+    🔧 5. MOBILE APP (Android/iOS)
+           A dedicated mobile app for students to view admit cards
+           and for supervisors to scan QR directly from phone camera.
+
+    🔧 6. LIVE PROCTORING (Online Exams)
+           For online exams — use continuous camera monitoring
+           to detect if another person sits in front of the screen.
+
+    🔧 7. SMS NOTIFICATIONS
+           Currently only email notifications.
+           Add SMS alerts for students who don't have smartphones.
+
+    🔧 8. AI CHEATING DETECTION
+           Eye tracking + head pose estimation to detect
+           if a student is looking at someone else's paper.
+
+    🔧 9. DETAILED ANALYTICS DASHBOARD
+           Graphs and charts showing attendance trends,
+           fraud frequency, department-wise reports.
+
+------------------------------------------------------------------------
+QUICK ANSWERS TO COMMON EVALUATOR QUESTIONS
+------------------------------------------------------------------------
+
+Q: Why did you use Spring Boot?
+A: Spring Boot is industry-standard for building secure, scalable REST APIs
+   in Java. It has built-in security, database connectivity, and is
+   widely used in real-world enterprise applications.
+
+Q: How does biometric/fingerprint verification work?
+A: It is handled entirely in our Java Spring Boot backend.
+   When the supervisor scans a student's fingerprint, Java hashes
+   it using SHA-256 and compares it with the stored hash in the
+   database. If it is the first scan, it enrolls the student.
+   If the hashes match, attendance is marked as PRESENT.
+   If not, it is marked as FAILED/ABSENT.
+
+Q: How secure is the QR code?
+A: The QR code is encrypted using AES-256 (military-grade encryption).
+   Even if someone takes a screenshot of the QR, they cannot forge it.
+
+Q: Why didn't you use real fingerprint scanner hardware?
+A: Real biometric fingerprint scanners require a private paid domain
+   and specialized network/SDK integration provided by hardware vendors.
+   These are paid services and not accessible in an academic project
+   environment. So we implemented biometric template matching which
+   simulates the same logic and can be connected to real hardware later.
+
+Q: What is the difference between Head Supervisor and Exam Supervisor?
+A: Head Supervisor is the college head / exam coordinator — manages
+   the entire exam, assigns Exam Supervisors to halls, and handles
+   escalated fraud/incident cases at a higher authority level.
+   Exam Supervisor is the hall incharge — physically present inside
+   the exam hall, scans student QR codes, marks attendance, and
+   reports incidents directly in the system.
+
+Q: How does smart subject selection work in exam creation?
+A: When admin creates an exam, they choose the type — REGULAR or BACKLOG.
+   For REGULAR: system shows all subjects for that semester/course.
+   For BACKLOG: system only shows subjects where at least one student
+   has a pending backlog. This prevents selecting irrelevant subjects.
+
+Q: How are students notified about exams?
+A: The system sends automated emails. When admin adds students via CSV,
+   credentials are emailed automatically. Students are also forced to
+   change their password on first login for security.
+
+Q: Who assigns supervisors to exam halls?
+A: The Head Supervisor does this — NOT the institution admin.
+   Head Supervisor logs in and assigns Exam Supervisors to halls.
+
+Q: How does the system handle multiple colleges?
+A: The Super Admin can onboard multiple institutions. Each institution
+   has its own admin, students, supervisors, and exam data. Data is
+   completely isolated per institution.
+
+Q: What if the internet goes down during the exam?
+A: This is a known limitation. As future scope, we plan to add an
+   offline mode where basic QR validation works without internet.
+
+------------------------------------------------------------------------
+HOW TO START THE PROJECT (Quick Reference)
+------------------------------------------------------------------------
+
+Step 1: Start MySQL database
+Step 2: Start AI service → cd ai_verification → python app.py  (Port 5001)
+Step 3: Start Backend   → cd backend → mvn spring-boot:run     (Port 8080)
+Step 4: Serve Frontend  → python -m http.server 8000            (Port 8000)
+Step 5: Open browser    → http://localhost:8000/frontend/auth_portal.html
+
+------------------------------------------------------------------------
+YOUR ROLE: BACKEND DEVELOPER - KEY POINTS
+------------------------------------------------------------------------
+
+When evaluators ask YOU specifically:
+
+"Tell me about your role?"
+→ "I was the Backend Developer. I built the server-side of the application
+   using Java Spring Boot. I created all the REST APIs that connect the
+   frontend to the database. I implemented core features like AES-256 QR
+   encryption, JWT-based role authentication, OTP login, forced first-login
+   password change, intelligent exam subject validation, and automated email
+   notifications. I also managed the dual supervisor role system."
+
+"What was the hardest thing you did?"
+→ "The most challenging part was implementing intelligent exam creation —
+   where the system automatically filters and shows only valid subjects
+   based on whether the exam is regular or a backlog exam. Also, AES-256
+   QR encryption and handling role-based access for 5 different roles
+   across 26 API controllers was very complex."
+
+"How many APIs did you build?"
+→ "We have 26 controller classes with 100+ API endpoints covering
+   authentication, OTP, exam management, subject validation, attendance,
+   fraud detection, notifications, biometric verification, and more."
+
+------------------------------------------------------------------------
+ALL THE BEST FOR TOMORROW! YOU GOT THIS! 💪🎓
+------------------------------------------------------------------------

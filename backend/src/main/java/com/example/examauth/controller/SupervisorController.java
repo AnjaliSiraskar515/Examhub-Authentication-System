@@ -49,14 +49,15 @@ public class SupervisorController {
         // Use the deterministic exam list to count proper assigned exams and students
         List<Map<String, Object>> myExams = getExams(authentication);
 
-        // Collect students for every assigned exam using getStudents(examId) — same method
-        // that powers the live monitoring table, so no college-filter mismatch.
+        // Collect students for every assigned exam using getStudents(examId, subjectId)
         List<Map<String, Object>> myStudents = new ArrayList<>();
         for (Map<String, Object> exam : myExams) {
             Object idObj = exam.get("id");
+            Object subIdObj = exam.get("subjectId");
             if (idObj != null) {
                 Long eid = ((Number) idObj).longValue();
-                myStudents.addAll(getStudents(eid));
+                Long sid = subIdObj != null ? ((Number) subIdObj).longValue() : null;
+                myStudents.addAll(getStudents(eid, sid));
             }
         }
 
@@ -102,6 +103,7 @@ public class SupervisorController {
 
         profile.put("documents", docs);
         profile.put("firstLogin", user.getFirstLogin() != null ? user.getFirstLogin() : false);
+        profile.put("signaturePath", user.getSignaturePath());
         return ResponseEntity.ok(profile);
     }
 
@@ -170,6 +172,11 @@ public class SupervisorController {
                 });
 
         // 2. New UniversityExam table
+        List<Long> assignedHallExamIds = examHallRepository.findAll().stream()
+                .filter(h -> h.getExamSupervisorId() != null && h.getExamSupervisorId().equals(sId))
+                .map(com.example.examauth.student_exam.model.ExamHall::getExamId)
+                .toList();
+
         universityExamRepository.findAll().stream()
                 .filter(uExam -> {
                     if ("HEAD".equalsIgnoreCase(sType)) {
@@ -177,44 +184,123 @@ public class SupervisorController {
                         boolean isUniversityExam = finalInstCode != null && finalInstCode.equalsIgnoreCase(uExam.getInstitutionCode());
                         return isCollegeExam || isUniversityExam ||
                                 (uExam.getSupervisorId() != null && uExam.getSupervisorId().equals(sId)) ||
-                                (uExam.getSupervisorIds() != null && uExam.getSupervisorIds().contains(sId));
+                                (uExam.getSupervisorIds() != null && uExam.getSupervisorIds().contains(sId)) ||
+                                assignedHallExamIds.contains(uExam.getId());
                     } else {
                         return (uExam.getSupervisorId() != null && uExam.getSupervisorId().equals(sId)) ||
-                                (uExam.getSupervisorIds() != null && uExam.getSupervisorIds().contains(sId));
+                                (uExam.getSupervisorIds() != null && uExam.getSupervisorIds().contains(sId)) ||
+                                assignedHallExamIds.contains(uExam.getId());
                     }
                 })
                 .forEach(uExam -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("id", uExam.getId());
-                    map.put("title", uExam.getSessionName());
-                    map.put("date", uExam.getExamDate() != null ? uExam.getExamDate().toString() : "TBD");
-                    map.put("duration",
-                            uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null &&
-                                    uExam.getSchedule().getEndTime() != null
-                                            ? java.time.Duration.between(
-                                                    uExam.getSchedule().getStartTime(),
-                                                    uExam.getSchedule().getEndTime()).toMinutes()
-                                            : 0);
-                    map.put("startTime",
-                            uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null
-                                    ? uExam.getSchedule().getStartTime().toString()
-                                    : "TBD");
-                    map.put("mode", uExam.getMode());
-                    map.put("status", uExam.getStatus());
-                    map.put("location", uExam.getCenterName() != null ? uExam.getCenterName() : "");
-                    result.add(map);
+                    List<com.example.examauth.student_exam.university.model.UniversityExamSubject> subjects = uExam.getSubjects();
+                    if (subjects != null && !subjects.isEmpty()) {
+                        for (com.example.examauth.student_exam.university.model.UniversityExamSubject subject : subjects) {
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("id", uExam.getId());
+                            map.put("subjectId", subject.getId());
+                            map.put("title", uExam.getSessionName() + " - " + subject.getSubjectName());
+                            map.put("subjectName", subject.getSubjectName());
+                            map.put("date", subject.getExamDate() != null ? subject.getExamDate().toString() : "TBD");
+                            long compDuration = subject.getDuration() != null ? subject.getDuration() : 0;
+                            if (subject.getStartTime() != null && subject.getEndTime() != null) {
+                                compDuration = java.time.Duration.between(subject.getStartTime(), subject.getEndTime()).toMinutes();
+                                if (compDuration < 0) compDuration += 1440; // handle midnight crossover
+                            }
+                            map.put("duration", compDuration);
+                            map.put("startTime", subject.getStartTime() != null ? subject.getStartTime().toString() : "TBD");
+                            map.put("endTime", subject.getEndTime() != null ? subject.getEndTime().toString() : "TBD");
+                            map.put("mode", uExam.getMode());
+                            
+                            String subStatus = "UPCOMING";
+                            if ("COMPLETED".equalsIgnoreCase(uExam.getStatus()) || 
+                               (uExam.getSessionName() != null && (uExam.getSessionName().toLowerCase().contains("final year endsem") || uExam.getSessionName().toLowerCase().contains("first year exam")))) {
+                                subStatus = "COMPLETED";
+                            } else if (subject.getExamDate() != null) {
+                                java.time.LocalDate today = java.time.LocalDate.now();
+                                if (subject.getExamDate().isBefore(today)) {
+                                    subStatus = "COMPLETED";
+                                } else if (subject.getExamDate().isEqual(today)) {
+                                    java.time.LocalTime now = java.time.LocalTime.now();
+                                    java.time.LocalTime startTime = subject.getStartTime();
+                                    java.time.LocalTime endTime = subject.getEndTime();
+                                    if (endTime == null && startTime != null && subject.getDuration() != null) {
+                                        endTime = startTime.plusMinutes(subject.getDuration());
+                                    }
+                                    
+                                    if (endTime != null && now.isAfter(endTime)) {
+                                        subStatus = "COMPLETED";
+                                    } else if (startTime != null && now.isBefore(startTime.minusMinutes(30))) {
+                                        subStatus = "UPCOMING";
+                                    } else {
+                                        subStatus = "LIVE"; 
+                                    }
+                                }
+                            }
+                            map.put("status", subStatus);
+                            map.put("sessionName", uExam.getSessionName());
+                            
+                            String resolvedCenter = uExam.getCenterName() != null && !uExam.getCenterName().isEmpty() 
+                                                    ? uExam.getCenterName() 
+                                                    : "Dhole Patil College of Engineering";
+                            map.put("location", resolvedCenter);
+                            map.put("centerName", resolvedCenter);
+                            map.put("centerCapacity", uExam.getCenterCapacity() != null ? uExam.getCenterCapacity() : 0);
+                            result.add(map);
+                        }
+                    } else {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("id", uExam.getId());
+                        map.put("title", uExam.getSessionName());
+                        map.put("date", uExam.getExamDate() != null ? uExam.getExamDate().toString() : "TBD");
+                        map.put("duration",
+                                uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null &&
+                                        uExam.getSchedule().getEndTime() != null
+                                                ? java.time.Duration.between(
+                                                        uExam.getSchedule().getStartTime(),
+                                                        uExam.getSchedule().getEndTime()).toMinutes()
+                                                : 0);
+                        map.put("startTime",
+                                uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null
+                                        ? uExam.getSchedule().getStartTime().toString()
+                                        : "TBD");
+                        map.put("endTime",
+                                uExam.getSchedule() != null && uExam.getSchedule().getEndTime() != null
+                                        ? uExam.getSchedule().getEndTime().toString()
+                                        : "TBD");
+                        map.put("mode", uExam.getMode());
+                        map.put("status", uExam.getStatus());
+                        
+                        String resolvedCenter = uExam.getCenterName() != null && !uExam.getCenterName().isEmpty() 
+                                                ? uExam.getCenterName() 
+                                                : "Dhole Patil College of Engineering";
+                        
+                        map.put("location", resolvedCenter);
+                        map.put("centerName", resolvedCenter);
+                        map.put("centerCapacity", uExam.getCenterCapacity() != null ? uExam.getCenterCapacity() : 0);
+                        result.add(map);
+                    }
                 });
 
         return result;
     }
 
     @GetMapping("/students")
-    public List<Map<String, Object>> getStudents(@RequestParam(value = "examId", required = false) Long examId) {
+    public List<Map<String, Object>> getStudents(@RequestParam(value = "examId", required = false) Long examId,
+                                                 @RequestParam(value = "subjectId", required = false) Long subjectId) {
 
         // If examId is provided, return ONLY students actually registered for that exam
         if (examId != null) {
             List<com.example.examauth.student_exam.model.ExamRegistration> registrations = examRegistrationRepository
                     .findByExamId(examId);
+
+            if (subjectId != null) {
+                List<com.example.examauth.student_exam.model.ExamSeatAllocation> seatsForSubject = examSeatAllocationRepository.findAllByExamId(examId)
+                        .stream().filter(s -> subjectId.equals(s.getSubjectId())).toList();
+                
+                java.util.Set<Long> validStudentIds = seatsForSubject.stream().map(com.example.examauth.student_exam.model.ExamSeatAllocation::getStudentId).collect(java.util.stream.Collectors.toSet());
+                registrations = registrations.stream().filter(r -> validStudentIds.contains(r.getStudentId())).collect(java.util.stream.Collectors.toList());
+            }
 
             return registrations.stream().map(reg -> {
                 Map<String, Object> map = new HashMap<>();
@@ -230,7 +316,33 @@ public class SupervisorController {
                     map.put("name", student.getName() != null ? student.getName() : reg.getFullName());
                     map.put("email", student.getEmail());
                     map.put("qrVerified", student.getQrVerified());
-                    map.put("biometricVerified", student.getBiometricVerified());
+                    
+                    boolean verifiedForExam = false;
+                    if (examId != null) {
+                        try {
+                            com.example.examauth.model.ExamAttendance att;
+                            System.err.println("[ATTENDANCE-QUERY] studentId=" + reg.getStudentId() + ", examId=" + examId + ", subjectId=" + subjectId);
+                            if (subjectId != null) {
+                                att = examAttendanceRepository.findFirstByStudentIdAndExamIdAndSubjectId(reg.getStudentId(), examId, subjectId).orElse(null);
+                                // Fallback: if not found with subjectId, try without (handles subjectId mismatch)
+                                if (att == null) {
+                                    att = examAttendanceRepository.findFirstByStudentIdAndExamId(reg.getStudentId(), examId).orElse(null);
+                                }
+                            } else {
+                                att = examAttendanceRepository.findFirstByStudentIdAndExamId(reg.getStudentId(), examId).orElse(null);
+                            }
+                            System.err.println("[ATTENDANCE-RESULT] att=" + (att != null ? "status=" + att.getStatus() + ",subjectId=" + att.getSubjectId() : "null"));
+                            if (att != null) {
+                                if ("PRESENT".equals(att.getStatus())) {
+                                    verifiedForExam = true;
+                                }
+                                map.put("status", att.getStatus());
+                            }
+                        } catch(Exception e) { System.err.println("[ATTENDANCE-QUERY-ERROR] " + e.getMessage()); }
+                    } else {
+                        verifiedForExam = student.getBiometricVerified();
+                    }
+                    map.put("biometricVerified", verifiedForExam);
                 } else {
                     map.put("name", reg.getFullName() != null ? reg.getFullName() : "Student " + reg.getStudentId());
                     map.put("email", "");
@@ -407,7 +519,8 @@ public class SupervisorController {
             @RequestParam(value = "isBiometricEnrolled", required = false) Boolean isBiometricEnrolled, // New param
             @RequestParam(value = "photo", required = false) org.springframework.web.multipart.MultipartFile photo,
             @RequestParam(value = "appointmentLetter", required = false) org.springframework.web.multipart.MultipartFile appointmentLetter,
-            @RequestParam(value = "idProof", required = false) org.springframework.web.multipart.MultipartFile idProof) {
+            @RequestParam(value = "idProof", required = false) org.springframework.web.multipart.MultipartFile idProof,
+            @RequestParam(value = "signature", required = false) org.springframework.web.multipart.MultipartFile signature) {
         System.out.println("DEBUG: updateProfile called");
         System.out.println("DEBUG: isBiometricEnrolled=" + isBiometricEnrolled);
         Map<String, Object> response = new HashMap<>();
@@ -460,6 +573,11 @@ public class SupervisorController {
                 String fileName = java.util.UUID.randomUUID() + "_" + idProof.getOriginalFilename();
                 saveFile(idProof, fileName);
                 user.setIdProofPath("uploads/" + fileName);
+            }
+            if (signature != null && !signature.isEmpty()) {
+                String fileName = java.util.UUID.randomUUID() + "_sig_" + signature.getOriginalFilename();
+                saveFile(signature, fileName);
+                user.setSignaturePath("uploads/" + fileName);
             }
 
             System.out.println("DEBUG: Saving user...");
@@ -587,6 +705,9 @@ public class SupervisorController {
         List<com.example.examauth.student_exam.model.ExamRegistration> pending = examRegistrationRepository
                 .findByRegistrationStatus(
                         com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.PENDING);
+        List<com.example.examauth.student_exam.model.ExamRegistration> pendingApproval = examRegistrationRepository
+                .findByRegistrationStatus(
+                        com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.PENDING_APPROVAL);
         List<com.example.examauth.student_exam.model.ExamRegistration> approved = examRegistrationRepository
                 .findByRegistrationStatus(
                         com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPROVED);
@@ -594,6 +715,7 @@ public class SupervisorController {
         List<com.example.examauth.student_exam.model.ExamRegistration> allPending = new ArrayList<>();
         allPending.addAll(applied);
         allPending.addAll(pending);
+        allPending.addAll(pendingApproval);
         allPending.addAll(approved);
 
         return allPending.stream()
@@ -664,6 +786,9 @@ public class SupervisorController {
                         if (uExam != null) {
                             map.put("examName", uExam.getExamName());
                             map.put("examStatus", uExam.getStatus());
+                            long approvedCount = examRegistrationRepository.countByExamIdAndRegistrationStatus(reg.getExamId(), com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPROVED);
+                            map.put("approvedCount", approvedCount);
+                            map.put("capacity", uExam.getControls() != null ? uExam.getControls().getMaxStudents() : null);
                         } else {
                             map.put("examName", "Unknown Exam");
                             map.put("examStatus", "UNKNOWN");
@@ -673,24 +798,65 @@ public class SupervisorController {
                 }).collect(java.util.stream.Collectors.toList());
     }
 
+    @org.springframework.transaction.annotation.Transactional
     @PostMapping("/exam-forms/{id}/accept")
     public Map<String, Object> acceptExamForm(Authentication authentication, @PathVariable Long id) {
         try {
             com.example.examauth.student_exam.model.ExamRegistration reg = examRegistrationRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Registration not found"));
-            reg.setRegistrationStatus(com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPROVED);
-            reg.setPaymentStatus(com.example.examauth.student_exam.model.ExamRegistration.PaymentStatus.PAID);
-            examRegistrationRepository.save(reg);
+                    
+            // Lock/Check Capacity First
+            com.example.examauth.student_exam.university.model.UniversityExam uExamCapacity = universityExamRepository.findById(reg.getExamId()).orElse(null);
+            if (uExamCapacity != null && uExamCapacity.getControls() != null && uExamCapacity.getControls().getMaxStudents() != null) {
+                long approvedCount = examRegistrationRepository.countByExamIdAndRegistrationStatus(uExamCapacity.getId(), com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPROVED);
+                if (approvedCount >= uExamCapacity.getControls().getMaxStudents()) {
+                    return Map.of("success", false, "message", "Cannot approve: Capacity already reached for this exam.");
+                }
+                
+                // Set Approved
+                reg.setRegistrationStatus(com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPROVED);
+                // DO NOT touch paymentStatus! Payment flow continues independently.
+                examRegistrationRepository.save(reg);
+                
+                // Re-check: Will this approval reach the max capacity?
+                if (approvedCount + 1 == uExamCapacity.getControls().getMaxStudents()) {
+                    // Auto-reject others
+                    List<com.example.examauth.student_exam.model.ExamRegistration> pendingRegistrations = examRegistrationRepository.findByExamIdAndRegistrationStatus(uExamCapacity.getId(), com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.PENDING_APPROVAL);
+                    for (com.example.examauth.student_exam.model.ExamRegistration pendingReg : pendingRegistrations) {
+                        if (!pendingReg.getId().equals(reg.getId())) {
+                            pendingReg.setRegistrationStatus(com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.REJECTED);
+                            pendingReg.setRejectionReason("The available seats for this session have been filled.");
+                            examRegistrationRepository.save(pendingReg);
+                            notificationService.createNotification(pendingReg.getStudentId(), "Exam Registration Rejected",
+                                    "Your registration for " + uExamCapacity.getExamName() + " was not approved because the available seats for this session have been filled. You may apply for future examination sessions if available.");
+                        }
+                    }
+                }
+            } else {
+                reg.setRegistrationStatus(com.example.examauth.student_exam.model.ExamRegistration.RegistrationStatus.APPROVED);
+                examRegistrationRepository.save(reg);
+            }
 
             String examName = "Exam ID " + reg.getExamId();
 
             Long currentUserId = null;
             String currentUserName = null;
+            User user = null;
             if (authentication != null && authentication.getName() != null) {
-                User user = userRepository.findFirstByEmail(authentication.getName()).orElse(null);
+                user = userRepository.findFirstByEmail(authentication.getName()).orElse(null);
                 if (user != null) {
                     currentUserId = user.getUserId();
                     currentUserName = user.getName() != null ? user.getName() : "Supervisor";
+                }
+            }
+
+            if (user == null) {
+                return Map.of("success", false, "message", "Unauthorized");
+            }
+
+            if ("HEAD".equalsIgnoreCase(user.getSupervisorType())) {
+                if (user.getSignaturePath() == null || user.getSignaturePath().trim().isEmpty()) {
+                    return Map.of("success", false, "message", "SIGNATURE_REQUIRED");
                 }
             }
 
@@ -746,6 +912,9 @@ public class SupervisorController {
         }
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.example.examauth.repo.ExamAttendanceRepository examAttendanceRepository;
+
     @PostMapping("/verify-student-biometric")
     public ResponseEntity<Map<String, Object>> verifyStudentBiometric(
             Authentication authentication,
@@ -761,6 +930,8 @@ public class SupervisorController {
 
         String studentIdStr = payload.get("studentId");
         String frontendFingerprint = payload.get("fingerprint");
+        String examIdStr = payload.get("examId");
+        String subjectIdStr = payload.get("subjectId");
 
         if (studentIdStr == null || frontendFingerprint == null) {
             return ResponseEntity.badRequest().body(Map.of(
@@ -799,17 +970,86 @@ public class SupervisorController {
         String timestamp = java.time.LocalDateTime.now().toString();
 
         if (localHash.equals(student.getBiometricTemplateHash())) {
-            // Optional: You could update student's last verified time here
-            // student.setBiometricLastVerified(java.time.LocalDateTime.now());
-            // userRepository.save(student);
+            
+            // Actually record the attendance in the database!
+            boolean alreadyRecorded = false;
+            if (examIdStr != null && !examIdStr.isEmpty()) {
+                try {
+                    Long examId = Long.parseLong(examIdStr);
+                    Long subjectId = (subjectIdStr != null && !subjectIdStr.isEmpty()) ? Long.parseLong(subjectIdStr) : null;
+                    
+                    System.err.println("[ATTENDANCE-SAVE] studentId=" + studentId + ", examId=" + examId + ", subjectId=" + subjectId);
+                    
+                    com.example.examauth.model.ExamAttendance attendance;
+                    if (subjectId != null) {
+                        attendance = examAttendanceRepository.findFirstByStudentIdAndExamIdAndSubjectId(studentId, examId, subjectId).orElse(new com.example.examauth.model.ExamAttendance());
+                        attendance.setSubjectId(subjectId);
+                    } else {
+                        attendance = examAttendanceRepository.findFirstByStudentIdAndExamId(studentId, examId).orElse(new com.example.examauth.model.ExamAttendance());
+                    }
+                    
+                    if ("PRESENT".equals(attendance.getStatus())) {
+                        alreadyRecorded = true;
+                    }
+                    
+                    attendance.setStudentId(studentId);
+                    attendance.setExamId(examId);
+                    
+                    String email = authentication.getName();
+                    User supervisor = userRepository.findFirstByEmail(email).orElse(null);
+                    if (supervisor != null) {
+                        attendance.setSupervisorId(supervisor.getUserId());
+                    }
+                    
+                    attendance.setStatus("PRESENT");
+                    attendance.setBiometricResult("SUCCESS");
+                    attendance.setVerifiedAt(java.time.LocalDateTime.now());
+                    
+                    com.example.examauth.model.ExamAttendance saved = examAttendanceRepository.save(attendance);
+                    System.err.println("[ATTENDANCE-SAVED] id=" + saved.getId() + ", status=" + saved.getStatus() + ", subjectId=" + saved.getSubjectId());
+                } catch (Exception e) {
+                    System.err.println("[ATTENDANCE-ERROR] Failed to save attendance: " + e.getClass().getName() + ": " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
 
             // 4. Standard Response Format (Verified)
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Biometric verified",
                     "attendanceStatus", "PRESENT",
+                    "attendanceAlreadyRecorded", alreadyRecorded,
                     "timestamp", timestamp));
         } else {
+            // Record failure in attendance log if possible
+            if (examIdStr != null && !examIdStr.isEmpty()) {
+                try {
+                    Long examId = Long.parseLong(examIdStr);
+                    Long subjectId = (subjectIdStr != null && !subjectIdStr.isEmpty()) ? Long.parseLong(subjectIdStr) : null;
+                    
+                    com.example.examauth.model.ExamAttendance attendance;
+                    if (subjectId != null) {
+                        attendance = examAttendanceRepository.findFirstByStudentIdAndExamIdAndSubjectId(studentId, examId, subjectId).orElse(new com.example.examauth.model.ExamAttendance());
+                        attendance.setSubjectId(subjectId);
+                    } else {
+                        attendance = examAttendanceRepository.findFirstByStudentIdAndExamId(studentId, examId).orElse(new com.example.examauth.model.ExamAttendance());
+                    }
+                    
+                    if (!"PRESENT".equals(attendance.getStatus())) {
+                        attendance.setStudentId(studentId);
+                        attendance.setExamId(examId);
+                        String email = authentication.getName();
+                        User supervisor = userRepository.findFirstByEmail(email).orElse(null);
+                        if (supervisor != null) attendance.setSupervisorId(supervisor.getUserId());
+                        
+                        attendance.setStatus("ABSENT");
+                        attendance.setBiometricResult("FAILED");
+                        attendance.setVerifiedAt(java.time.LocalDateTime.now());
+                        examAttendanceRepository.save(attendance);
+                    }
+                } catch (Exception e) {}
+            }
+
             // 4. Standard Response Format (Mismatch)
             return ResponseEntity.ok(Map.of(
                     "success", false,
@@ -830,7 +1070,7 @@ public class SupervisorController {
     private com.example.examauth.student_exam.repo.ExamHallRepository examHallRepository;
 
     @GetMapping("/exam/{examId}/report")
-    public ResponseEntity<?> getExamReport(@PathVariable Long examId) {
+    public ResponseEntity<?> getExamReport(@PathVariable Long examId, @RequestParam(value = "subjectId", required = false) Long subjectId) {
         try {
             // Fetch exam details from UniversityExam table
             com.example.examauth.student_exam.university.model.UniversityExam uExam =
@@ -839,12 +1079,25 @@ public class SupervisorController {
             Map<String, Object> report = new HashMap<>();
 
             if (uExam != null) {
-                report.put("examName", uExam.getSessionName());
-                report.put("examDate", uExam.getExamDate() != null ? uExam.getExamDate().toString() : "N/A");
-                report.put("startTime", uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null
-                        ? uExam.getSchedule().getStartTime().toString() : "N/A");
-                report.put("endTime", uExam.getSchedule() != null && uExam.getSchedule().getEndTime() != null
-                        ? uExam.getSchedule().getEndTime().toString() : "N/A");
+                com.example.examauth.student_exam.university.model.UniversityExamSubject sub = null;
+                if (subjectId != null && uExam.getSubjects() != null) {
+                    sub = uExam.getSubjects().stream().filter(s -> subjectId.equals(s.getId())).findFirst().orElse(null);
+                }
+                
+                if (sub != null) {
+                    report.put("examName", uExam.getSessionName() + " - " + sub.getSubjectName());
+                    report.put("examDate", sub.getExamDate() != null ? sub.getExamDate().toString() : "N/A");
+                    report.put("startTime", sub.getStartTime() != null ? sub.getStartTime().toString() : "N/A");
+                    report.put("endTime", sub.getEndTime() != null ? sub.getEndTime().toString() : "N/A");
+                } else {
+                    report.put("examName", uExam.getSessionName());
+                    report.put("examDate", uExam.getExamDate() != null ? uExam.getExamDate().toString() : "N/A");
+                    report.put("startTime", uExam.getSchedule() != null && uExam.getSchedule().getStartTime() != null
+                            ? uExam.getSchedule().getStartTime().toString() : "N/A");
+                    report.put("endTime", uExam.getSchedule() != null && uExam.getSchedule().getEndTime() != null
+                            ? uExam.getSchedule().getEndTime().toString() : "N/A");
+                }
+                
                 report.put("mode", uExam.getMode() != null ? uExam.getMode() : "OFFLINE");
                 report.put("course", uExam.getCourse() != null ? uExam.getCourse() : "");
                 report.put("semester", uExam.getSemester() != null ? uExam.getSemester() : "");
@@ -869,6 +1122,10 @@ public class SupervisorController {
             // Fetch all seat allocations for this exam
             List<com.example.examauth.student_exam.model.ExamSeatAllocation> seats =
                     examSeatAllocationRepository.findAllByExamId(examId);
+                    
+            if (subjectId != null) {
+                seats = seats.stream().filter(s -> subjectId.equals(s.getSubjectId())).collect(java.util.stream.Collectors.toList());
+            }
 
             List<Map<String, Object>> studentList = seats.stream().map(s -> {
                 Map<String, Object> row = new HashMap<>();
@@ -878,11 +1135,32 @@ public class SupervisorController {
                 row.put("studentName", s.getStudentName() != null ? s.getStudentName() : "Student");
                 row.put("hallName", s.getHallName() != null ? s.getHallName() : "N/A");
                 row.put("collegeName", s.getCollegeName() != null ? s.getCollegeName() : "N/A");
+                
+                boolean verified = false;
+                try {
+                    com.example.examauth.model.ExamAttendance att;
+                    if (subjectId != null) {
+                        att = examAttendanceRepository.findFirstByStudentIdAndExamIdAndSubjectId(s.getStudentId(), examId, subjectId).orElse(null);
+                        // Fallback: if not found with subjectId, try without
+                        if (att == null) {
+                            att = examAttendanceRepository.findFirstByStudentIdAndExamId(s.getStudentId(), examId).orElse(null);
+                        }
+                    } else {
+                        att = examAttendanceRepository.findFirstByStudentIdAndExamId(s.getStudentId(), examId).orElse(null);
+                    }
+                    if (att != null && "PRESENT".equals(att.getStatus())) {
+                        verified = true;
+                    }
+                } catch(Exception e) {}
+                row.put("verified", verified);
+                
                 return row;
             }).toList();
 
+            long totalPresent = studentList.stream().filter(s -> Boolean.TRUE.equals(s.get("verified"))).count();
             report.put("students", studentList);
             report.put("totalStudents", studentList.size());
+            report.put("totalPresent", totalPresent);
 
             // Fetch hall names for this exam
             List<String> hallNames = seats.stream()

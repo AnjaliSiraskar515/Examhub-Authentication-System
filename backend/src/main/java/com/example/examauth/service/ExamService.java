@@ -30,7 +30,10 @@ public class ExamService {
         return examRepository.findById(id);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void deleteExam(Long id) {
+        // We cannot easily autowire all repositories here without cyclic dependencies, 
+        // but we can use EntityManager or the repositories if we inject them.
         examRepository.deleteById(id);
     }
 }

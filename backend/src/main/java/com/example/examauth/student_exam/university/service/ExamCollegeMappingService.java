@@ -22,6 +22,11 @@ public class ExamCollegeMappingService {
         return mappingRepository.save(mapping);
     }
 
+    @Transactional
+    public ExamCollegeMapping updateMapping(ExamCollegeMapping mapping) {
+        return mappingRepository.save(mapping);
+    }
+
     public List<ExamCollegeMapping> getMappingsByExam(Long examId) {
         return mappingRepository.findAllByExamId(examId);
     }

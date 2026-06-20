@@ -315,12 +315,13 @@ public class DataSeeder {
 
             // Seed 30 Test Students for Phase 5 E2E Capacity & Pagination Testing
             for (int i = 1; i <= 30; i++) {
-                String prn = String.format("E2E%03d", i);
-                if (userRepository.findByPrn(prn).isEmpty()) {
+                String username = "e2e_student" + i;
+                if (userRepository.findByUsername(username).isEmpty()) {
+                    String prn = String.format("E2E%03d", i);
                     User s = new User();
                     s.setName("E2E Student " + i);
                     s.setEmail("e2e" + i + "@examhub.edu");
-                    s.setUsername("e2e_student" + i);
+                    s.setUsername(username);
                     s.setPrn(prn);
                     s.setPassword(passwordEncoder.encode("password"));
                     s.setRole("STUDENT");

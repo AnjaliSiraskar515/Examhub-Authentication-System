@@ -377,7 +377,7 @@ public class ProfileController {
             userRepository.save(user);
             return ResponseEntity.ok(Map.of(
                     "status", "uploaded",
-                    "photoPath", user.getPhotoPath(),
+                    "photoPath", user.getPhotoPath() != null ? user.getPhotoPath() : "",
                     "photoUrl", user.getPhotoPath() == null ? "" : "/uploads/" + user.getPhotoPath()));
         } catch (Exception e) {
             e.printStackTrace();

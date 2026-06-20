@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "exam_attendance",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "exam_id"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "exam_id", "subject_id"})
 )
 public class ExamAttendance {
 
@@ -26,6 +26,9 @@ public class ExamAttendance {
 
     @Column(name = "exam_id")
     private Long examId;
+
+    @Column(name = "subject_id")
+    private Long subjectId;
 
     @Column(name = "supervisor_id")
     private Long supervisorId;
@@ -60,6 +63,14 @@ public class ExamAttendance {
 
     public void setExamId(Long examId) {
         this.examId = examId;
+    }
+
+    public Long getSubjectId() {
+        return subjectId;
+    }
+
+    public void setSubjectId(Long subjectId) {
+        this.subjectId = subjectId;
     }
 
     public Long getSupervisorId() {
