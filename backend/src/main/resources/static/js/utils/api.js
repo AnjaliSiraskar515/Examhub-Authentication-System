@@ -1,4 +1,4 @@
-const API_BASE_URL = '/api/student';
+const API_BASE_URL = (window.GLOBAL_API_BASE || "") + '/api/student';
 
 // Get auth headers with JWT token
 const getHeaders = () => {

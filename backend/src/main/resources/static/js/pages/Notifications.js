@@ -260,7 +260,7 @@ export const Notifications = {
         // Persist to backend
         try {
             const token = localStorage.getItem('token');
-            await fetch('/api/student/notifications/mark-all-read', {
+            await fetch((window.GLOBAL_API_BASE || '') + '/api/student/notifications/mark-all-read', {
                 method: 'POST',
                 headers: { 'Authorization': token ? `Bearer ${token}` : '' }
             });

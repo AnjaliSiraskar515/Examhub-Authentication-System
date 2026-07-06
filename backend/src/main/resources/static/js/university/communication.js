@@ -37,7 +37,7 @@ async function loadInboxMessages() {
     inboxList.innerHTML = '<div class="p-4 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading messages...</div>';
 
     try {
-        const res = await authFetch('/api/university/communication/inbox');
+        const res = await authfetch((window.GLOBAL_API_BASE || '') + '/api/university/communication/inbox');
         if (!res.ok) throw new Error('Failed to fetch messages');
         
         const data = await res.json();
@@ -194,7 +194,7 @@ async function showCommMessage(msgId) {
     // Mark as read if it is SENT, and NOT sent by us
     if (msg.status === 'SENT' && !isFromUniversityAdmin) {
         try {
-            const res = await authFetch('/api/university/communication/mark-read', {
+            const res = await authfetch((window.GLOBAL_API_BASE || '') + '/api/university/communication/mark-read', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: msg.id })
@@ -216,7 +216,7 @@ function replyToMessage() {
 
 async function requestReplyPermission(msgId) {
     try {
-        const res = await authFetch('/api/messages/request-reply', {
+        const res = await authfetch((window.GLOBAL_API_BASE || '') + '/api/messages/request-reply', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: msgId })
@@ -238,7 +238,7 @@ async function requestReplyPermission(msgId) {
 
 async function acknowledgeMessage(msgId) {
     try {
-        const res = await authFetch('/api/university/communication/acknowledge', {
+        const res = await authfetch((window.GLOBAL_API_BASE || '') + '/api/university/communication/acknowledge', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: msgId })
@@ -274,7 +274,7 @@ async function sendReply() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
     try {
-        const res = await authFetch('/api/messages/reply', {
+        const res = await authfetch((window.GLOBAL_API_BASE || '') + '/api/messages/reply', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ parentMessageId: activeMessageId, message: text })
@@ -323,7 +323,7 @@ async function openComposeHeadSupervisorModal() {
     select.innerHTML = '<option value="">Loading Head Supervisors...</option>';
     
     try {
-        const res = await authFetch('/api/university/head-supervisors');
+        const res = await authfetch((window.GLOBAL_API_BASE || '') + '/api/university/head-supervisors');
         const data = await res.json();
         if (data.success && data.data) {
             select.innerHTML = '';
@@ -360,7 +360,7 @@ async function submitComposeHeadSupervisor() {
     }
 
     try {
-        const res = await authFetch('/api/university/communication/send', {
+        const res = await authfetch((window.GLOBAL_API_BASE || '') + '/api/university/communication/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -388,7 +388,7 @@ async function toggleBlockSupervisor(email, block) {
     if (!confirm(`Are you sure you want to ${block ? 'BLOCK' : 'UNBLOCK'} this supervisor from messaging you?`)) return;
 
     try {
-        const res = await authFetch('/api/university/communication/block-supervisor', {
+        const res = await authfetch((window.GLOBAL_API_BASE || '') + '/api/university/communication/block-supervisor', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, block: block.toString() })

@@ -62,6 +62,7 @@
       background-color: #1e1b4b;
     }
   </style>
+  <script src="config.js"></script>
 </head>
 
 <body class="min-h-screen flex flex-col items-center justify-center p-6">
@@ -236,7 +237,7 @@
       const email = document.getElementById('instEmail').value.trim();
       if (!email) return alert("Enter valid email first.");
       try {
-        const response = await fetch('/api/otp/send/email', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/otp/send/email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
@@ -259,7 +260,7 @@
       const otp = document.getElementById('emailOtp').value.trim();
       const status = document.getElementById('emailStatus');
       try {
-        const response = await fetch('/api/otp/verify/email', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/otp/verify/email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, otp })
@@ -284,7 +285,7 @@
       const phone = document.getElementById('instPhone').value.trim();
       if (!phone) return alert("Enter valid phone number first.");
       try {
-        const response = await fetch('/api/otp/send/phone', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/otp/send/phone', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone })
@@ -307,7 +308,7 @@
       const otp = document.getElementById('phoneOtp').value.trim();
       const status = document.getElementById('phoneStatus');
       try {
-        const response = await fetch('/api/otp/verify/phone', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/otp/verify/phone', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone, otp })
@@ -355,7 +356,7 @@
       };
 
       try {
-        const response = await fetch('/api/institution/register', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/institution/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)

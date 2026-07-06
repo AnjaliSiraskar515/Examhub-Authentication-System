@@ -247,7 +247,7 @@ export const Navbar = {
             // Persist to backend FIRST so next poll returns isRead=true
             try {
                 const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
-                await fetch('/api/student/notifications/mark-all-read', {
+                await fetch((window.GLOBAL_API_BASE || '') + '/api/student/notifications/mark-all-read', {
                     method: 'POST',
                     headers: { 'Authorization': token ? `Bearer ${token}` : '' }
                 });

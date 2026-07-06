@@ -1428,11 +1428,11 @@
       tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-400 py-10"><i class="fas fa-spinner fa-spin mr-2"></i>Loading exams...</td></tr>';
 
       try {
-        const res = await fetch('/api/supervisor/exams', { headers: authHeaders() });
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/exams', { headers: authHeaders() });
         const exams = await res.json();
 
         // Update college badge
-        const profRes = await fetch('/api/supervisor/profile', { headers: authHeaders() });
+        const profRes = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/profile', { headers: authHeaders() });
         const prof = await profRes.json();
         const colEl = document.getElementById('headCollegeName');
         if (colEl) colEl.textContent = prof.collegeName || prof.college || 'SRCOE';
@@ -1535,7 +1535,7 @@
       container.innerHTML = '<div class="text-center text-gray-500 my-8"><i class="fas fa-spinner fa-spin text-3xl"></i><p class="mt-2">Loading forms...</p></div>';
 
       try {
-        const res = await fetch('/api/supervisor/exam-forms', { headers: authHeaders() });
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/exam-forms', { headers: authHeaders() });
         if (!res.ok) throw new Error('Failed to fetch approvals');
         const forms = await res.json();
         // Sort to give priority to latest forms (descending by ID)
@@ -1815,7 +1815,7 @@
       const profileBox = document.getElementById('tab-profile');
       // if (profileBox.dataset.loaded) return; // Removed to allow auto-refresh
       try {
-        const res = await fetch('/api/supervisor/profile', { headers: authHeaders() });
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/profile', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-profile');
         const p = await res.json();
         document.getElementById('profileAvatar').src = p.avatar || 'placeholder-avatar.png';
@@ -1961,7 +1961,7 @@
 
             try {
                 const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
-                const res = await fetch('/api/profile/change-password', {
+                const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/profile/change-password', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2008,7 +2008,7 @@
       if (container.dataset.loaded) return;
       container.innerHTML = '<div class="muted">Loading exams...</div>';
       try {
-        const res = await fetch('/api/supervisor/exams', { headers: authHeaders() });
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/exams', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-exams');
         let arr = await res.json();
 
@@ -2277,7 +2277,7 @@
       const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
       if (!token) return;
       try {
-        const res = await fetch('/api/supervisor/notifications', {
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/notifications', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) return;
@@ -2497,7 +2497,7 @@
       const list = document.getElementById('notificationList');
       if (list.innerText.includes('No exams assigned') || list.innerText.includes('No new notifications')) return;
 
-      const res = fetch('/api/supervisor/exams', { headers: authHeaders() })
+      const res = fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/exams', { headers: authHeaders() })
         .then(r => r.json())
         .then(arr => {
           let read = JSON.parse(localStorage.getItem('readNotifications') || '[]');
@@ -2743,7 +2743,7 @@
       }
 
       // call backend to verify token (secured with JWT)
-      fetch('/api/qr/verify', {
+      fetch((window.GLOBAL_API_BASE || '') + '/api/qr/verify', {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ qrToken: decodedText })
@@ -2932,7 +2932,7 @@
     }
 
     window.verifyStudentQR = async function (studentId) {
-      const res = await fetch('/api/qr/generate?studentId=' + encodeURIComponent(studentId) + '&examId=1');
+      const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/qr/generate?studentId=' + encodeURIComponent(studentId) + '&examId=1');
       if (res.ok) alert('QR generated (simulate scanning)'); else alert('QR generate failed');
     }
 
@@ -2959,7 +2959,7 @@
         await delay(1000); // Wait 1s for "verifying"
 
         // Step 4: Verify
-        const res = await fetch('/api/supervisor/verify-student-biometric', {
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/verify-student-biometric', {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
@@ -3002,7 +3002,7 @@
 
         await delay(2000); // Simulate hardware scan time
 
-        const res = await fetch('/api/biometric/capture', {
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/biometric/capture', {
           method: 'POST',
           headers: authHeaders()
         });
@@ -3128,7 +3128,7 @@
 
         // 4. Verification from Backend
         const verifyCall = async (hash) => {
-            const response = await fetch('/api/supervisor/verify-student-biometric', {
+            const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/verify-student-biometric', {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
@@ -3278,7 +3278,7 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
         btn.disabled = true;
 
-        const res = await fetch('/api/supervisor/update-profile', {
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/update-profile', {
           method: 'POST',
           headers: authHeaders(),
           body: formData // Content-Type handled automatically with boundary
@@ -3311,7 +3311,7 @@
 
       const profileBox = document.getElementById('tab-profile');
       try {
-        const res = await fetch('/api/supervisor/profile', { headers: authHeaders() });
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/profile', { headers: authHeaders() });
         if (!res.ok) throw new Error('no-profile');
         const p = await res.json();
 
@@ -3510,7 +3510,7 @@
 
       // 2. Call Backend
       try {
-        const res = await fetch('/api/supervisor/enroll-biometric', {
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/enroll-biometric', {
           method: 'POST',
           headers: authHeaders()
         });
@@ -4087,7 +4087,7 @@
         formData.append('currentPassword', currentPassword);
         formData.append('newPassword', newPassword);
 
-        const res = await fetch('/api/supervisor/update-password', {
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/update-password', {
           method: 'POST',
           headers: authHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
           body: formData.toString()

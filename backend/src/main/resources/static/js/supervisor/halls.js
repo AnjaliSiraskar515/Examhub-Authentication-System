@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadAssignedExams() {
     try {
-        const response = await fetch('/api/supervisor/halls/mappings', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/halls/mappings', {
             headers: authHeaders()
         });
         if (!response.ok) throw new Error('Failed to load assigned exams');
@@ -46,7 +46,7 @@ async function loadAssignedExams() {
         // Fetch exams to determine dynamic live status
         let liveExamIds = new Set();
         try {
-            const examsRes = await fetch('/api/supervisor/exams', { headers: authHeaders() });
+            const examsRes = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/exams', { headers: authHeaders() });
             const exams = await examsRes.json();
             
             exams.forEach(ex => {
@@ -188,7 +188,7 @@ async function handleCreateHall(e) {
     const supervisorId = document.getElementById('hall-supervisor').value;
 
     try {
-        const response = await fetch('/api/supervisor/halls/', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/supervisor/halls/', {
             method: 'POST',
             headers: authHeaders({'Content-Type': 'application/json'}),
             body: JSON.stringify({

@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadAllocationExams() {
     try {
-        const resp = await authFetch('/api/university/exams');
+        const resp = await authfetch((window.GLOBAL_API_BASE || '') + '/api/university/exams');
         if (!resp.ok) throw new Error('Failed to fetch exams: ' + resp.status);
         const exams = await resp.json();
         const select = document.getElementById('allocation-exam-select');
@@ -131,7 +131,7 @@ async function openMapCollegeModal() {
     if (!allocationState.selectedExamId) return;
     
     try {
-        const resp = await authFetch('/api/admin/colleges');
+        const resp = await authfetch((window.GLOBAL_API_BASE || '') + '/api/admin/colleges');
         if (!resp.ok) throw new Error('Failed to fetch colleges');
         const colleges = await resp.json();
         const select = document.getElementById('map-college-select');
@@ -188,7 +188,7 @@ async function handleMapCollegeSubmit(e) {
     if (!collegeId || !supervisorId || !allocationState.selectedExamId) return;
     
     try {
-        const resp = await authFetch('/api/university/allocation/mappings', {
+        const resp = await authfetch((window.GLOBAL_API_BASE || '') + '/api/university/allocation/mappings', {
             method: 'POST',
             body: JSON.stringify({
                 examId: parseInt(allocationState.selectedExamId),

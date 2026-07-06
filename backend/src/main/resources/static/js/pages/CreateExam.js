@@ -30,20 +30,20 @@ export default function CreateExam(passedExamId = null) {
             return {
                 source: 'LEGACY',
                 numericId: idStr.substring(7),
-                url: `/api/exam/${idStr.substring(7)}`
+                url: (window.GLOBAL_API_BASE || '') + `/api/exam/${idStr.substring(7)}`
             };
         } else if (idStr.startsWith('UNIV_')) {
             return {
                 source: 'UNIVERSITY',
                 numericId: idStr.substring(5),
-                url: `/api/university/exams/${idStr.substring(5)}`
+                url: (window.GLOBAL_API_BASE || '') + `/api/university/exams/${idStr.substring(5)}`
             };
         }
         // Fallback for plain IDs (assumed University context in this wizard)
         return {
             source: 'UNIVERSITY',
             numericId: idStr,
-            url: `/api/university/exams/${idStr}`
+            url: (window.GLOBAL_API_BASE || '') + `/api/university/exams/${idStr}`
         };
     };
 
@@ -598,7 +598,7 @@ export default function CreateExam(passedExamId = null) {
                     // Subjects are university-wide — use dept NAME not college-specific departmentId
                     const deptEl = document.getElementById('department');
                     const deptName = deptEl ? deptEl.options[deptEl.selectedIndex]?.text?.trim() : '';
-                    let url = `/api/admin/subjects${examType === 'BACKLOG' ? '/backlogged' : ''}?course=${encodeURIComponent(course)}&semester=${semester}`;
+                    let url = (window.GLOBAL_API_BASE || '') + `/api/admin/subjects${examType === 'BACKLOG' ? '/backlogged' : ''}?course=${encodeURIComponent(course)}&semester=${semester}`;
                     if (deptName) url += `&departmentName=${encodeURIComponent(deptName)}`;
                     const res = await authFetch(url);
                     const subjects = res.ok ? await res.json() : [];
@@ -913,7 +913,7 @@ export default function CreateExam(passedExamId = null) {
         showLoading(true);
 
         try {
-            let url = '/api/university/exams';
+            let url = (window.GLOBAL_API_BASE || '') + '/api/university/exams';
             let method = 'POST';
 
             if (examId) {
@@ -1036,7 +1036,7 @@ export default function CreateExam(passedExamId = null) {
         try {
             const collegeId = window.CollegeContext?.selectedCollegeId || sessionStorage.getItem('selectedCollegeId') || 1;
             if (!collegeId) return;
-            const res = await authFetch(`/api/admin/departments?collegeId=${collegeId}`);
+            const res = await authFetch((window.GLOBAL_API_BASE || '') + `/api/admin/departments?collegeId=${collegeId}`);
             if (res.ok) {
                 const depts = await res.json();
                 const dropdown = document.getElementById('department');

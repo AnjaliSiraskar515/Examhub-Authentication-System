@@ -20,9 +20,9 @@ export default function MyRegistrations() {
             const headers = { 'Authorization': token ? `Bearer ${token}` : '' };
             // Fetch registrations, student profile, and exams concurrently
             const [regResponse, profileResponse, examsResponse] = await Promise.all([
-                fetch('/api/student/registrations', { headers }),
-                fetch('/api/profile/info', { headers }),
-                fetch('/api/university/exams', { headers })
+                fetch((window.GLOBAL_API_BASE || '') + '/api/student/registrations', { headers }),
+                fetch((window.GLOBAL_API_BASE || '') + '/api/profile/info', { headers }),
+                fetch((window.GLOBAL_API_BASE || '') + '/api/university/exams', { headers })
             ]);
 
             if (!regResponse.ok) {

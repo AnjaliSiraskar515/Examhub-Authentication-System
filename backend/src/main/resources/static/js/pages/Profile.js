@@ -11,7 +11,7 @@ export const Profile = {
             let isVerified = !!data.verified;
             try {
                 const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
-                const bioResponse = await fetch('/api/student-profile/biometric/status', {
+                const bioResponse = await fetch((window.GLOBAL_API_BASE || '') + '/api/student-profile/biometric/status', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (bioResponse.ok) {

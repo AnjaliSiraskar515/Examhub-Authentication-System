@@ -263,6 +263,7 @@
       }
     }
   </style>
+  <script src="config.js"></script>
 </head>
 
 <body>
@@ -477,7 +478,7 @@
 
         // Set dynamic university identity (logo & name)
         try {
-          const idResp = await fetch('/api/university/identity');
+          const idResp = await fetch((window.GLOBAL_API_BASE || '') + '/api/university/identity');
           if (idResp.ok) {
             const idData = await idResp.json();
             const headerEl = document.querySelector('.header');

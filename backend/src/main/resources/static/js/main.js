@@ -147,7 +147,7 @@ async function loadAndInjectUserProfile() {
         const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
         if (!token || token === 'mock-token-xyz') return;
 
-        const response = await fetch('/api/profile/info', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/profile/info', {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (!response.ok) return;
@@ -212,7 +212,7 @@ async function enforceStudentVerificationGate() {
 
     let studentProfileId = localStorage.getItem('userId');
     try {
-        const infoRes = await fetch('/api/profile/info', {
+        const infoRes = await fetch((window.GLOBAL_API_BASE || '') + '/api/profile/info', {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (infoRes.ok) {
@@ -232,7 +232,7 @@ async function enforceStudentVerificationGate() {
         let verified = false;
 
         try {
-            const bioResponse = await fetch('/api/student-profile/biometric/status', {
+            const bioResponse = await fetch((window.GLOBAL_API_BASE || '') + '/api/student-profile/biometric/status', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (bioResponse.ok) {
@@ -360,7 +360,7 @@ function showForcePasswordChangeModal() {
 
         try {
             const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
-            const res = await fetch('/api/profile/change-password', {
+            const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/profile/change-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,10 +1,11 @@
 // ============================================================
 // 🌐 GLOBAL BACKEND CONFIGURATION
-// Update ONLY this file when switching between local and live.
+// Auto-detects environment so you never have to change it!
 // ============================================================
 
-// 🔴 LOCAL DEVELOPMENT (uncomment when running locally via Spring Boot):
-const API_BASE_URL = "http://localhost:8081";
+window.GLOBAL_API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? "http://localhost:8081" 
+    : "https://examhub-authentication-system.onrender.com";
 
-// 🟢 PRODUCTION (live Render deployment):
-// const API_BASE_URL = "https://examhub-authentication-system.onrender.com";
+// Keep API_BASE_URL for script.js backwards compatibility
+const API_BASE_URL = window.GLOBAL_API_BASE;

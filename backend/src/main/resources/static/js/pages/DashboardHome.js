@@ -25,10 +25,10 @@ export const DashboardHome = {
         try {
             const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
             if (token) {
-                const regsResponse = await fetch('/api/student/registrations', { headers: { 'Authorization': `Bearer ${token}` } });
+                const regsResponse = await fetch((window.GLOBAL_API_BASE || '') + '/api/student/registrations', { headers: { 'Authorization': `Bearer ${token}` } });
                 const regs = await regsResponse.ok ? await regsResponse.json() : [];
                 
-                const examsResponse = await fetch('/api/university/exams', { headers: { 'Authorization': `Bearer ${token}` } });
+                const examsResponse = await fetch((window.GLOBAL_API_BASE || '') + '/api/university/exams', { headers: { 'Authorization': `Bearer ${token}` } });
                 const exams = await examsResponse.ok ? await examsResponse.json() : [];
 
                 const approvedRegs = regs.filter(r => r.registrationStatus === 'APPROVED');

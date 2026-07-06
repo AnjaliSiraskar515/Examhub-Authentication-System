@@ -9,8 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+// Removed Spring Mail imports as we now use Brevo HTTP API
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -26,11 +25,10 @@ public class OtpService {
     @Autowired
     private OtpRepository otpRepository;
 
-    @Autowired
-    private JavaMailSender mailSender; // ✅ Injects Gmail SMTP sender
+    @Value("${brevo.api.key}")
+    private String brevoApiKey;
 
-    @Value("${spring.mail.username}")
-    private String senderEmail;
+    private final String senderEmail = "siraskar2005@gmail.com";
 
     @Value("${fast2sms.api.key}")
     private String fast2SmsApiKey;
@@ -54,24 +52,32 @@ public class OtpService {
         System.out.println("🔐 GENERATED EMAIL OTP for " + email + ": " + otp);
 
         try {
-            // ✅ Compose and send email
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setFrom(senderEmail); // 👈 Dynamically set from properties
-            message.setSubject("ExamHub OTP Verification");
-            message.setText(
-                    "Hello,\n\nYour ExamHub verification OTP is: " + otp +
-                            "\n\nThis code is valid for 5 minutes.\n" +
-                            "Do not share it with anyone.\n\n" +
-                            "- ExamHub Authentication System");
-
-            // ✅ Send email asynchronously so it doesn't block the UI
+            // ✅ Send email asynchronously via Brevo HTTP API so it doesn't block the UI
             java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
-                    mailSender.send(message);
-                    System.out.println("📧 OTP email dispatched to: " + email);
+                    String url = "https://api.brevo.com/v3/smtp/email";
+                    
+                    String payload = String.format(
+                        "{" +
+                        "\"sender\":{\"name\":\"ExamHub\",\"email\":\"%s\"}," +
+                        "\"to\":[{\"email\":\"%s\"}]," +
+                        "\"subject\":\"ExamHub OTP Verification\"," +
+                        "\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Your ExamHub verification OTP is: <strong>%s</strong></p><p>This code is valid for 5 minutes.</p><p>Do not share it with anyone.</p><p>- ExamHub Authentication System</p></body></html>\"" +
+                        "}", senderEmail, email, otp
+                    );
+
+                    RestTemplate restTemplate = new RestTemplate();
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+                    headers.set("api-key", brevoApiKey);
+                    headers.set("accept", "application/json");
+
+                    HttpEntity<String> request = new HttpEntity<>(payload, headers);
+                    restTemplate.postForEntity(url, request, String.class);
+                    
+                    System.out.println("📧 OTP email dispatched to: " + email + " via Brevo");
                 } catch (Exception e) {
-                    System.err.println("❌ Failed to dispatch OTP email to: " + email + " due to SMTP error: " + e.getMessage());
+                    System.err.println("❌ Failed to dispatch OTP email to: " + email + " due to Brevo API error: " + e.getMessage());
                 }
             });
 

@@ -556,7 +556,7 @@ async function handleRegistrationSubmit(e) {
     const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
 
     try {
-        const response = await fetch('/api/student/registrations', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/student/registrations', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,

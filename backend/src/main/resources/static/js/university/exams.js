@@ -91,7 +91,7 @@ function renderExamsTable(exams) {
 
 window.updateExamStatus = async function (id, status) {
     try {
-        const response = await authFetch('/api/exam/' + id + '/status', {
+        const response = await authfetch((window.GLOBAL_API_BASE || '') + '/api/exam/' + id + '/status', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: status })

@@ -482,6 +482,7 @@
       background-color: rgba(255, 255, 255, 0.4) !important;
     }
   </style>
+  <script src="config.js"></script>
 </head>
 
 <body>
@@ -1745,7 +1746,7 @@
 
       try {
         // Fetch only once or on demand, optimization: fetch all always for now
-        const response = await authFetch('/api/admin/institutions');
+        const response = await authfetch((window.GLOBAL_API_BASE || '') + '/api/admin/institutions');
         if (!response.ok) throw new Error("Failed to fetch");
         const payload = await response.json();
         allInstitutions = unwrapApiResponse(payload) || [];
@@ -1799,7 +1800,7 @@
       }
 
       try {
-        const response = await authFetch('/api/admin/communication/send', {
+        const response = await authfetch((window.GLOBAL_API_BASE || '') + '/api/admin/communication/send', {
           method: 'POST',
           body: JSON.stringify({
             recipient,
@@ -1874,7 +1875,7 @@
 
     async function loadCommunicationHistory() {
       try {
-        const response = await authFetch('/api/admin/communication/history');
+        const response = await authfetch((window.GLOBAL_API_BASE || '') + '/api/admin/communication/history');
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || payload.success === false) {
           throw new Error(payload.message || payload.error || 'Failed to load communication history');
@@ -1894,7 +1895,7 @@
       const tbody = document.getElementById('replyRequestsBody');
       if (!tbody) return;
       try {
-        const response = await authFetch('/api/admin/communication/reply-requests');
+        const response = await authfetch((window.GLOBAL_API_BASE || '') + '/api/admin/communication/reply-requests');
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || payload.success === false) {
           throw new Error(payload.message || payload.error || 'Failed to load reply requests');
@@ -2430,7 +2431,7 @@
         // Fetch if not provided
         try {
           if (!window.allExamsData) {
-            const resp = await authFetch('/api/exam/all');
+            const resp = await authfetch((window.GLOBAL_API_BASE || '') + '/api/exam/all');
             if (resp.ok) {
               const rawExams = await resp.json();
               window.allExamsData = rawExams.map(e => ({
@@ -2652,7 +2653,7 @@
 
       let notifications = [];
       try {
-        const response = await authFetch('/api/admin/notifications?_t=' + new Date().getTime());
+        const response = await authfetch((window.GLOBAL_API_BASE || '') + '/api/admin/notifications?_t=' + new Date().getTime());
         const payload = await response.json();
         if (!response.ok) {
           throw new Error(payload.error || 'Failed to load notifications');
@@ -2799,7 +2800,7 @@
         const token = localStorage.getItem('token');
         const headers = {};
         if (token) headers['Authorization'] = 'Bearer ' + token;
-        const response = await fetch('/api/admin/settings', { headers });
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/admin/settings', { headers });
         if (!response.ok) {
           throw new Error('Unable to load settings');
         }
@@ -2807,7 +2808,7 @@
         applySystemSettings(data);
         lastLoadedSettingsPayload = collectSystemSettingsPayload();
 
-        const metaResponse = await fetch('/api/admin/settings/meta', { headers });
+        const metaResponse = await fetch((window.GLOBAL_API_BASE || '') + '/api/admin/settings/meta', { headers });
         if (metaResponse.ok) {
           const meta = await metaResponse.json();
           updateSettingsMetaFooter(meta);
@@ -2830,7 +2831,7 @@
         const token = localStorage.getItem('token');
         const headers = {};
         if (token) headers['Authorization'] = 'Bearer ' + token;
-        const response = await fetch('/api/admin/settings/maintenance/cache-status', { headers });
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/admin/settings/maintenance/cache-status', { headers });
         if (!response.ok) {
           throw new Error('Unable to load cache status');
         }
@@ -2880,7 +2881,7 @@
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
-        const response = await fetch('/api/admin/settings', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/admin/settings', {
           method: 'PUT',
           headers,
           body: JSON.stringify(collectSystemSettingsPayload())
@@ -2931,7 +2932,7 @@
         if (token) headers['Authorization'] = 'Bearer ' + token;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 120000);
-        const response = await fetch('/api/admin/settings/maintenance/backup', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/admin/settings/maintenance/backup', {
           method: 'POST',
           headers,
           signal: controller.signal
@@ -2964,7 +2965,7 @@
         const token = localStorage.getItem('token');
         const headers = {};
         if (token) headers['Authorization'] = 'Bearer ' + token;
-        const response = await fetch('/api/admin/settings/maintenance/clear-cache', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/admin/settings/maintenance/clear-cache', {
           method: 'POST',
           headers
         });
@@ -2988,7 +2989,7 @@
         const token = localStorage.getItem('token');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = 'Bearer ' + token;
-        const response = await fetch('/api/admin/settings/maintenance/backup-schedule', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/admin/settings/maintenance/backup-schedule', {
           method: 'POST',
           headers,
           body: JSON.stringify({ schedule: selected.trim() })
@@ -3011,7 +3012,7 @@
         const token = localStorage.getItem('token');
         const headers = {};
         if (token) headers['Authorization'] = 'Bearer ' + token;
-        const response = await fetch('/api/admin/settings/maintenance/logs', { headers });
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/admin/settings/maintenance/logs', { headers });
         const data = await response.json();
         const terminal = document.getElementById('recent-logs-terminal');
         const logs = Array.isArray(data.logs) ? data.logs : [];
@@ -3045,7 +3046,7 @@
         modal.classList.remove('hidden');
         modalContent.innerHTML = 'Loading complete logs...';
 
-        const response = await fetch('/api/admin/settings/maintenance/logs', { headers });
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/admin/settings/maintenance/logs', { headers });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to load logs');
         
@@ -3084,7 +3085,7 @@
       btn.disabled = true;
 
       try {
-        const response = await authFetch('/api/admin/reports/pdf', {
+        const response = await authfetch((window.GLOBAL_API_BASE || '') + '/api/admin/reports/pdf', {
           headers: { 'Accept': 'application/pdf' }
         });
         if (!response.ok) {
@@ -3377,7 +3378,7 @@
         const headers = {};
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
-        const response = await fetch('/api/profile/info', { headers });
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/profile/info', { headers });
         if (response.ok) {
           const data = await response.json();
 
@@ -3647,7 +3648,7 @@
         if (token) headers['Authorization'] = 'Bearer ' + token;
         // For basic auth demo, credentials might be needed, but usually session based in this context
 
-        const infoResponse = await fetch('/api/profile/update-info', {
+        const infoResponse = await fetch((window.GLOBAL_API_BASE || '') + '/api/profile/update-info', {
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
@@ -3675,7 +3676,7 @@
         }
 
         if (emailChanged) {
-          const emailResponse = await fetch('/api/profile/update-email', {
+          const emailResponse = await fetch((window.GLOBAL_API_BASE || '') + '/api/profile/update-email', {
             method: 'POST',
             headers: headers,
             body: JSON.stringify({
@@ -3757,7 +3758,7 @@
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
-        const response = await fetch('/api/profile/change-password', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/profile/change-password', {
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
@@ -4022,7 +4023,7 @@
         const headers = {};
         if (token) headers['Authorization'] = 'Bearer ' + token;
 
-        const response = await fetch('/api/profile/upload', {
+        const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/profile/upload', {
           method: 'POST',
           headers: headers,
           body: formData
@@ -4063,7 +4064,7 @@
         return;
       }
       try {
-        const res = await authFetch('/api/admin/global-search?query=' + encodeURIComponent(query));
+        const res = await authfetch((window.GLOBAL_API_BASE || '') + '/api/admin/global-search?query=' + encodeURIComponent(query));
         if(res.ok) {
             const payload = await res.json();
             const data = payload.data;
@@ -4193,7 +4194,7 @@
 
     async function loadInstitutionsForFilter() {
       try {
-        const res = await authFetch('/api/admin/institutions');
+        const res = await authfetch((window.GLOBAL_API_BASE || '') + '/api/admin/institutions');
         if (res.ok) {
             const payload = await res.json();
             const institutions = payload.data || [];

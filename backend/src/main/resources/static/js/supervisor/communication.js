@@ -13,7 +13,7 @@ window.loadHeadSupervisorInbox = async function() {
     listContainer.innerHTML = '<div class="text-center p-6 text-gray-400 text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>Loading messages...</div>';
     
     try {
-        const res = await fetch('/api/head-supervisor/communication/inbox', {
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/head-supervisor/communication/inbox', {
             headers: authHeaders()
         }).catch(() => null);
         
@@ -164,7 +164,7 @@ async function viewHeadMessage(msg, element) {
     // Mark as read if received and SENT
     if (!isSentByMe && msg.status === 'SENT') {
         try {
-            fetch('/api/head-supervisor/communication/mark-read', {
+            fetch((window.GLOBAL_API_BASE || '') + '/api/head-supervisor/communication/mark-read', {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ id: msg.id })
@@ -214,7 +214,7 @@ async function deleteMessageSupervisor(id) {
 
 async function requestReplyPermissionSupervisor(id) {
     try {
-        const res = await fetch('/api/messages/request-reply', {
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/messages/request-reply', {
             method: 'POST',
             headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ id: id })
@@ -252,7 +252,7 @@ window.sendHeadSupervisorMessage = async function() {
         const msgType = selectedVal === 'URGENT' ? 'WARNING' : 'GENERAL';
         const msgPriority = selectedVal === 'URGENT' ? 'URGENT' : 'NORMAL';
 
-        const res = await fetch('/api/head-supervisor/communication/send', {
+        const res = await fetch((window.GLOBAL_API_BASE || '') + '/api/head-supervisor/communication/send', {
             method: 'POST',
             headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({

@@ -19,7 +19,7 @@ export default function ExamRegistration() {
             // ── 1. Load student profile (real PRN, name, course)
             const token = localStorage.getItem('token');
             try {
-                const profileRes = await fetch('/api/profile/info', {
+                const profileRes = await fetch((window.GLOBAL_API_BASE || '') + '/api/profile/info', {
                     headers: { 'Authorization': token ? `Bearer ${token}` : '' }
                 });
                 if (profileRes.ok) {
@@ -31,7 +31,7 @@ export default function ExamRegistration() {
 
             // ── 1.5 Check Eligibility Gate
             try {
-                const eligRes = await fetch('/api/student/exams/eligible', {
+                const eligRes = await fetch((window.GLOBAL_API_BASE || '') + '/api/student/exams/eligible', {
                     headers: { 'Authorization': token ? `Bearer ${token}` : '' }
                 });
 
@@ -68,7 +68,7 @@ export default function ExamRegistration() {
             }
 
             // ── 2. Fetch open exams
-            const response = await fetch('/api/university/exams');
+            const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/university/exams');
             if (!response.ok) throw new Error("Failed to fetch exams");
             const rawExams = await response.json();
             
@@ -690,7 +690,7 @@ export default function ExamRegistration() {
 
                 const token = localStorage.getItem('token');
 
-                const response = await fetch('/api/student/exams/register', {
+                const response = await fetch((window.GLOBAL_API_BASE || '') + '/api/student/exams/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -723,7 +723,7 @@ export default function ExamRegistration() {
                 // Refresh registeredExamIds so the card immediately shows "Already Registered"
                 try {
                     const token2 = localStorage.getItem('token');
-                    const regRes = await fetch('/api/student/registrations', {
+                    const regRes = await fetch((window.GLOBAL_API_BASE || '') + '/api/student/registrations', {
                         headers: { 'Authorization': token2 ? `Bearer ${token2}` : '' }
                     });
                     if (regRes.ok) {
