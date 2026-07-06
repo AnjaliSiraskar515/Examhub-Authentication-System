@@ -7,6 +7,13 @@
   <title>ExamHub – Authentication Portal</title>
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="shortcut icon" href="favicon.ico">
+  <script>
+    if (localStorage.getItem('color-theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+  </script>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -163,6 +170,45 @@
     #loginButton:disabled {
       background: #9ca3af;
       cursor: not-allowed;
+    }
+
+    /* Dark Mode Overrides */
+    .dark body {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+    
+    .dark .glass-card {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    }
+
+    .dark input, .dark select {
+      background-color: rgba(15, 23, 42, 0.8);
+      border-color: rgba(255,255,255,0.1);
+      color: #e2e8f0;
+    }
+    
+    .dark .bg-white\\/80 {
+      background-color: rgba(30, 41, 59, 0.8);
+    }
+    
+    .dark .bg-gray-100\\/60 {
+      background-color: rgba(15, 23, 42, 0.6);
+      border-color: rgba(255,255,255,0.05);
+    }
+    
+    .dark .text-gray-700 {
+      color: #cbd5e1;
+    }
+    
+    .dark .text-gray-800 {
+      color: #e2e8f0;
+    }
+    
+    .dark .text-gray-600 {
+      color: #94a3b8;
     }
   </style>
 </head>

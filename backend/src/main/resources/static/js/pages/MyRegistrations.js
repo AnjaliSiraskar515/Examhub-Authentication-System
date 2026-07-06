@@ -60,7 +60,16 @@ export default function MyRegistrations() {
             } else {
                 const regCards = myRegistrations.map(reg => {
                     const examForReg = window.examsData ? window.examsData.find(e => e.id === reg.examId) : null;
-                    const isExamCompleted = examForReg && examForReg.status === 'COMPLETED';
+                    let isExamCompleted = examForReg && examForReg.status === 'COMPLETED';
+                    if (!isExamCompleted && examForReg && examForReg.schedule && examForReg.schedule.examDate) {
+                        const d = new Date(examForReg.schedule.examDate);
+                        d.setHours(0, 0, 0, 0);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        if (d < today) {
+                            isExamCompleted = true;
+                        }
+                    }
 
                     let statusLabel = '';
                     let statusColor = '';
@@ -78,7 +87,7 @@ export default function MyRegistrations() {
                         statusLabel = 'REJECTED';
                         statusColor = 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800';
                         statusIcon = 'fa-times-circle';
-                    } else if (reg.registrationStatus === 'APPLIED') {
+                    } else if (reg.registrationStatus === 'PENDING_APPROVAL' || reg.registrationStatus === 'PENDING' || reg.registrationStatus === 'APPLIED') {
                         statusLabel = 'PENDING APPROVAL';
                         statusColor = 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800';
                         statusIcon = 'fa-info-circle';
@@ -147,8 +156,8 @@ export default function MyRegistrations() {
                             
                             <!-- Action Buttons -->
                             <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100 dark:border-gray-700/50 relative z-10">
-                                <button onclick="window.viewRegistrationForm(${reg.id})" class="px-6 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500 hover:shadow-md text-gray-700 dark:text-gray-300 rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 transform active:scale-95">
-                                    <i class="fas fa-eye text-gray-400"></i> View Form
+                                <button ${isExamCompleted ? 'disabled' : `onclick="window.viewRegistrationForm(${reg.id})"`} class="px-6 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 ${isExamCompleted ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500 hover:shadow-md'} text-gray-700 dark:text-gray-300 rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 transform active:scale-95">
+                                    <i class="fas ${isExamCompleted ? 'fa-lock' : 'fa-eye'} text-gray-400"></i> ${isExamCompleted ? 'Locked' : 'View Form'}
                                 </button>
                                 <button onclick="window.downloadHallTicket(${reg.id})" class="px-6 py-2.5 bg-gradient-to-r ${canDownloadHallTicket ? 'from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white shadow-indigo-500/25 shadow-lg' : 'from-indigo-100 to-indigo-50 dark:from-indigo-900/30 dark:to-indigo-800/30 text-indigo-400 dark:text-indigo-600 cursor-not-allowed border border-indigo-200 dark:border-indigo-800/50'} rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 transform active:scale-95" ${!canDownloadHallTicket ? 'disabled' : ''}>
                                     <i class="fas fa-file-download ${canDownloadHallTicket ? 'text-indigo-200' : ''}"></i> Hall Ticket

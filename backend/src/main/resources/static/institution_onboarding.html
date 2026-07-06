@@ -7,12 +7,59 @@
   <title>ExamHub - Institution Onboarding with OTP</title>
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="shortcut icon" href="favicon.ico">
+  <script>
+    if (localStorage.getItem('color-theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body {
       background-color: #f8fafc;
       font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    
+    /* Dark Mode Overrides */
+    .dark body {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+    
+    .dark .bg-white {
+      background-color: #1e293b;
+    }
+    
+    .dark .border-gray-100 {
+      border-color: #334155;
+    }
+    
+    .dark .border-gray-300, .dark .border-dashed {
+      border-color: #475569;
+    }
+    
+    .dark .text-gray-800 {
+      color: #f1f5f9;
+    }
+    
+    .dark .text-gray-600 {
+      color: #cbd5e1;
+    }
+    
+    .dark input, .dark textarea {
+      background-color: rgba(15, 23, 42, 0.8);
+      color: #e2e8f0;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .dark .text-indigo-700 {
+      color: #818cf8;
+    }
+    
+    .dark .hover\\:bg-indigo-50:hover {
+      background-color: #1e1b4b;
     }
   </style>
 </head>

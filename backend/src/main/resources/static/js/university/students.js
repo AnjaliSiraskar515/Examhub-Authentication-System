@@ -3,6 +3,8 @@
 // No college dropdown in the modal — context bar drives everything.
 
 let studentsList = []; // Memory cache
+let currentStudentsPage = 1;
+const STUDENTS_PER_PAGE = 10;
 
 // ─── Listen for College Context Changes ──────────────────────────────────────
 document.addEventListener('collegeContextChanged', () => {
@@ -72,6 +74,7 @@ window.loadStudents = async function () {
             newAppsEl.innerText = pendingCount;
         }
 
+        currentStudentsPage = 1;
         renderStudentsTable();
         injectStudentModal();
 
@@ -110,7 +113,11 @@ function renderStudentsTable() {
         return;
     }
 
-    const html = studentsList.map(student => {
+    const startIndex = (currentStudentsPage - 1) * STUDENTS_PER_PAGE;
+    const endIndex = startIndex + STUDENTS_PER_PAGE;
+    const paginatedStudents = studentsList.slice(startIndex, endIndex);
+
+    const html = paginatedStudents.map(student => {
         const isEligible = student.isEligible !== false;
         const statusBadge = isEligible
             ? `<span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-md uppercase tracking-wider">Active</span>`
@@ -169,6 +176,48 @@ function renderStudentsTable() {
     }).join('');
 
     tbody.innerHTML = html;
+    updateStudentsPagination();
+}
+
+function updateStudentsPagination() {
+    const totalEntries = studentsList.length;
+    const totalPages = Math.ceil(totalEntries / STUDENTS_PER_PAGE);
+    
+    let startIndex = (currentStudentsPage - 1) * STUDENTS_PER_PAGE + 1;
+    let endIndex = Math.min(startIndex + STUDENTS_PER_PAGE - 1, totalEntries);
+    
+    if (totalEntries === 0) {
+        startIndex = 0;
+        endIndex = 0;
+    }
+
+    const infoEl = document.getElementById('students-pagination-info');
+    if (infoEl) {
+        infoEl.innerText = `Showing ${startIndex} to ${endIndex} of ${totalEntries} entries`;
+    }
+
+    const prevBtn = document.getElementById('students-prev-btn');
+    const nextBtn = document.getElementById('students-next-btn');
+
+    if (prevBtn) {
+        prevBtn.disabled = currentStudentsPage <= 1;
+        prevBtn.onclick = () => {
+            if (currentStudentsPage > 1) {
+                currentStudentsPage--;
+                renderStudentsTable();
+            }
+        };
+    }
+
+    if (nextBtn) {
+        nextBtn.disabled = currentStudentsPage >= totalPages || totalPages === 0;
+        nextBtn.onclick = () => {
+            if (currentStudentsPage < totalPages) {
+                currentStudentsPage++;
+                renderStudentsTable();
+            }
+        };
+    }
 }
 
 // 3. View Student Details (unchanged logic)

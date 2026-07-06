@@ -129,7 +129,6 @@ export default function CreateExam(passedExamId = null) {
                                     <option value="">Select</option>
                                     <option value="REGULAR">Regular</option>
                                     <option value="BACKLOG">Backlog</option>
-                                    <option value="BOTH">Both</option>
                                 </select>
                             </div>
                             <div>
@@ -138,7 +137,6 @@ export default function CreateExam(passedExamId = null) {
                                     <option value="">Select Mode</option>
                                     <option value="OFFLINE">Offline</option>
                                     <option value="ONLINE">Online</option>
-                                    <option value="HYBRID">Hybrid</option>
                                 </select>
                             </div>
                             <div>
