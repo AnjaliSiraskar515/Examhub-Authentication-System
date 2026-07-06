@@ -4,7 +4,7 @@
 // ============================================================
 
 // 🔴 LOCAL DEVELOPMENT (uncomment when running locally via Spring Boot):
-// const API_BASE_URL = "";
+const API_BASE_URL = "http://localhost:8081";
 
 // 🟢 PRODUCTION (live Render deployment):
-const API_BASE_URL = "https://examhub-authentication-system.onrender.com";
+// const API_BASE_URL = "https://examhub-authentication-system.onrender.com";
