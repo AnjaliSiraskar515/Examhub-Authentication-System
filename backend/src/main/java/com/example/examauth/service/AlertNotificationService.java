@@ -1,8 +1,7 @@
 package com.example.examauth.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+// Removed Spring Mail imports in favor of BrevoEmailService
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -10,15 +9,11 @@ import org.springframework.stereotype.Service;
 public class AlertNotificationService {
 
     @Autowired
-    private JavaMailSender mailSender;
+    private BrevoEmailService brevoEmailService;
 
     @Async
     public void sendSupervisorCredentials(String email, String name, String password,
                                           String college, String university) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("Welcome to ExamHub — Your Supervisor Account is Ready");
-
         String body = "Dear " + name + ",\n\n"
                 + "We are delighted to inform you that your Supervisor account has been successfully created on the ExamHub platform.\n\n"
                 + "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
@@ -39,13 +34,7 @@ public class AlertNotificationService {
                 + "Empowering Secure Examinations\n"
                 + "━━━━━━━━━━━━━━━━━━━━━━━━━━━";
 
-        message.setText(body);
-
-        try {
-            mailSender.send(message);
-        } catch (Exception e) {
-            System.err.println("Failed to send email to " + email + ": " + e.getMessage());
-        }
+        brevoEmailService.sendEmail(email, "Welcome to ExamHub — Your Supervisor Account is Ready", body, false);
     }
 
     // Backward-compatible overload (used by CSV import path)
@@ -56,10 +45,6 @@ public class AlertNotificationService {
 
     @Async
     public void sendStudentWelcomeEmail(String email, String name, String university, String college, String password) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("Student Enrollment Account Created");
-
         String body = "Dear " + name + ",\n\n"
                 + "Your student account has been created successfully.\n\n"
                 + "University: " + (university != null ? university : "University") + "\n"
@@ -71,21 +56,11 @@ public class AlertNotificationService {
                 + "Regards,\n"
                 + "Examhub Team";
 
-        message.setText(body);
-
-        try {
-            mailSender.send(message);
-        } catch (Exception e) {
-            System.err.println("Failed to send welcome email to student " + email + ": " + e.getMessage());
-        }
+        brevoEmailService.sendEmail(email, "Student Enrollment Account Created", body, false);
     }
 
     @Async
     public void sendAccessRemovedEmail(String email, String name, String role, String university) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("ExamHub — Account Access Removed");
-
         String roleLabel = (role != null && role.toUpperCase().contains("SUPERVISOR")) ? "Supervisor" : "Student";
         String body = "Dear " + name + ",\n\n"
                 + "We are writing to inform you that your " + roleLabel + " account has been removed from the ExamHub platform"
@@ -97,12 +72,6 @@ public class AlertNotificationService {
                 + "Regards,\n"
                 + "Examhub Team";
 
-        message.setText(body);
-
-        try {
-            mailSender.send(message);
-        } catch (Exception e) {
-            System.err.println("Failed to send access-removal email to " + email + ": " + e.getMessage());
-        }
+        brevoEmailService.sendEmail(email, "ExamHub — Account Access Removed", body, false);
     }
 }

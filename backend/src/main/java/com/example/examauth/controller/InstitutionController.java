@@ -2,6 +2,7 @@ package com.example.examauth.controller;
 
 import com.example.examauth.model.Institution;
 import com.example.examauth.repo.InstitutionRepository;
+import com.example.examauth.service.BrevoEmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -64,10 +65,7 @@ public class InstitutionController {
     }
 
     @Autowired
-    private org.springframework.mail.javamail.JavaMailSender mailSender;
-
-    @org.springframework.beans.factory.annotation.Value("${spring.mail.username}")
-    private String senderEmail;
+    private BrevoEmailService brevoEmailService;
 
     @PostMapping("/approve/{id}")
     public ResponseEntity<?> approveInstitution(@PathVariable Long id) {
@@ -142,18 +140,15 @@ public class InstitutionController {
             if (institution.getContactEmail() == null || institution.getContactEmail().isEmpty())
                 return;
 
-            org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
-            message.setTo(institution.getContactEmail());
-            message.setFrom(senderEmail);
-            message.setSubject("Institution Approval Notification - ExamHub");
-            message.setText("Dear " + institution.getAdminName() + ",\n\n" +
+
+            String text = "Dear " + institution.getAdminName() + ",\n\n" +
                     "Congratulations! Your institution '" + institution.getName() + "' has been approved.\n\n" +
                     "Here is your Unique Login Key: " + plainLoginKey + "\n\n" +
                     "Please use this key to access your institution dashboard.\n" +
                     "Do not share this key with unauthorized personnel.\n\n" +
-                    "Best Regards,\nExamHub Team");
+                    "Best Regards,\nExamHub Team";
 
-            mailSender.send(message);
+            brevoEmailService.sendEmail(institution.getContactEmail(), "Institution Approval Notification - ExamHub", text, false);
             System.out.println("✅ Approval email sent to: " + institution.getContactEmail());
         } catch (Exception e) {
             System.err.println("❌ Failed to send approval email: " + e.getMessage());
@@ -166,18 +161,15 @@ public class InstitutionController {
             if (institution.getContactEmail() == null || institution.getContactEmail().isEmpty())
                 return;
 
-            org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
-            message.setTo(institution.getContactEmail());
-            message.setFrom(senderEmail);
-            message.setSubject("Institution Application Status - ExamHub");
-            message.setText("Dear " + institution.getAdminName() + ",\n\n" +
+
+            String text = "Dear " + institution.getAdminName() + ",\n\n" +
                     "We regret to inform you that your application for '" + institution.getName()
                     + "' has been declined at this time.\n\n" +
                     "If you believe this is an error or wish to re-apply with corrected details, please contact our support team.\n\n"
                     +
-                    "Best Regards,\nExamHub Team");
+                    "Best Regards,\nExamHub Team";
 
-            mailSender.send(message);
+            brevoEmailService.sendEmail(institution.getContactEmail(), "Institution Application Status - ExamHub", text, false);
             System.out.println("⚠️ Rejection email sent to: " + institution.getContactEmail());
         } catch (Exception e) {
             System.err.println("❌ Failed to send rejection email: " + e.getMessage());
