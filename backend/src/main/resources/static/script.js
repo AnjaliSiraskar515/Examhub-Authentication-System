@@ -3,7 +3,7 @@ console.log("✅ script.js loaded successfully!");
 // ===========================================================
 //  GLOBAL CONSTANTS
 // ===========================================================
-const BACKEND_BASE = (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : "") + "/api";
+const BACKEND_BASE = (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : "https://examhub-authentication-system.onrender.com") + "/api";
 
 let emailVerified = false;
 let phoneVerified = false;
