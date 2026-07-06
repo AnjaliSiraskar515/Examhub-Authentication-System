@@ -30,20 +30,20 @@ export default function CreateExam(passedExamId = null) {
             return {
                 source: 'LEGACY',
                 numericId: idStr.substring(7),
-                url: `http://localhost:8080/api/exam/${idStr.substring(7)}`
+                url: `https://examhub-authentication-system.onrender.com/api/exam/${idStr.substring(7)}`
             };
         } else if (idStr.startsWith('UNIV_')) {
             return {
                 source: 'UNIVERSITY',
                 numericId: idStr.substring(5),
-                url: `http://localhost:8080/api/university/exams/${idStr.substring(5)}`
+                url: `https://examhub-authentication-system.onrender.com/api/university/exams/${idStr.substring(5)}`
             };
         }
         // Fallback for plain IDs (assumed University context in this wizard)
         return {
             source: 'UNIVERSITY',
             numericId: idStr,
-            url: `http://localhost:8080/api/university/exams/${idStr}`
+            url: `https://examhub-authentication-system.onrender.com/api/university/exams/${idStr}`
         };
     };
 
@@ -517,7 +517,7 @@ export default function CreateExam(passedExamId = null) {
             if (course && deptId && semester && examType) {
                 container.innerHTML = '<div class="text-center p-6"><i class="fas fa-spinner fa-spin text-indigo-500 mr-2"></i> Fetching Subjects...</div>';
                 try {
-                    let url = `http://localhost:8080/api/admin/subjects${examType === 'BACKLOG' ? '/backlogged' : ''}?course=${encodeURIComponent(course)}&semester=${semester}`;
+                    let url = `https://examhub-authentication-system.onrender.com/api/admin/subjects${examType === 'BACKLOG' ? '/backlogged' : ''}?course=${encodeURIComponent(course)}&semester=${semester}`;
                     if (deptId) url += `&departmentId=${deptId}`;
                     const res = await authFetch(url);
                     const subjects = res.ok ? await res.json() : [];
@@ -781,7 +781,7 @@ export default function CreateExam(passedExamId = null) {
         showLoading(true);
 
         try {
-            let url = 'http://localhost:8080/api/university/exams';
+            let url = 'https://examhub-authentication-system.onrender.com/api/university/exams';
             let method = 'POST';
 
             if (examId) {

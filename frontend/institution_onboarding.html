@@ -187,7 +187,7 @@
       const email = document.getElementById('instEmail').value.trim();
       if (!email) return alert("Enter valid email first.");
       try {
-        const response = await fetch('http://localhost:8081/api/otp/send/email', {
+        const response = await fetch('https://examhub-authentication-system.onrender.com/api/otp/send/email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
@@ -210,7 +210,7 @@
       const otp = document.getElementById('emailOtp').value.trim();
       const status = document.getElementById('emailStatus');
       try {
-        const response = await fetch('http://localhost:8081/api/otp/verify/email', {
+        const response = await fetch('https://examhub-authentication-system.onrender.com/api/otp/verify/email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, otp })
@@ -235,7 +235,7 @@
       const phone = document.getElementById('instPhone').value.trim();
       if (!phone) return alert("Enter valid phone number first.");
       try {
-        const response = await fetch('http://localhost:8081/api/otp/send/phone', {
+        const response = await fetch('https://examhub-authentication-system.onrender.com/api/otp/send/phone', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone })
@@ -258,7 +258,7 @@
       const otp = document.getElementById('phoneOtp').value.trim();
       const status = document.getElementById('phoneStatus');
       try {
-        const response = await fetch('http://localhost:8081/api/otp/verify/phone', {
+        const response = await fetch('https://examhub-authentication-system.onrender.com/api/otp/verify/phone', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone, otp })
@@ -306,7 +306,7 @@
       };
 
       try {
-        const response = await fetch('http://localhost:8081/api/institution/register', {
+        const response = await fetch('https://examhub-authentication-system.onrender.com/api/institution/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
